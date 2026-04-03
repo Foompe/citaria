@@ -207,7 +207,7 @@ CREATE TABLE reserva_servicio
     hora_inicio     TIME           NOT NULL,
     hora_fin        TIME           NOT NULL,
     precio_unitario DECIMAL(10, 2) NOT NULL,
-    cantidad        INT UNSIGNED   NOT NULL DEFAULT 1,
+    cantidad        INT   NOT NULL DEFAULT 1,
     CONSTRAINT fk_rs_reserva FOREIGN KEY (reserva_id)
         REFERENCES reserva (id)
         ON DELETE RESTRICT ON UPDATE CASCADE,

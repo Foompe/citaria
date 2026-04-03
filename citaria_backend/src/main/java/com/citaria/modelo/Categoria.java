@@ -3,15 +3,13 @@ package com.citaria.modelo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
-import java.time.LocalDate;
-
 /**
- * Festivos y cierres puntuales de una organización.
- * La combinación organizacion_id + fecha es única.
+ * Agrupación de servicios dentro de una organización.
+ * La combinación organizacion_id + nombre es única.
  */
 @Entity
-@Table(name = "organizacion_horario_cierre")
-public class OrganizacionHorarioCierre {
+@Table(name = "categoria")
+public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,13 +20,10 @@ public class OrganizacionHorarioCierre {
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotNull
-    @Column(nullable = false)
-    private LocalDate fecha;
-
+    @NotBlank
     @Size(max = 100)
-    @Column(length = 100)
-    private String motivo;
+    @Column(nullable = false, length = 100)
+    private String nombre;
 
     public Integer getId() {
         return id;
@@ -46,26 +41,18 @@ public class OrganizacionHorarioCierre {
         this.organizacion = organizacion;
     }
 
-    public LocalDate getFecha() {
-        return fecha;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getMotivo() {
-        return motivo;
-    }
-
-    public void setMotivo(String motivo) {
-        this.motivo = motivo;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof OrganizacionHorarioCierre that)) return false;
+        if (!(o instanceof Categoria that)) return false;
         return id != null && id.equals(that.id);
     }
 
@@ -76,11 +63,10 @@ public class OrganizacionHorarioCierre {
 
     @Override
     public String toString() {
-        return "OrganizacionHorarioCierre{" +
+        return "Categoria{" +
                 "id=" + id +
                 ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
-                ", fecha=" + fecha +
-                ", motivo='" + motivo + '\'' +
+                ", nombre='" + nombre + '\'' +
                 '}';
     }
 }

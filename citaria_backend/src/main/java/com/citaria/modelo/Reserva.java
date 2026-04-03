@@ -6,12 +6,12 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
- * Festivos y cierres puntuales de una organización.
- * La combinación organizacion_id + fecha es única.
+ * Reserva realizada por un cliente en una organización.
+ * Una reserva puede contener múltiples servicios a través de ReservaServicio.
  */
 @Entity
-@Table(name = "organizacion_horario_cierre")
-public class OrganizacionHorarioCierre {
+@Table(name = "reserva")
+public class Reserva {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,12 +23,21 @@ public class OrganizacionHorarioCierre {
     private Organizacion organizacion;
 
     @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id", nullable = false)
+    private Cliente cliente;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoReserva estado = EstadoReserva.pendiente;
+
+    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
-    @Size(max = 100)
-    @Column(length = 100)
-    private String motivo;
+    @Column(columnDefinition = "TEXT")
+    private String notas;
 
     public Integer getId() {
         return id;
@@ -46,6 +55,22 @@ public class OrganizacionHorarioCierre {
         this.organizacion = organizacion;
     }
 
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public EstadoReserva getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoReserva estado) {
+        this.estado = estado;
+    }
+
     public LocalDate getFecha() {
         return fecha;
     }
@@ -54,18 +79,18 @@ public class OrganizacionHorarioCierre {
         this.fecha = fecha;
     }
 
-    public String getMotivo() {
-        return motivo;
+    public String getNotas() {
+        return notas;
     }
 
-    public void setMotivo(String motivo) {
-        this.motivo = motivo;
+    public void setNotas(String notas) {
+        this.notas = notas;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof OrganizacionHorarioCierre that)) return false;
+        if (!(o instanceof Reserva that)) return false;
         return id != null && id.equals(that.id);
     }
 
@@ -76,11 +101,12 @@ public class OrganizacionHorarioCierre {
 
     @Override
     public String toString() {
-        return "OrganizacionHorarioCierre{" +
+        return "Reserva{" +
                 "id=" + id +
                 ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
+                ", clienteId=" + (cliente != null ? cliente.getId() : null) +
+                ", estado=" + estado +
                 ", fecha=" + fecha +
-                ", motivo='" + motivo + '\'' +
                 '}';
     }
 }

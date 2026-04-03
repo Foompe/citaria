@@ -6,14 +6,13 @@ import jakarta.validation.constraints.*;
 import java.time.LocalTime;
 
 /**
- * Horario semanal de una organización.
+ * Disponibilidad semanal de un empleado.
  * Cada registro representa un día de la semana con su franja horaria.
- * El día se representa con un valor numérico del 1 (lunes) al 7 (domingo).
+ * La combinación empleado_id + dia_semana es única.
  */
 @Entity
-@Table(name = "organizacion_horario",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"organizacion_id", "dia_semana"}))
-public class OrganizacionHorario {
+@Table(name = "horario_empleado")
+public class HorarioEmpleado {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,8 +20,8 @@ public class OrganizacionHorario {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organizacion_id", nullable = false)
-    private Organizacion organizacion;
+    @JoinColumn(name = "empleado_id", nullable = false)
+    private Empleado empleado;
 
     @NotNull
     @Min(1)
@@ -31,12 +30,12 @@ public class OrganizacionHorario {
     private Integer diaSemana;
 
     @NotNull
-    @Column(name = "hora_apertura", nullable = false)
-    private LocalTime horaApertura;
+    @Column(name = "hora_inicio", nullable = false)
+    private LocalTime horaInicio;
 
     @NotNull
-    @Column(name = "hora_cierre", nullable = false)
-    private LocalTime horaCierre;
+    @Column(name = "hora_fin", nullable = false)
+    private LocalTime horaFin;
 
     @NotNull
     @Column(nullable = false)
@@ -50,12 +49,12 @@ public class OrganizacionHorario {
         this.id = id;
     }
 
-    public Organizacion getOrganizacion() {
-        return organizacion;
+    public Empleado getEmpleado() {
+        return empleado;
     }
 
-    public void setOrganizacion(Organizacion organizacion) {
-        this.organizacion = organizacion;
+    public void setEmpleado(Empleado empleado) {
+        this.empleado = empleado;
     }
 
     public Integer getDiaSemana() {
@@ -66,20 +65,20 @@ public class OrganizacionHorario {
         this.diaSemana = diaSemana;
     }
 
-    public LocalTime getHoraApertura() {
-        return horaApertura;
+    public LocalTime getHoraInicio() {
+        return horaInicio;
     }
 
-    public void setHoraApertura(LocalTime horaApertura) {
-        this.horaApertura = horaApertura;
+    public void setHoraInicio(LocalTime horaInicio) {
+        this.horaInicio = horaInicio;
     }
 
-    public LocalTime getHoraCierre() {
-        return horaCierre;
+    public LocalTime getHoraFin() {
+        return horaFin;
     }
 
-    public void setHoraCierre(LocalTime horaCierre) {
-        this.horaCierre = horaCierre;
+    public void setHoraFin(LocalTime horaFin) {
+        this.horaFin = horaFin;
     }
 
     public Boolean getActivo() {
@@ -93,7 +92,7 @@ public class OrganizacionHorario {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof OrganizacionHorario that)) return false;
+        if (!(o instanceof HorarioEmpleado that)) return false;
         return id != null && id.equals(that.id);
     }
 
@@ -104,12 +103,12 @@ public class OrganizacionHorario {
 
     @Override
     public String toString() {
-        return "OrganizacionHorario{" +
+        return "HorarioEmpleado{" +
                 "id=" + id +
-                ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
+                ", empleadoId=" + (empleado != null ? empleado.getId() : null) +
                 ", diaSemana=" + diaSemana +
-                ", horaApertura=" + horaApertura +
-                ", horaCierre=" + horaCierre +
+                ", horaInicio=" + horaInicio +
+                ", horaFin=" + horaFin +
                 ", activo=" + activo +
                 '}';
     }
