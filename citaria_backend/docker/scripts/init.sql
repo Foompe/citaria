@@ -1,197 +1,220 @@
--- ─────────────────────────────────────────
--- CITARIA — Script de inicialización BD
--- ─────────────────────────────────────────
+CREATE TABLE organizacion
+(
+    id            INT  AUTO_INCREMENT PRIMARY KEY,
+    nombre        VARCHAR(100) NOT NULL,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    telefono      VARCHAR(20)  NULL,
+    cif           VARCHAR(20)  NULL UNIQUE,
+    calle         VARCHAR(255) NULL,
+    codigo_postal VARCHAR(10)  NULL,
+    ciudad        VARCHAR(100) NULL,
+    pais          VARCHAR(2)   NOT NULL
+);
 
--- ─────────────────────────────────────────
--- EMPRESA
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS empresa (
-    id               BIGINT       NOT NULL AUTO_INCREMENT,
-    nombre           VARCHAR(100) NOT NULL,
-    logo_url         VARCHAR(255),
-    color_primario   VARCHAR(7)   NOT NULL DEFAULT '#1F3864',
-    color_secundario VARCHAR(7)   NOT NULL DEFAULT '#2E75B6',
-    tipografia       VARCHAR(50)  NOT NULL DEFAULT 'Roboto',
-    telefono         VARCHAR(20),
-    email            VARCHAR(150),
-    direccion        VARCHAR(255),
-    ciudad           VARCHAR(100),
-    codigo_postal    VARCHAR(10),
-    horario_apertura TIME,
-    horario_cierre   TIME,
-    descripcion      TEXT,
-    PRIMARY KEY (id)
-    );
+CREATE TABLE organizacion_horario
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT      NOT NULL,
+    dia_semana      TINYINT  NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
+    hora_apertura   TIME             NOT NULL,
+    hora_cierre     TIME             NOT NULL,
+    activo          BOOLEAN          NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_orh_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_orh_dia UNIQUE (organizacion_id, dia_semana)
+);
 
--- ─────────────────────────────────────────
--- EMPRESA_HORARIO
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS empresa_horario (
-    id          BIGINT NOT NULL AUTO_INCREMENT,
-    empresa_id  BIGINT NOT NULL,
-    dia_semana  ENUM('LUNES','MARTES','MIERCOLES','JUEVES',
-    'VIERNES','SABADO','DOMINGO') NOT NULL,
-    hora_apertura TIME  NOT NULL,
-    hora_cierre   TIME  NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_empresa_horario_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE
-    );
+CREATE TABLE organizacion_horario_cierre
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    fecha           DATE         NOT NULL,
+    motivo          VARCHAR(100) NULL,
+    CONSTRAINT fk_ohc_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_ohc_fecha UNIQUE (organizacion_id, fecha)
+);
 
--- ─────────────────────────────────────────
--- USUARIO
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS usuario (
-    id         BIGINT       NOT NULL AUTO_INCREMENT,
-    email      VARCHAR(150) NOT NULL UNIQUE,
-    password   VARCHAR(255) NOT NULL,
-    rol        ENUM('EMPRESA', 'CLIENTE') NOT NULL,
-    empresa_id BIGINT       NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE
-    );
+CREATE TABLE configuracion_visual
+(
+    id               INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id  INT  NOT NULL UNIQUE,
+    logo_url         VARCHAR(500) NULL,
+    favicon_url      VARCHAR(500) NULL,
+    icono_app_url    VARCHAR(500) NULL,
+    color_primario   VARCHAR(7)   NULL,
+    color_secundario VARCHAR(7)   NULL,
+    tipografia       VARCHAR(100) NULL,
+    CONSTRAINT fk_cv_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
 
--- ─────────────────────────────────────────
--- SKILL
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS skill (
-    id          BIGINT       NOT NULL AUTO_INCREMENT,
-    nombre      VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    empresa_id  BIGINT       NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_skill_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE
-    );
+CREATE TABLE cliente
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    nombre          VARCHAR(100) NOT NULL,
+    apellidos       VARCHAR(150) NULL,
+    dni             VARCHAR(9)   NULL,
+    email           VARCHAR(255) NULL,
+    telefono        VARCHAR(20)  NULL,
+    notas           TEXT         NULL,
+    anonimizado_at  DATETIME     NULL,
+    CONSTRAINT fk_cli_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_cli_dni UNIQUE (organizacion_id, dni)
+);
 
--- ─────────────────────────────────────────
--- SERVICIO
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS servicio (
-    id           BIGINT         NOT NULL AUTO_INCREMENT,
-    nombre       VARCHAR(100)   NOT NULL,
-    descripcion  TEXT,
-    duracion_min INT            NOT NULL,
-    precio       DECIMAL(10, 2) NOT NULL,
-    imagen_url   VARCHAR(255),
-    activo       BOOLEAN        NOT NULL DEFAULT TRUE,
-    empresa_id   BIGINT         NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_servicio_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE
-    );
+CREATE TABLE credenciales
+(
+    id               INT  AUTO_INCREMENT PRIMARY KEY,
+    cliente_id       INT  NOT NULL UNIQUE,
+    email            VARCHAR(255) NOT NULL UNIQUE,
+    password_hash    VARCHAR(255) NOT NULL,
+    email_verificado BOOLEAN      NOT NULL DEFAULT FALSE,
+    ultimo_acceso    DATETIME     NULL,
+    CONSTRAINT fk_cred_cliente FOREIGN KEY (cliente_id)
+        REFERENCES cliente (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
 
--- ─────────────────────────────────────────
--- SERVICIO_SKILL
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS servicio_skill (
-    servicio_id BIGINT NOT NULL,
-    skill_id    BIGINT NOT NULL,
+CREATE TABLE empleado
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    nombre          VARCHAR(100) NOT NULL,
+    apellidos       VARCHAR(150) NOT NULL,
+    email           VARCHAR(255) NULL,
+    telefono        VARCHAR(20)  NULL,
+    foto_url        VARCHAR(500) NULL,
+    activo          BOOLEAN      NOT NULL DEFAULT TRUE,
+    anonimizado_at  DATETIME     NULL,
+    CONSTRAINT fk_emp_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_emp_email UNIQUE (organizacion_id, email)
+);
+
+CREATE TABLE horario_empleado
+(
+    id          INT  AUTO_INCREMENT PRIMARY KEY,
+    empleado_id INT      NOT NULL,
+    dia_semana  TINYINT  NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
+    hora_inicio TIME             NOT NULL,
+    hora_fin    TIME             NOT NULL,
+    activo      BOOLEAN          NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_he_empleado FOREIGN KEY (empleado_id)
+        REFERENCES empleado (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_he_dia UNIQUE (empleado_id, dia_semana)
+);
+
+CREATE TABLE skill
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    nombre          VARCHAR(100) NOT NULL,
+    descripcion     TEXT         NULL,
+    CONSTRAINT fk_sk_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_sk_nombre UNIQUE (organizacion_id, nombre)
+);
+
+CREATE TABLE categoria
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    nombre          VARCHAR(100) NOT NULL,
+    CONSTRAINT fk_cat_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT uq_cat_nombre UNIQUE (organizacion_id, nombre)
+);
+
+CREATE TABLE servicio
+(
+    id               INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id  INT       NOT NULL,
+    categoria_id     INT       NULL,
+    nombre           VARCHAR(100)      NOT NULL,
+    descripcion      TEXT              NULL,
+    imagen_url       VARCHAR(500)      NULL,
+    precio           DECIMAL(10, 2)    NOT NULL,
+    duracion_minutos SMALLINT  NOT NULL,
+    activo           BOOLEAN           NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_srv_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_srv_categoria FOREIGN KEY (categoria_id)
+        REFERENCES categoria (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE servicio_skill
+(
+    servicio_id INT  NOT NULL,
+    skill_id    INT  NOT NULL,
     PRIMARY KEY (servicio_id, skill_id),
     CONSTRAINT fk_ss_servicio FOREIGN KEY (servicio_id)
-    REFERENCES servicio (id) ON DELETE CASCADE,
+        REFERENCES servicio (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_ss_skill FOREIGN KEY (skill_id)
-    REFERENCES skill (id) ON DELETE CASCADE
-    );
+        REFERENCES skill (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
 
--- ─────────────────────────────────────────
--- EMPLEADO
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS empleado (
-    id          BIGINT         NOT NULL AUTO_INCREMENT,
-    nombre      VARCHAR(100),
-    apellidos   VARCHAR(150),
-    dni         VARCHAR(20),
-    email       VARCHAR(150),
-    telefono    VARCHAR(20),
-    foto_url    VARCHAR(255),
-    salario     DECIMAL(10, 2),
-    activo      BOOLEAN        NOT NULL DEFAULT TRUE,
-    anonimizado BOOLEAN        NOT NULL DEFAULT FALSE,
-    empresa_id  BIGINT         NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_empleado_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE,
-    CONSTRAINT uq_empleado_email_empresa UNIQUE (email, empresa_id)
-    );
-
--- ─────────────────────────────────────────
--- EMPLEADO_SKILL
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS empleado_skill (
-    empleado_id BIGINT NOT NULL,
-    skill_id    BIGINT NOT NULL,
+CREATE TABLE empleado_skill
+(
+    empleado_id INT  NOT NULL,
+    skill_id    INT  NOT NULL,
     PRIMARY KEY (empleado_id, skill_id),
     CONSTRAINT fk_es_empleado FOREIGN KEY (empleado_id)
-    REFERENCES empleado (id) ON DELETE CASCADE,
+        REFERENCES empleado (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_es_skill FOREIGN KEY (skill_id)
-    REFERENCES skill (id) ON DELETE CASCADE
-    );
+        REFERENCES skill (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
 
--- ─────────────────────────────────────────
--- HORARIO_EMPLEADO
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS horario_empleado (
-    id          BIGINT NOT NULL AUTO_INCREMENT,
-    empleado_id BIGINT NOT NULL,
-    dia_semana  ENUM('LUNES','MARTES','MIERCOLES','JUEVES',
-    'VIERNES','SABADO','DOMINGO') NOT NULL,
-    hora_inicio TIME   NOT NULL,
-    hora_fin    TIME   NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_horario_empleado FOREIGN KEY (empleado_id)
-    REFERENCES empleado (id) ON DELETE CASCADE
-    );
+CREATE TABLE reserva
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id INT  NOT NULL,
+    cliente_id      INT  NOT NULL,
+    estado          ENUM ('pendiente','confirmada','cancelada','completada')
+                                 NOT NULL DEFAULT 'pendiente',
+    fecha           DATE         NOT NULL,
+    notas           TEXT         NULL,
+    CONSTRAINT fk_res_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_res_cliente FOREIGN KEY (cliente_id)
+        REFERENCES cliente (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
 
--- ─────────────────────────────────────────
--- CLIENTE
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS cliente (
-    id               BIGINT       NOT NULL AUTO_INCREMENT,
-    nombre           VARCHAR(100),
-    apellidos        VARCHAR(150),
-    dni              VARCHAR(20),
-    email            VARCHAR(150),
-    telefono         VARCHAR(20),
-    fecha_nacimiento DATE,
-    bloqueado        BOOLEAN      NOT NULL DEFAULT FALSE,
-    anonimizado      BOOLEAN      NOT NULL DEFAULT FALSE,
-    usuario_id       BIGINT       UNIQUE,
-    empresa_id       BIGINT       NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_cliente_usuario FOREIGN KEY (usuario_id)
-    REFERENCES usuario (id) ON DELETE SET NULL,
-    CONSTRAINT fk_cliente_empresa FOREIGN KEY (empresa_id)
-    REFERENCES empresa (id) ON DELETE CASCADE,
-    CONSTRAINT uq_cliente_email_empresa UNIQUE (email, empresa_id)
-    );
-
--- ─────────────────────────────────────────
--- RESERVA
--- ─────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS reserva (
-    id                 BIGINT         NOT NULL AUTO_INCREMENT,
-    fecha              DATE           NOT NULL,
-    hora_inicio        TIME           NOT NULL,
-    hora_fin           TIME           NOT NULL,
-    estado             ENUM('PENDIENTE','CONFIRMADA','CANCELADA')
-    NOT NULL DEFAULT 'PENDIENTE',
-    precio_final       DECIMAL(10,2)  NOT NULL,
-    notas              TEXT,
-    motivo_cancelacion TEXT,
-    fecha_creacion     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    cliente_id         BIGINT         NOT NULL,
-    servicio_id        BIGINT         NOT NULL,
-    empleado_id        BIGINT         NOT NULL,
-    empresa_id         BIGINT         NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_reserva_cliente  FOREIGN KEY (cliente_id)
-    REFERENCES cliente  (id) ON DELETE RESTRICT,
-    CONSTRAINT fk_reserva_servicio FOREIGN KEY (servicio_id)
-    REFERENCES servicio (id) ON DELETE RESTRICT,
-    CONSTRAINT fk_reserva_empleado FOREIGN KEY (empleado_id)
-    REFERENCES empleado (id) ON DELETE RESTRICT,
-    CONSTRAINT fk_reserva_empresa  FOREIGN KEY (empresa_id)
-    REFERENCES empresa  (id) ON DELETE CASCADE
-    );
+CREATE TABLE reserva_servicio
+(
+    id              INT  AUTO_INCREMENT PRIMARY KEY,
+    reserva_id      INT    NOT NULL,
+    servicio_id     INT    NOT NULL,
+    empleado_id     INT    NOT NULL,
+    hora_inicio     TIME           NOT NULL,
+    hora_fin        TIME           NOT NULL,
+    precio_unitario DECIMAL(10, 2) NOT NULL,
+    cantidad        INT UNSIGNED   NOT NULL DEFAULT 1,
+    CONSTRAINT fk_rs_reserva FOREIGN KEY (reserva_id)
+        REFERENCES reserva (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_rs_servicio FOREIGN KEY (servicio_id)
+        REFERENCES servicio (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_rs_empleado FOREIGN KEY (empleado_id)
+        REFERENCES empleado (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
+);
