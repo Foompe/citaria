@@ -1,12 +1,9 @@
 package com.citaria.service;
 
 import com.citaria.dto.ClienteDTO;
-import com.citaria.dto.CredencialesDTO;
 import com.citaria.model.Cliente;
-import com.citaria.model.Credenciales;
 import com.citaria.model.Organizacion;
 import com.citaria.repository.ClienteDAO;
-import com.citaria.repository.CredencialesDAO;
 import com.citaria.repository.OrganizacionDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,15 +21,12 @@ import java.util.Optional;
 public class ClienteServiceImpl implements ClienteService {
 
     private ClienteDAO clienteDAO;
-    private CredencialesDAO credencialesDAO;
     private OrganizacionDAO organizacionDAO;
 
     @Autowired
     public ClienteServiceImpl(ClienteDAO clienteDAO,
-                              CredencialesDAO credencialesDAO,
                               OrganizacionDAO organizacionDAO) {
         this.clienteDAO = clienteDAO;
-        this.credencialesDAO = credencialesDAO;
         this.organizacionDAO = organizacionDAO;
     }
 
@@ -93,45 +87,6 @@ public class ClienteServiceImpl implements ClienteService {
         return false;
     }
 
-    // ===== CREDENCIALES =====
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<CredencialesDTO> obtenerCredencialesPorCliente(Integer clienteId) {
-        Optional<Cliente> cliente = clienteDAO.findById(clienteId);
-        if (cliente.isPresent()) {
-            Optional<Credenciales> credenciales = credencialesDAO.findByCliente(cliente.get());
-            if (credenciales.isPresent()) {
-                return Optional.of(convertirCredencialesADTO(credenciales.get()));
-            }
-        }
-        return Optional.empty();
-    }
-
-    @Override
-    @Transactional
-    public CredencialesDTO crearCredenciales(Integer clienteId, CredencialesDTO dto) {
-        Optional<Cliente> cliente = clienteDAO.findById(clienteId);
-        Credenciales credenciales = convertirCredencialesAEntidad(dto);
-        credenciales.setCliente(cliente.get());
-        return convertirCredencialesADTO(credencialesDAO.save(credenciales));
-    }
-
-    @Override
-    @Transactional
-    public Optional<CredencialesDTO> actualizarCredenciales(Integer clienteId, CredencialesDTO dto) {
-        Optional<Cliente> cliente = clienteDAO.findById(clienteId);
-        if (cliente.isPresent()) {
-            Optional<Credenciales> existente = credencialesDAO.findByCliente(cliente.get());
-            if (existente.isPresent()) {
-                Credenciales credenciales = existente.get();
-                actualizarCamposCredenciales(credenciales, dto);
-                return Optional.of(convertirCredencialesADTO(credencialesDAO.save(credenciales)));
-            }
-        }
-        return Optional.empty();
-    }
-
     // ===== CONVERSIONES =====
 
     private ClienteDTO convertirClienteADTO(Cliente cliente) {
@@ -166,30 +121,5 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setEmail(dto.getEmail());
         cliente.setTelefono(dto.getTelefono());
         cliente.setNotas(dto.getNotas());
-    }
-
-    private CredencialesDTO convertirCredencialesADTO(Credenciales credenciales) {
-        CredencialesDTO dto = new CredencialesDTO();
-        dto.setId(credenciales.getId());
-        dto.setClienteId(credenciales.getCliente().getId());
-        dto.setEmail(credenciales.getEmail());
-        dto.setEmailVerificado(credenciales.getEmailVerificado());
-        dto.setUltimoAcceso(credenciales.getUltimoAcceso());
-        return dto;
-    }
-
-    private Credenciales convertirCredencialesAEntidad(CredencialesDTO dto) {
-        Credenciales credenciales = new Credenciales();
-        credenciales.setEmail(dto.getEmail());
-        credenciales.setPasswordHash(dto.getPassword());
-        credenciales.setEmailVerificado(false);
-        return credenciales;
-    }
-
-    private void actualizarCamposCredenciales(Credenciales credenciales, CredencialesDTO dto) {
-        credenciales.setEmail(dto.getEmail());
-        if (dto.getPassword() != null) {
-            credenciales.setPasswordHash(dto.getPassword());
-        }
     }
 }

@@ -69,19 +69,6 @@ CREATE TABLE cliente
     CONSTRAINT uq_cli_dni UNIQUE (organizacion_id, dni)
 );
 
-CREATE TABLE credenciales
-(
-    id               INT  AUTO_INCREMENT PRIMARY KEY,
-    cliente_id       INT  NOT NULL UNIQUE,
-    email            VARCHAR(255) NOT NULL UNIQUE,
-    password_hash    VARCHAR(255) NOT NULL,
-    email_verificado BOOLEAN      NOT NULL DEFAULT FALSE,
-    ultimo_acceso    DATETIME     NULL,
-    CONSTRAINT fk_cred_cliente FOREIGN KEY (cliente_id)
-        REFERENCES cliente (id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
 CREATE TABLE empleado
 (
     id              INT  AUTO_INCREMENT PRIMARY KEY,
@@ -97,6 +84,29 @@ CREATE TABLE empleado
         REFERENCES organizacion (id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT uq_emp_email UNIQUE (organizacion_id, email)
+);
+
+CREATE TABLE usuario
+(
+    id               INT  AUTO_INCREMENT PRIMARY KEY,
+    organizacion_id  INT          NOT NULL,
+    email            VARCHAR(255) NOT NULL UNIQUE,
+    password_hash    VARCHAR(255) NOT NULL,
+    rol              ENUM('ADMIN','EMPLEADO','CLIENTE') NOT NULL,
+    activo           BOOLEAN      NOT NULL DEFAULT TRUE,
+    email_verificado BOOLEAN      NOT NULL DEFAULT FALSE,
+    ultimo_acceso    DATETIME     NULL,
+    cliente_id       INT          NULL UNIQUE,
+    empleado_id      INT          NULL UNIQUE,
+    CONSTRAINT fk_usu_organizacion FOREIGN KEY (organizacion_id)
+        REFERENCES organizacion (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_usu_cliente FOREIGN KEY (cliente_id)
+        REFERENCES cliente (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_usu_empleado FOREIGN KEY (empleado_id)
+        REFERENCES empleado (id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 CREATE TABLE horario_empleado
@@ -187,7 +197,7 @@ CREATE TABLE reserva
     organizacion_id INT  NOT NULL,
     cliente_id      INT  NOT NULL,
     estado          ENUM ('pendiente','confirmada','cancelada','completada')
-                                 NOT NULL DEFAULT 'pendiente',
+                         NOT NULL DEFAULT 'pendiente',
     fecha           DATE         NOT NULL,
     notas           TEXT         NULL,
     CONSTRAINT fk_res_organizacion FOREIGN KEY (organizacion_id)
