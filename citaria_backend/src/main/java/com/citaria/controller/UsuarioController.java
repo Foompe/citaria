@@ -7,12 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controlador REST para la gestión de usuarios del sistema.
@@ -22,7 +22,7 @@ import java.util.Optional;
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
-    private UsuarioService usuarioService;
+    private final UsuarioService usuarioService;
 
     @Autowired
     public UsuarioController(UsuarioService usuarioService) {
@@ -55,11 +55,7 @@ public class UsuarioController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioDTO> obtenerPorId(@PathVariable Integer id) {
-        Optional<UsuarioDTO> resultado = usuarioService.obtenerPorId(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(usuarioService.obtenerPorId(id));
     }
 
     @Operation(summary = "Crear un nuevo usuario en una organización")
@@ -68,7 +64,7 @@ public class UsuarioController {
     })
     @PostMapping("/organizacion/{organizacionId}")
     public ResponseEntity<UsuarioDTO> crear(@PathVariable Integer organizacionId,
-                                            @RequestBody UsuarioDTO dto) {
+                                            @Valid @RequestBody UsuarioDTO dto) {
         return ResponseEntity.status(201).body(usuarioService.crear(organizacionId, dto));
     }
 
@@ -79,12 +75,8 @@ public class UsuarioController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioDTO> actualizar(@PathVariable Integer id,
-                                                 @RequestBody UsuarioDTO dto) {
-        Optional<UsuarioDTO> resultado = usuarioService.actualizar(id, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                 @Valid @RequestBody UsuarioDTO dto) {
+        return ResponseEntity.ok(usuarioService.actualizar(id, dto));
     }
 
     @Operation(summary = "Eliminar un usuario")

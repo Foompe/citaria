@@ -2,6 +2,7 @@ package com.citaria.service;
 
 import com.citaria.dto.ReservaDTO;
 import com.citaria.dto.ReservaServicioDTO;
+import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementación del servicio de gestión de reservas.
@@ -47,13 +47,13 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerTodas(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Reserva> reservas = reservaDAO.findByOrganizacion(organizacion);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Reserva> reservas = reservaDAO.findByOrganizacion(organizacion.get());
-            for (Reserva reserva : reservas) {
-                reservasDTO.add(convertirReservaADTO(reserva));
-            }
+        for (Reserva reserva : reservas) {
+            reservasDTO.add(convertirReservaADTO(reserva));
         }
         return reservasDTO;
     }
@@ -61,13 +61,13 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerPorCliente(Integer clienteId) {
-        Optional<Cliente> cliente = clienteDAO.findById(clienteId);
+        Cliente cliente = clienteDAO.findById(clienteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Cliente con id " + clienteId + " no encontrado"));
+        List<Reserva> reservas = reservaDAO.findByCliente(cliente);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
-        if (cliente.isPresent()) {
-            List<Reserva> reservas = reservaDAO.findByCliente(cliente.get());
-            for (Reserva reserva : reservas) {
-                reservasDTO.add(convertirReservaADTO(reserva));
-            }
+        for (Reserva reserva : reservas) {
+            reservasDTO.add(convertirReservaADTO(reserva));
         }
         return reservasDTO;
     }
@@ -75,13 +75,13 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerPorFecha(Integer organizacionId, LocalDate fecha) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Reserva> reservas = reservaDAO.findByOrganizacionAndFecha(organizacion, fecha);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Reserva> reservas = reservaDAO.findByOrganizacionAndFecha(organizacion.get(), fecha);
-            for (Reserva reserva : reservas) {
-                reservasDTO.add(convertirReservaADTO(reserva));
-            }
+        for (Reserva reserva : reservas) {
+            reservasDTO.add(convertirReservaADTO(reserva));
         }
         return reservasDTO;
     }
@@ -89,48 +89,49 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerPorEstado(Integer organizacionId, EstadoReserva estado) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Reserva> reservas = reservaDAO.findByOrganizacionAndEstado(organizacion, estado);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Reserva> reservas = reservaDAO.findByOrganizacionAndEstado(organizacion.get(), estado);
-            for (Reserva reserva : reservas) {
-                reservasDTO.add(convertirReservaADTO(reserva));
-            }
+        for (Reserva reserva : reservas) {
+            reservasDTO.add(convertirReservaADTO(reserva));
         }
         return reservasDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ReservaDTO> obtenerPorId(Integer id) {
-        Optional<Reserva> reserva = reservaDAO.findById(id);
-        if (reserva.isPresent()) {
-            return Optional.of(convertirReservaADTO(reserva.get()));
-        }
-        return Optional.empty();
+    public ReservaDTO obtenerPorId(Integer id) {
+        Reserva reserva = reservaDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reserva con id " + id + " no encontrada"));
+        return convertirReservaADTO(reserva);
     }
 
     @Override
     @Transactional
     public ReservaDTO crear(Integer organizacionId, Integer clienteId, ReservaDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
-        Optional<Cliente> cliente = clienteDAO.findById(clienteId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        Cliente cliente = clienteDAO.findById(clienteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Cliente con id " + clienteId + " no encontrado"));
         Reserva reserva = convertirReservaAEntidad(dto);
-        reserva.setOrganizacion(organizacion.get());
-        reserva.setCliente(cliente.get());
+        reserva.setOrganizacion(organizacion);
+        reserva.setCliente(cliente);
         return convertirReservaADTO(reservaDAO.save(reserva));
     }
 
     @Override
     @Transactional
-    public Optional<ReservaDTO> actualizarEstado(Integer id, EstadoReserva estado) {
-        Optional<Reserva> existente = reservaDAO.findById(id);
-        if (existente.isPresent()) {
-            Reserva reserva = existente.get();
-            reserva.setEstado(estado);
-            return Optional.of(convertirReservaADTO(reservaDAO.save(reserva)));
-        }
-        return Optional.empty();
+    public ReservaDTO actualizarEstado(Integer id, EstadoReserva estado) {
+        Reserva reserva = reservaDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reserva con id " + id + " no encontrada"));
+        reserva.setEstado(estado);
+        return convertirReservaADTO(reservaDAO.save(reserva));
     }
 
     @Override
@@ -148,13 +149,13 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaServicioDTO> obtenerDetallesPorReserva(Integer reservaId) {
-        Optional<Reserva> reserva = reservaDAO.findById(reservaId);
+        Reserva reserva = reservaDAO.findById(reservaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reserva con id " + reservaId + " no encontrada"));
+        List<ReservaServicio> detalles = reservaServicioDAO.findByReserva(reserva);
         List<ReservaServicioDTO> detallesDTO = new ArrayList<>();
-        if (reserva.isPresent()) {
-            List<ReservaServicio> detalles = reservaServicioDAO.findByReserva(reserva.get());
-            for (ReservaServicio detalle : detalles) {
-                detallesDTO.add(convertirDetalleADTO(detalle));
-            }
+        for (ReservaServicio detalle : detalles) {
+            detallesDTO.add(convertirDetalleADTO(detalle));
         }
         return detallesDTO;
     }
@@ -162,13 +163,19 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional
     public ReservaServicioDTO agregarDetalle(Integer reservaId, ReservaServicioDTO dto) {
-        Optional<Reserva> reserva = reservaDAO.findById(reservaId);
-        Optional<Servicio> servicio = servicioDAO.findById(dto.getServicioId());
-        Optional<Empleado> empleado = empleadoDAO.findById(dto.getEmpleadoId());
+        Reserva reserva = reservaDAO.findById(reservaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reserva con id " + reservaId + " no encontrada"));
+        Servicio servicio = servicioDAO.findById(dto.getServicioId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Servicio con id " + dto.getServicioId() + " no encontrado"));
+        Empleado empleado = empleadoDAO.findById(dto.getEmpleadoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Empleado con id " + dto.getEmpleadoId() + " no encontrado"));
         ReservaServicio detalle = convertirDetalleAEntidad(dto);
-        detalle.setReserva(reserva.get());
-        detalle.setServicio(servicio.get());
-        detalle.setEmpleado(empleado.get());
+        detalle.setReserva(reserva);
+        detalle.setServicio(servicio);
+        detalle.setEmpleado(empleado);
         return convertirDetalleADTO(reservaServicioDAO.save(detalle));
     }
 

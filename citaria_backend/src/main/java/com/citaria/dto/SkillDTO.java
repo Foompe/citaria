@@ -1,5 +1,7 @@
 package com.citaria.dto;
 
+import jakarta.validation.constraints.*;
+
 /**
  * DTO para la transferencia de datos de una skill.
  */
@@ -7,7 +9,11 @@ public class SkillDTO {
 
     private Integer id;
     private Integer organizacionId;
+
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
     private String nombre;
+
     private String descripcion;
 
     public Integer getId() { return id; }

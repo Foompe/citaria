@@ -1,7 +1,7 @@
 package com.citaria.dto;
 
 import com.citaria.model.EstadoReserva;
-
+import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
@@ -14,7 +14,10 @@ public class ReservaDTO {
     private Integer clienteId;
     private String nombreCliente;
     private EstadoReserva estado;
+
+    @NotNull(message = "La fecha es obligatoria")
     private LocalDate fecha;
+
     private String notas;
 
     public Integer getId() { return id; }

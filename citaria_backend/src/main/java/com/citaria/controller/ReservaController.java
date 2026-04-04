@@ -8,13 +8,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+
 
 /**
  * Controlador REST para la gestión de reservas.
@@ -25,7 +26,7 @@ import java.util.Optional;
 @RequestMapping("/api/reservas")
 public class ReservaController {
 
-    private ReservaService reservaService;
+    private final ReservaService reservaService;
 
     @Autowired
     public ReservaController(ReservaService reservaService) {
@@ -79,11 +80,7 @@ public class ReservaController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ReservaDTO> obtenerPorId(@PathVariable Integer id) {
-        Optional<ReservaDTO> resultado = reservaService.obtenerPorId(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(reservaService.obtenerPorId(id));
     }
 
     @Operation(summary = "Crear una nueva reserva")
@@ -93,7 +90,7 @@ public class ReservaController {
     @PostMapping("/organizacion/{organizacionId}/cliente/{clienteId}")
     public ResponseEntity<ReservaDTO> crear(@PathVariable Integer organizacionId,
                                             @PathVariable Integer clienteId,
-                                            @RequestBody ReservaDTO dto) {
+                                            @Valid @RequestBody ReservaDTO dto) {
         return ResponseEntity.status(201).body(reservaService.crear(organizacionId, clienteId, dto));
     }
 
@@ -105,11 +102,7 @@ public class ReservaController {
     @PatchMapping("/{id}/estado/{estado}")
     public ResponseEntity<ReservaDTO> actualizarEstado(@PathVariable Integer id,
                                                        @PathVariable EstadoReserva estado) {
-        Optional<ReservaDTO> resultado = reservaService.actualizarEstado(id, estado);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(reservaService.actualizarEstado(id, estado));
     }
 
     @Operation(summary = "Eliminar una reserva")
@@ -142,7 +135,7 @@ public class ReservaController {
     })
     @PostMapping("/{id}/detalles")
     public ResponseEntity<ReservaServicioDTO> agregarDetalle(@PathVariable Integer id,
-                                                             @RequestBody ReservaServicioDTO dto) {
+                                                             @Valid @RequestBody ReservaServicioDTO dto) {
         return ResponseEntity.status(201).body(reservaService.agregarDetalle(id, dto));
     }
 

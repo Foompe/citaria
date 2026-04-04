@@ -1,5 +1,7 @@
 package com.citaria.dto;
 
+import jakarta.validation.constraints.*;
+
 /**
  * DTO para la transferencia de datos de una categoría.
  */
@@ -7,6 +9,9 @@ public class CategoriaDTO {
 
     private Integer id;
     private Integer organizacionId;
+
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
     private String nombre;
 
     public Integer getId() { return id; }

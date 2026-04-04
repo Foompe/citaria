@@ -4,6 +4,7 @@ import com.citaria.dto.CategoriaDTO;
 import com.citaria.dto.ServicioDTO;
 import com.citaria.dto.ServicioSkillDTO;
 import com.citaria.dto.SkillDTO;
+import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,46 +46,45 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional(readOnly = true)
     public List<CategoriaDTO> obtenerCategoriasPorOrganizacion(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Categoria> categorias = categoriaDAO.findByOrganizacion(organizacion);
         List<CategoriaDTO> categoriasDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Categoria> categorias = categoriaDAO.findByOrganizacion(organizacion.get());
-            for (Categoria categoria : categorias) {
-                categoriasDTO.add(convertirCategoriaADTO(categoria));
-            }
+        for (Categoria categoria : categorias) {
+            categoriasDTO.add(convertirCategoriaADTO(categoria));
         }
         return categoriasDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<CategoriaDTO> obtenerCategoriaPorId(Integer id) {
-        Optional<Categoria> categoria = categoriaDAO.findById(id);
-        if (categoria.isPresent()) {
-            return Optional.of(convertirCategoriaADTO(categoria.get()));
-        }
-        return Optional.empty();
+    public CategoriaDTO obtenerCategoriaPorId(Integer id) {
+        Categoria categoria = categoriaDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Categoría con id " + id + " no encontrada"));
+        return convertirCategoriaADTO(categoria);
     }
 
     @Override
     @Transactional
     public CategoriaDTO crearCategoria(Integer organizacionId, CategoriaDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
         Categoria categoria = convertirCategoriaAEntidad(dto);
-        categoria.setOrganizacion(organizacion.get());
+        categoria.setOrganizacion(organizacion);
         return convertirCategoriaADTO(categoriaDAO.save(categoria));
     }
 
     @Override
     @Transactional
-    public Optional<CategoriaDTO> actualizarCategoria(Integer id, CategoriaDTO dto) {
-        Optional<Categoria> existente = categoriaDAO.findById(id);
-        if (existente.isPresent()) {
-            Categoria categoria = existente.get();
-            categoria.setNombre(dto.getNombre());
-            return Optional.of(convertirCategoriaADTO(categoriaDAO.save(categoria)));
-        }
-        return Optional.empty();
+    public CategoriaDTO actualizarCategoria(Integer id, CategoriaDTO dto) {
+        Categoria categoria = categoriaDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Categoría con id " + id + " no encontrada"));
+        categoria.setNombre(dto.getNombre());
+        return convertirCategoriaADTO(categoriaDAO.save(categoria));
     }
 
     @Override
@@ -102,47 +102,46 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional(readOnly = true)
     public List<SkillDTO> obtenerSkillsPorOrganizacion(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Skill> skills = skillDAO.findByOrganizacion(organizacion);
         List<SkillDTO> skillsDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Skill> skills = skillDAO.findByOrganizacion(organizacion.get());
-            for (Skill skill : skills) {
-                skillsDTO.add(convertirSkillADTO(skill));
-            }
+        for (Skill skill : skills) {
+            skillsDTO.add(convertirSkillADTO(skill));
         }
         return skillsDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<SkillDTO> obtenerSkillPorId(Integer id) {
-        Optional<Skill> skill = skillDAO.findById(id);
-        if (skill.isPresent()) {
-            return Optional.of(convertirSkillADTO(skill.get()));
-        }
-        return Optional.empty();
+    public SkillDTO obtenerSkillPorId(Integer id) {
+        Skill skill = skillDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Skill con id " + id + " no encontrada"));
+        return convertirSkillADTO(skill);
     }
 
     @Override
     @Transactional
     public SkillDTO crearSkill(Integer organizacionId, SkillDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
         Skill skill = convertirSkillAEntidad(dto);
-        skill.setOrganizacion(organizacion.get());
+        skill.setOrganizacion(organizacion);
         return convertirSkillADTO(skillDAO.save(skill));
     }
 
     @Override
     @Transactional
-    public Optional<SkillDTO> actualizarSkill(Integer id, SkillDTO dto) {
-        Optional<Skill> existente = skillDAO.findById(id);
-        if (existente.isPresent()) {
-            Skill skill = existente.get();
-            skill.setNombre(dto.getNombre());
-            skill.setDescripcion(dto.getDescripcion());
-            return Optional.of(convertirSkillADTO(skillDAO.save(skill)));
-        }
-        return Optional.empty();
+    public SkillDTO actualizarSkill(Integer id, SkillDTO dto) {
+        Skill skill = skillDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Skill con id " + id + " no encontrada"));
+        skill.setNombre(dto.getNombre());
+        skill.setDescripcion(dto.getDescripcion());
+        return convertirSkillADTO(skillDAO.save(skill));
     }
 
     @Override
@@ -160,13 +159,13 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioDTO> obtenerServiciosPorOrganizacion(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Servicio> servicios = servicioDAO.findByOrganizacion(organizacion);
         List<ServicioDTO> serviciosDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Servicio> servicios = servicioDAO.findByOrganizacion(organizacion.get());
-            for (Servicio servicio : servicios) {
-                serviciosDTO.add(convertirServicioADTO(servicio));
-            }
+        for (Servicio servicio : servicios) {
+            serviciosDTO.add(convertirServicioADTO(servicio));
         }
         return serviciosDTO;
     }
@@ -174,33 +173,34 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioDTO> obtenerServiciosPorCategoria(Integer categoriaId) {
-        Optional<Categoria> categoria = categoriaDAO.findById(categoriaId);
+        Categoria categoria = categoriaDAO.findById(categoriaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Categoría con id " + categoriaId + " no encontrada"));
+        List<Servicio> servicios = servicioDAO.findByCategoria(categoria);
         List<ServicioDTO> serviciosDTO = new ArrayList<>();
-        if (categoria.isPresent()) {
-            List<Servicio> servicios = servicioDAO.findByCategoria(categoria.get());
-            for (Servicio servicio : servicios) {
-                serviciosDTO.add(convertirServicioADTO(servicio));
-            }
+        for (Servicio servicio : servicios) {
+            serviciosDTO.add(convertirServicioADTO(servicio));
         }
         return serviciosDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ServicioDTO> obtenerServicioPorId(Integer id) {
-        Optional<Servicio> servicio = servicioDAO.findById(id);
-        if (servicio.isPresent()) {
-            return Optional.of(convertirServicioADTO(servicio.get()));
-        }
-        return Optional.empty();
+    public ServicioDTO obtenerServicioPorId(Integer id) {
+        Servicio servicio = servicioDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Servicio con id " + id + " no encontrado"));
+        return convertirServicioADTO(servicio);
     }
 
     @Override
     @Transactional
     public ServicioDTO crearServicio(Integer organizacionId, ServicioDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
         Servicio servicio = convertirServicioAEntidad(dto);
-        servicio.setOrganizacion(organizacion.get());
+        servicio.setOrganizacion(organizacion);
         if (dto.getCategoriaId() != null) {
             Optional<Categoria> categoria = categoriaDAO.findById(dto.getCategoriaId());
             categoria.ifPresent(servicio::setCategoria);
@@ -210,25 +210,18 @@ public class CatalogoServiceImpl implements CatalogoService {
 
     @Override
     @Transactional
-    public Optional<ServicioDTO> actualizarServicio(Integer id, ServicioDTO dto) {
-        Optional<Servicio> existente = servicioDAO.findById(id);
-        if (existente.isPresent()) {
-            Servicio servicio = existente.get();
-            servicio.setNombre(dto.getNombre());
-            servicio.setDescripcion(dto.getDescripcion());
-            servicio.setImagenUrl(dto.getImagenUrl());
-            servicio.setPrecio(dto.getPrecio());
-            servicio.setDuracionMinutos(dto.getDuracionMinutos());
-            servicio.setActivo(dto.getActivo());
-            if (dto.getCategoriaId() != null) {
-                Optional<Categoria> categoria = categoriaDAO.findById(dto.getCategoriaId());
-                categoria.ifPresent(servicio::setCategoria);
-            } else {
-                servicio.setCategoria(null);
-            }
-            return Optional.of(convertirServicioADTO(servicioDAO.save(servicio)));
+    public ServicioDTO actualizarServicio(Integer id, ServicioDTO dto) {
+        Servicio servicio = servicioDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Servicio con id " + id + " no encontrado"));
+        actualizarCamposServicio(servicio, dto);
+        if (dto.getCategoriaId() != null) {
+            Optional<Categoria> categoria = categoriaDAO.findById(dto.getCategoriaId());
+            categoria.ifPresent(servicio::setCategoria);
+        } else {
+            servicio.setCategoria(null);
         }
-        return Optional.empty();
+        return convertirServicioADTO(servicioDAO.save(servicio));
     }
 
     @Override
@@ -246,13 +239,13 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioSkillDTO> obtenerSkillsPorServicio(Integer servicioId) {
-        Optional<Servicio> servicio = servicioDAO.findById(servicioId);
+        Servicio servicio = servicioDAO.findById(servicioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Servicio con id " + servicioId + " no encontrado"));
+        List<ServicioSkill> skills = servicioSkillDAO.findByServicio(servicio);
         List<ServicioSkillDTO> skillsDTO = new ArrayList<>();
-        if (servicio.isPresent()) {
-            List<ServicioSkill> skills = servicioSkillDAO.findByServicio(servicio.get());
-            for (ServicioSkill servicioSkill : skills) {
-                skillsDTO.add(convertirServicioSkillADTO(servicioSkill));
-            }
+        for (ServicioSkill servicioSkill : skills) {
+            skillsDTO.add(convertirServicioSkillADTO(servicioSkill));
         }
         return skillsDTO;
     }
@@ -260,9 +253,13 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Override
     @Transactional
     public ServicioSkillDTO asignarSkillAServicio(Integer servicioId, Integer skillId) {
-        Optional<Servicio> servicio = servicioDAO.findById(servicioId);
-        Optional<Skill> skill = skillDAO.findById(skillId);
-        ServicioSkill servicioSkill = new ServicioSkill(servicio.get(), skill.get());
+        Servicio servicio = servicioDAO.findById(servicioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Servicio con id " + servicioId + " no encontrado"));
+        Skill skill = skillDAO.findById(skillId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Skill con id " + skillId + " no encontrada"));
+        ServicioSkill servicioSkill = new ServicioSkill(servicio, skill);
         return convertirServicioSkillADTO(servicioSkillDAO.save(servicioSkill));
     }
 
@@ -335,6 +332,15 @@ public class CatalogoServiceImpl implements CatalogoService {
         servicio.setDuracionMinutos(dto.getDuracionMinutos());
         servicio.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         return servicio;
+    }
+
+    private void actualizarCamposServicio(Servicio servicio, ServicioDTO dto) {
+        servicio.setNombre(dto.getNombre());
+        servicio.setDescripcion(dto.getDescripcion());
+        servicio.setImagenUrl(dto.getImagenUrl());
+        servicio.setPrecio(dto.getPrecio());
+        servicio.setDuracionMinutos(dto.getDuracionMinutos());
+        servicio.setActivo(dto.getActivo());
     }
 
     private ServicioSkillDTO convertirServicioSkillADTO(ServicioSkill servicioSkill) {

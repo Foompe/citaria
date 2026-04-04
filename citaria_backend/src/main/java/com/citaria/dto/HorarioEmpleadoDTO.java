@@ -1,5 +1,6 @@
 package com.citaria.dto;
 
+import jakarta.validation.constraints.*;
 import java.time.LocalTime;
 
 /**
@@ -9,9 +10,19 @@ public class HorarioEmpleadoDTO {
 
     private Integer id;
     private Integer empleadoId;
+
+    @NotNull(message = "El día de la semana es obligatorio")
+    @Min(value = 1, message = "El día de la semana debe ser entre 1 y 7")
+    @Max(value = 7, message = "El día de la semana debe ser entre 1 y 7")
     private Integer diaSemana;
+
+    @NotNull(message = "La hora de inicio es obligatoria")
     private LocalTime horaInicio;
+
+    @NotNull(message = "La hora de fin es obligatoria")
     private LocalTime horaFin;
+
+    @NotNull(message = "El campo activo es obligatorio")
     private Boolean activo;
 
     public Integer getId() { return id; }

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,8 +26,8 @@ import java.util.Optional;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private UsuarioDAO usuarioDAO;
-    private PasswordEncoder passwordEncoder;
+    private final UsuarioDAO usuarioDAO;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public AuthController(UsuarioDAO usuarioDAO,
@@ -47,7 +48,7 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO request) {
         Optional<Usuario> usuario = usuarioDAO.findByEmail(request.getEmail());
 
         if (usuario.isEmpty() ||

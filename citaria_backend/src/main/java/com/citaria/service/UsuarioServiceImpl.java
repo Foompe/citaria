@@ -1,6 +1,7 @@
 package com.citaria.service;
 
 import com.citaria.dto.UsuarioDTO;
+import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,13 +41,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioDTO> obtenerTodos(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Usuario> usuarios = usuarioDAO.findByOrganizacion(organizacion);
         List<UsuarioDTO> usuariosDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Usuario> usuarios = usuarioDAO.findByOrganizacion(organizacion.get());
-            for (Usuario usuario : usuarios) {
-                usuariosDTO.add(convertirADTO(usuario));
-            }
+        for (Usuario usuario : usuarios) {
+            usuariosDTO.add(convertirADTO(usuario));
         }
         return usuariosDTO;
     }
@@ -54,43 +55,43 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioDTO> obtenerPorRol(Integer organizacionId, RolUsuario rol) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Usuario> usuarios = usuarioDAO.findByOrganizacionAndRol(organizacion, rol);
         List<UsuarioDTO> usuariosDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Usuario> usuarios = usuarioDAO.findByOrganizacionAndRol(organizacion.get(), rol);
-            for (Usuario usuario : usuarios) {
-                usuariosDTO.add(convertirADTO(usuario));
-            }
+        for (Usuario usuario : usuarios) {
+            usuariosDTO.add(convertirADTO(usuario));
         }
         return usuariosDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UsuarioDTO> obtenerPorId(Integer id) {
-        Optional<Usuario> usuario = usuarioDAO.findById(id);
-        if (usuario.isPresent()) {
-            return Optional.of(convertirADTO(usuario.get()));
-        }
-        return Optional.empty();
+    public UsuarioDTO obtenerPorId(Integer id) {
+        Usuario usuario = usuarioDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario con id " + id + " no encontrado"));
+        return convertirADTO(usuario);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UsuarioDTO> obtenerPorEmail(String email) {
-        Optional<Usuario> usuario = usuarioDAO.findByEmail(email);
-        if (usuario.isPresent()) {
-            return Optional.of(convertirADTO(usuario.get()));
-        }
-        return Optional.empty();
+    public UsuarioDTO obtenerPorEmail(String email) {
+        Usuario usuario = usuarioDAO.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario con email " + email + " no encontrado"));
+        return convertirADTO(usuario);
     }
 
     @Override
     @Transactional
     public UsuarioDTO crear(Integer organizacionId, UsuarioDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
         Usuario usuario = convertirAEntidad(dto);
-        usuario.setOrganizacion(organizacion.get());
+        usuario.setOrganizacion(organizacion);
         if (dto.getClienteId() != null) {
             Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
             cliente.ifPresent(usuario::setCliente);
@@ -104,22 +105,20 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public Optional<UsuarioDTO> actualizar(Integer id, UsuarioDTO dto) {
-        Optional<Usuario> existente = usuarioDAO.findById(id);
-        if (existente.isPresent()) {
-            Usuario usuario = existente.get();
-            actualizarCamposUsuario(usuario, dto);
-            if (dto.getClienteId() != null) {
-                Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
-                cliente.ifPresent(usuario::setCliente);
-            }
-            if (dto.getEmpleadoId() != null) {
-                Optional<Empleado> empleado = empleadoDAO.findById(dto.getEmpleadoId());
-                empleado.ifPresent(usuario::setEmpleado);
-            }
-            return Optional.of(convertirADTO(usuarioDAO.save(usuario)));
+    public UsuarioDTO actualizar(Integer id, UsuarioDTO dto) {
+        Usuario usuario = usuarioDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario con id " + id + " no encontrado"));
+        actualizarCamposUsuario(usuario, dto);
+        if (dto.getClienteId() != null) {
+            Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
+            cliente.ifPresent(usuario::setCliente);
         }
-        return Optional.empty();
+        if (dto.getEmpleadoId() != null) {
+            Optional<Empleado> empleado = empleadoDAO.findById(dto.getEmpleadoId());
+            empleado.ifPresent(usuario::setEmpleado);
+        }
+        return convertirADTO(usuarioDAO.save(usuario));
     }
 
     @Override

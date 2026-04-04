@@ -6,12 +6,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controlador REST para la gestión de clientes.
@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequestMapping("/api/clientes")
 public class ClienteController {
 
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
 
     @Autowired
     public ClienteController(ClienteService clienteService) {
@@ -44,11 +44,7 @@ public class ClienteController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ClienteDTO> obtenerPorId(@PathVariable Integer id) {
-        Optional<ClienteDTO> resultado = clienteService.obtenerPorId(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(clienteService.obtenerPorId(id));
     }
 
     @Operation(summary = "Crear un nuevo cliente en una organización")
@@ -57,7 +53,7 @@ public class ClienteController {
     })
     @PostMapping("/organizacion/{organizacionId}")
     public ResponseEntity<ClienteDTO> crear(@PathVariable Integer organizacionId,
-                                            @RequestBody ClienteDTO dto) {
+                                            @Valid @RequestBody ClienteDTO dto) {
         return ResponseEntity.status(201).body(clienteService.crear(organizacionId, dto));
     }
 
@@ -68,12 +64,8 @@ public class ClienteController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<ClienteDTO> actualizar(@PathVariable Integer id,
-                                                 @RequestBody ClienteDTO dto) {
-        Optional<ClienteDTO> resultado = clienteService.actualizar(id, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                 @Valid @RequestBody ClienteDTO dto) {
+        return ResponseEntity.ok(clienteService.actualizar(id, dto));
     }
 
     @Operation(summary = "Eliminar un cliente")

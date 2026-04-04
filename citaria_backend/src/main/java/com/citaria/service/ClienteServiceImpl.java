@@ -1,6 +1,7 @@
 package com.citaria.service;
 
 import com.citaria.dto.ClienteDTO;
+import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.Cliente;
 import com.citaria.model.Organizacion;
 import com.citaria.repository.ClienteDAO;
@@ -11,11 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementación del servicio de gestión de clientes.
- * Incluye gestión de credenciales de acceso.
  */
 @Service
 public class ClienteServiceImpl implements ClienteService {
@@ -30,51 +29,48 @@ public class ClienteServiceImpl implements ClienteService {
         this.organizacionDAO = organizacionDAO;
     }
 
-    // ===== CLIENTE =====
-
     @Override
     @Transactional(readOnly = true)
     public List<ClienteDTO> obtenerTodos(Integer organizacionId) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
+        List<Cliente> clientes = clienteDAO.findByOrganizacion(organizacion);
         List<ClienteDTO> clientesDTO = new ArrayList<>();
-        if (organizacion.isPresent()) {
-            List<Cliente> clientes = clienteDAO.findByOrganizacion(organizacion.get());
-            for (Cliente cliente : clientes) {
-                clientesDTO.add(convertirClienteADTO(cliente));
-            }
+        for (Cliente cliente : clientes) {
+            clientesDTO.add(convertirClienteADTO(cliente));
         }
         return clientesDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ClienteDTO> obtenerPorId(Integer id) {
-        Optional<Cliente> cliente = clienteDAO.findById(id);
-        if (cliente.isPresent()) {
-            return Optional.of(convertirClienteADTO(cliente.get()));
-        }
-        return Optional.empty();
+    public ClienteDTO obtenerPorId(Integer id) {
+        Cliente cliente = clienteDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Cliente con id " + id + " no encontrado"));
+        return convertirClienteADTO(cliente);
     }
 
     @Override
     @Transactional
     public ClienteDTO crear(Integer organizacionId, ClienteDTO dto) {
-        Optional<Organizacion> organizacion = organizacionDAO.findById(organizacionId);
+        Organizacion organizacion = organizacionDAO.findById(organizacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Organización con id " + organizacionId + " no encontrada"));
         Cliente cliente = convertirClienteAEntidad(dto);
-        cliente.setOrganizacion(organizacion.get());
+        cliente.setOrganizacion(organizacion);
         return convertirClienteADTO(clienteDAO.save(cliente));
     }
 
     @Override
     @Transactional
-    public Optional<ClienteDTO> actualizar(Integer id, ClienteDTO dto) {
-        Optional<Cliente> existente = clienteDAO.findById(id);
-        if (existente.isPresent()) {
-            Cliente cliente = existente.get();
-            actualizarCamposCliente(cliente, dto);
-            return Optional.of(convertirClienteADTO(clienteDAO.save(cliente)));
-        }
-        return Optional.empty();
+    public ClienteDTO actualizar(Integer id, ClienteDTO dto) {
+        Cliente cliente = clienteDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Cliente con id " + id + " no encontrado"));
+        actualizarCamposCliente(cliente, dto);
+        return convertirClienteADTO(clienteDAO.save(cliente));
     }
 
     @Override

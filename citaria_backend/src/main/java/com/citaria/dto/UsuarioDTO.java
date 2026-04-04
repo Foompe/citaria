@@ -1,6 +1,7 @@
 package com.citaria.dto;
 
 import com.citaria.model.RolUsuario;
+import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
@@ -11,9 +12,18 @@ public class UsuarioDTO {
 
     private Integer id;
     private Integer organizacionId;
+
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "El email no tiene un formato válido")
+    @Size(max = 255, message = "El email no puede superar los 255 caracteres")
     private String email;
+
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
     private String password;
+
+    @NotNull(message = "El rol es obligatorio")
     private RolUsuario rol;
+
     private Boolean activo;
     private Boolean emailVerificado;
     private LocalDateTime ultimoAcceso;

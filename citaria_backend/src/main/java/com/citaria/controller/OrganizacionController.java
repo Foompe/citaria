@@ -9,12 +9,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controlador REST para la gestión de organizaciones.
@@ -25,7 +25,7 @@ import java.util.Optional;
 @RequestMapping("/api/organizaciones")
 public class OrganizacionController {
 
-    private OrganizacionService organizacionService;
+    private final OrganizacionService organizacionService;
 
     @Autowired
     public OrganizacionController(OrganizacionService organizacionService) {
@@ -50,11 +50,7 @@ public class OrganizacionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<OrganizacionDTO> obtenerPorId(@PathVariable Integer id) {
-        Optional<OrganizacionDTO> resultado = organizacionService.obtenerPorId(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(organizacionService.obtenerPorId(id));
     }
 
     @Operation(summary = "Crear una nueva organización")
@@ -62,7 +58,7 @@ public class OrganizacionController {
             @ApiResponse(responseCode = "201", description = "Organización creada correctamente")
     })
     @PostMapping
-    public ResponseEntity<OrganizacionDTO> crear(@RequestBody OrganizacionDTO dto) {
+    public ResponseEntity<OrganizacionDTO> crear(@Valid @RequestBody OrganizacionDTO dto) {
         return ResponseEntity.status(201).body(organizacionService.crear(dto));
     }
 
@@ -73,12 +69,8 @@ public class OrganizacionController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<OrganizacionDTO> actualizar(@PathVariable Integer id,
-                                                      @RequestBody OrganizacionDTO dto) {
-        Optional<OrganizacionDTO> resultado = organizacionService.actualizar(id, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                      @Valid @RequestBody OrganizacionDTO dto) {
+        return ResponseEntity.ok(organizacionService.actualizar(id, dto));
     }
 
     @Operation(summary = "Eliminar una organización")
@@ -103,11 +95,7 @@ public class OrganizacionController {
     })
     @GetMapping("/{id}/configuracion")
     public ResponseEntity<ConfiguracionVisualDTO> obtenerConfiguracion(@PathVariable Integer id) {
-        Optional<ConfiguracionVisualDTO> resultado = organizacionService.obtenerConfiguracionPorOrganizacion(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(organizacionService.obtenerConfiguracionPorOrganizacion(id));
     }
 
     @Operation(summary = "Crear configuración visual de una organización")
@@ -116,7 +104,7 @@ public class OrganizacionController {
     })
     @PostMapping("/{id}/configuracion")
     public ResponseEntity<ConfiguracionVisualDTO> crearConfiguracion(@PathVariable Integer id,
-                                                                     @RequestBody ConfiguracionVisualDTO dto) {
+                                                                     @Valid @RequestBody ConfiguracionVisualDTO dto) {
         return ResponseEntity.status(201).body(organizacionService.crearConfiguracion(id, dto));
     }
 
@@ -127,12 +115,8 @@ public class OrganizacionController {
     })
     @PutMapping("/{id}/configuracion")
     public ResponseEntity<ConfiguracionVisualDTO> actualizarConfiguracion(@PathVariable Integer id,
-                                                                          @RequestBody ConfiguracionVisualDTO dto) {
-        Optional<ConfiguracionVisualDTO> resultado = organizacionService.actualizarConfiguracion(id, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                                          @Valid @RequestBody ConfiguracionVisualDTO dto) {
+        return ResponseEntity.ok(organizacionService.actualizarConfiguracion(id, dto));
     }
 
     // ===== HORARIOS =====
@@ -152,7 +136,7 @@ public class OrganizacionController {
     })
     @PostMapping("/{id}/horarios")
     public ResponseEntity<OrganizacionHorarioDTO> crearHorario(@PathVariable Integer id,
-                                                               @RequestBody OrganizacionHorarioDTO dto) {
+                                                               @Valid @RequestBody OrganizacionHorarioDTO dto) {
         return ResponseEntity.status(201).body(organizacionService.crearHorario(id, dto));
     }
 
@@ -164,12 +148,8 @@ public class OrganizacionController {
     @PutMapping("/{id}/horarios/{horarioId}")
     public ResponseEntity<OrganizacionHorarioDTO> actualizarHorario(@PathVariable Integer id,
                                                                     @PathVariable Integer horarioId,
-                                                                    @RequestBody OrganizacionHorarioDTO dto) {
-        Optional<OrganizacionHorarioDTO> resultado = organizacionService.actualizarHorario(horarioId, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                                    @Valid @RequestBody OrganizacionHorarioDTO dto) {
+        return ResponseEntity.ok(organizacionService.actualizarHorario(horarioId, dto));
     }
 
     @Operation(summary = "Eliminar horario de una organización")
@@ -178,7 +158,8 @@ public class OrganizacionController {
             @ApiResponse(responseCode = "404", description = "Horario no encontrado")
     })
     @DeleteMapping("/{id}/horarios/{horarioId}")
-    public ResponseEntity<Void> eliminarHorario(@PathVariable Integer id, @PathVariable Integer horarioId) {
+    public ResponseEntity<Void> eliminarHorario(@PathVariable Integer id,
+                                                @PathVariable Integer horarioId) {
         if (organizacionService.eliminarHorario(horarioId)) {
             return ResponseEntity.noContent().build();
         }
@@ -202,7 +183,7 @@ public class OrganizacionController {
     })
     @PostMapping("/{id}/cierres")
     public ResponseEntity<OrganizacionHorarioCierreDTO> crearCierre(@PathVariable Integer id,
-                                                                    @RequestBody OrganizacionHorarioCierreDTO dto) {
+                                                                    @Valid @RequestBody OrganizacionHorarioCierreDTO dto) {
         return ResponseEntity.status(201).body(organizacionService.crearCierre(id, dto));
     }
 
@@ -212,7 +193,8 @@ public class OrganizacionController {
             @ApiResponse(responseCode = "404", description = "Cierre no encontrado")
     })
     @DeleteMapping("/{id}/cierres/{cierreId}")
-    public ResponseEntity<Void> eliminarCierre(@PathVariable Integer id, @PathVariable Integer cierreId) {
+    public ResponseEntity<Void> eliminarCierre(@PathVariable Integer id,
+                                               @PathVariable Integer cierreId) {
         if (organizacionService.eliminarCierre(cierreId)) {
             return ResponseEntity.noContent().build();
         }

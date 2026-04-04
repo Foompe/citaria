@@ -1,5 +1,6 @@
 package com.citaria.dto;
 
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
@@ -10,13 +11,29 @@ public class ReservaServicioDTO {
 
     private Integer id;
     private Integer reservaId;
+
+    @NotNull(message = "El servicio es obligatorio")
     private Integer servicioId;
+
     private String nombreServicio;
+
+    @NotNull(message = "El empleado es obligatorio")
     private Integer empleadoId;
+
     private String nombreEmpleado;
+
+    @NotNull(message = "La hora de inicio es obligatoria")
     private LocalTime horaInicio;
+
+    @NotNull(message = "La hora de fin es obligatoria")
     private LocalTime horaFin;
+
+    @NotNull(message = "El precio unitario es obligatorio")
+    @DecimalMin(value = "0.01", message = "El precio debe ser mayor que cero")
+    @Digits(integer = 8, fraction = 2, message = "El precio no puede tener más de 8 dígitos enteros y 2 decimales")
     private BigDecimal precioUnitario;
+
+    @Min(value = 1, message = "La cantidad debe ser al menos 1")
     private Integer cantidad;
 
     public Integer getId() { return id; }

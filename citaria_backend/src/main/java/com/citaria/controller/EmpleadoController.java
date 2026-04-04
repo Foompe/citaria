@@ -8,12 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Controlador REST para la gestión de empleados.
@@ -24,7 +24,7 @@ import java.util.Optional;
 @RequestMapping("/api/empleados")
 public class EmpleadoController {
 
-    private EmpleadoService empleadoService;
+    private final EmpleadoService empleadoService;
 
     @Autowired
     public EmpleadoController(EmpleadoService empleadoService) {
@@ -49,11 +49,7 @@ public class EmpleadoController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<EmpleadoDTO> obtenerPorId(@PathVariable Integer id) {
-        Optional<EmpleadoDTO> resultado = empleadoService.obtenerPorId(id);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(empleadoService.obtenerPorId(id));
     }
 
     @Operation(summary = "Crear un nuevo empleado en una organización")
@@ -61,8 +57,7 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "201", description = "Empleado creado correctamente")
     })
     @PostMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<EmpleadoDTO> crear(@PathVariable Integer organizacionId,
-                                             @RequestBody EmpleadoDTO dto) {
+    public ResponseEntity<EmpleadoDTO> crear(@PathVariable Integer organizacionId, @Valid @RequestBody EmpleadoDTO dto) {
         return ResponseEntity.status(201).body(empleadoService.crear(organizacionId, dto));
     }
 
@@ -72,13 +67,8 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id,
-                                                  @RequestBody EmpleadoDTO dto) {
-        Optional<EmpleadoDTO> resultado = empleadoService.actualizar(id, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody EmpleadoDTO dto) {
+        return ResponseEntity.ok(empleadoService.actualizar(id, dto));
     }
 
     @Operation(summary = "Eliminar un empleado")
@@ -111,7 +101,7 @@ public class EmpleadoController {
     })
     @PostMapping("/{id}/horarios")
     public ResponseEntity<HorarioEmpleadoDTO> crearHorario(@PathVariable Integer id,
-                                                           @RequestBody HorarioEmpleadoDTO dto) {
+                                                           @Valid @RequestBody HorarioEmpleadoDTO dto) {
         return ResponseEntity.status(201).body(empleadoService.crearHorario(id, dto));
     }
 
@@ -123,12 +113,8 @@ public class EmpleadoController {
     @PutMapping("/{id}/horarios/{horarioId}")
     public ResponseEntity<HorarioEmpleadoDTO> actualizarHorario(@PathVariable Integer id,
                                                                 @PathVariable Integer horarioId,
-                                                                @RequestBody HorarioEmpleadoDTO dto) {
-        Optional<HorarioEmpleadoDTO> resultado = empleadoService.actualizarHorario(horarioId, dto);
-        if (resultado.isPresent()) {
-            return ResponseEntity.ok(resultado.get());
-        }
-        return ResponseEntity.notFound().build();
+                                                                @Valid @RequestBody HorarioEmpleadoDTO dto) {
+        return ResponseEntity.ok(empleadoService.actualizarHorario(horarioId, dto));
     }
 
     @Operation(summary = "Eliminar horario de un empleado")

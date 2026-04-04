@@ -1,5 +1,6 @@
 package com.citaria.dto;
 
+import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
@@ -9,11 +10,25 @@ public class EmpleadoDTO {
 
     private Integer id;
     private Integer organizacionId;
+
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
     private String nombre;
+
+    @NotBlank(message = "Los apellidos son obligatorios")
+    @Size(max = 150, message = "Los apellidos no pueden superar los 150 caracteres")
     private String apellidos;
+
+    @Email(message = "El email no tiene un formato válido")
+    @Size(max = 255, message = "El email no puede superar los 255 caracteres")
     private String email;
+
+    @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
     private String telefono;
+
+    @Size(max = 500, message = "La URL de la foto no puede superar los 500 caracteres")
     private String fotoUrl;
+
     private Boolean activo;
     private LocalDateTime anonimizadoAt;
 
