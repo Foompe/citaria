@@ -70,6 +70,9 @@ public class SecurityConfig {
                                 "/api/organizaciones/*/configuracion"
                         ).permitAll()
 
+                        // Públicos — chatbot área cliente
+                        .requestMatchers(HttpMethod.POST, "/api/chatbot/**").permitAll()
+
                         // Solo ADMIN
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/empleados/**").hasRole("ADMIN")
