@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -17,7 +18,14 @@ import java.util.List;
  * Extrae el token del header Authorization, lo valida
  * y establece la autenticación en el contexto de Spring Security.
  */
+@Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private final JwtUtil jwtUtil;
+
+    public JwtFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     /**
      * Intercepta cada petición y procesa el token JWT si está presente.
@@ -39,8 +47,8 @@ public class JwtFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             try {
-                String email = JwtUtil.getEmail(token);
-                String role = JwtUtil.getRole(token);
+                String email = jwtUtil.getEmail(token);
+                String role = jwtUtil.getRole(token);
 
                 UsernamePasswordAuthenticationToken autenticacion =
                         new UsernamePasswordAuthenticationToken(

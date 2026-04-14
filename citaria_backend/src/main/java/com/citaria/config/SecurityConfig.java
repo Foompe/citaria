@@ -25,11 +25,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private UsuarioDetailsService usuarioDetailsService;
+    private final UsuarioDetailsService usuarioDetailsService;
+    private final JwtFilter jwtFilter;
 
     @Autowired
-    public SecurityConfig(UsuarioDetailsService usuarioDetailsService) {
+    public SecurityConfig(UsuarioDetailsService usuarioDetailsService,
+                          JwtFilter jwtFilter) {
         this.usuarioDetailsService = usuarioDetailsService;
+        this.jwtFilter = jwtFilter;
     }
 
     @Bean
@@ -100,7 +103,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(401, "No autenticado"))
                 )
-                .addFilterBefore(new JwtFilter(),
+                .addFilterBefore(jwtFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

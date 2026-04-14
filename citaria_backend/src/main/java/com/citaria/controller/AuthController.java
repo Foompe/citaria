@@ -28,12 +28,15 @@ public class AuthController {
 
     private final UsuarioDAO usuarioDAO;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Autowired
     public AuthController(UsuarioDAO usuarioDAO,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtUtil jwtUtil) {
         this.usuarioDAO = usuarioDAO;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -57,7 +60,7 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
 
-        String token = JwtUtil.generateToken(
+        String token = jwtUtil.generateToken(
                 usuario.get().getEmail(),
                 usuario.get().getRol().name()
         );

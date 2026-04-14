@@ -3,9 +3,11 @@ package com.citaria.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 
 /**
@@ -13,13 +15,14 @@ import java.util.Date;
  * Genera tokens con email y rol del usuario.
  * Valida implícitamente el token al extraer sus claims.
  */
+@Component
 public class JwtUtil {
 
-    private static final String SECRET =
-            "SECRETO_ELIMINADO";
+    private final SecretKey secretKey;
 
-    private static final Key SECRET_KEY =
-            Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    public JwtUtil(@Value("${jwt.secret}") String secret) {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     /**
      * Genera un token JWT firmado con email y rol del usuario.
@@ -28,13 +31,13 @@ public class JwtUtil {
      * @param role rol del usuario
      * @return token JWT firmado
      */
-    public static String generateToken(String email, String role) {
+    public String generateToken(String email, String role) {
         return Jwts.builder()
                 .subject(email)
                 .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 3600000))
-                .signWith(SECRET_KEY)
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -45,7 +48,7 @@ public class JwtUtil {
      * @param token token JWT
      * @return email del usuario
      */
-    public static String getEmail(String token) {
+    public String getEmail(String token) {
         return getClaims(token).getSubject();
     }
 
@@ -56,13 +59,13 @@ public class JwtUtil {
      * @param token token JWT
      * @return rol del usuario
      */
-    public static String getRole(String token) {
+    public String getRole(String token) {
         return getClaims(token).get("role", String.class);
     }
 
-    private static Claims getClaims(String token) {
+    private Claims getClaims(String token) {
         return Jwts.parser()
-                .verifyWith((javax.crypto.SecretKey) SECRET_KEY)
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
