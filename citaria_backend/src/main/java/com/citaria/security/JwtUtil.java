@@ -12,11 +12,16 @@ import java.util.Date;
 
 /**
  * Utilidad para la generación y validación de tokens JWT.
- * Genera tokens con email y rol del usuario.
- * Valida implícitamente el token al extraer sus claims.
+ * El token incluye email, rol y organizacionId del usuario.
+ * La inclusión del organizacionId en el token evita una consulta
+ * a BD en cada petición para resolver la organización del usuario.
  */
 @Component
 public class JwtUtil {
+
+    private static final String CLAIM_ROL = "rol";
+    private static final String CLAIM_ORGANIZACION_ID = "organizacionId";
+    private static final long EXPIRACION_MS = 3_600_000L;
 
     private final SecretKey secretKey;
 
@@ -25,25 +30,26 @@ public class JwtUtil {
     }
 
     /**
-     * Genera un token JWT firmado con email y rol del usuario.
+     * Genera un token JWT firmado con email, rol y organizacionId del usuario.
      *
-     * @param email email del usuario
-     * @param role rol del usuario
+     * @param email          email del usuario
+     * @param rol            rol del usuario
+     * @param organizacionId id de la organización a la que pertenece
      * @return token JWT firmado
      */
-    public String generateToken(String email, String role) {
+    public String generateToken(String email, String rol, Integer organizacionId) {
         return Jwts.builder()
                 .subject(email)
-                .claim("role", role)
+                .claim(CLAIM_ROL, rol)
+                .claim(CLAIM_ORGANIZACION_ID, organizacionId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .expiration(new Date(System.currentTimeMillis() + EXPIRACION_MS))
                 .signWith(secretKey)
                 .compact();
     }
 
     /**
      * Extrae el email del token JWT.
-     * Valida implícitamente el token — lanza excepción si es inválido o expirado.
      *
      * @param token token JWT
      * @return email del usuario
@@ -54,13 +60,22 @@ public class JwtUtil {
 
     /**
      * Extrae el rol del token JWT.
-     * Valida implícitamente el token — lanza excepción si es inválido o expirado.
      *
      * @param token token JWT
      * @return rol del usuario
      */
-    public String getRole(String token) {
-        return getClaims(token).get("role", String.class);
+    public String getRol(String token) {
+        return getClaims(token).get(CLAIM_ROL, String.class);
+    }
+
+    /**
+     * Extrae el organizacionId del token JWT.
+     *
+     * @param token token JWT
+     * @return id de la organización del usuario
+     */
+    public Integer getOrganizacionId(String token) {
+        return getClaims(token).get(CLAIM_ORGANIZACION_ID, Integer.class);
     }
 
     private Claims getClaims(String token) {

@@ -28,6 +28,18 @@ public class ManejadorGlobalExcepciones {
     }
 
     /**
+     * Maneja intentos de registro con un email ya existente.
+     * Devuelve 409 Conflict con mensaje descriptivo.
+     */
+    @ExceptionHandler(EmailYaRegistradoException.class)
+    public ResponseEntity<ErrorRespuestaDTO> manejarEmailYaRegistrado(
+            EmailYaRegistradoException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorRespuestaDTO(409, ex.getMessage()));
+    }
+
+    /**
      * Maneja errores de validación de campos.
      * Devuelve 400 con el primer error de validación encontrado.
      */

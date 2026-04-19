@@ -9,15 +9,18 @@ import java.util.List;
 /**
  * Contrato del servicio de gestión de empleados.
  * Incluye gestión de horarios y skills del empleado.
+ * La organización se resuelve automáticamente desde el contexto de seguridad.
+ * La eliminación de un empleado se gestiona exclusivamente a través de
+ * {@link UsuarioService#eliminar(Integer)}, que garantiza la anonimización
+ * de datos personales en una única transacción.
  */
 public interface EmpleadoService {
 
     // Empleado
-    List<EmpleadoDTO> obtenerTodos(Integer organizacionId);
+    List<EmpleadoDTO> obtenerTodos();
     EmpleadoDTO obtenerPorId(Integer id);
-    EmpleadoDTO crear(Integer organizacionId, EmpleadoDTO dto);
+    EmpleadoDTO crear(EmpleadoDTO dto);
     EmpleadoDTO actualizar(Integer id, EmpleadoDTO dto);
-    boolean eliminar(Integer id);
 
     // Horario empleado
     List<HorarioEmpleadoDTO> obtenerHorariosPorEmpleado(Integer empleadoId);

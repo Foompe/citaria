@@ -15,8 +15,8 @@ import java.util.Optional;
 @Repository
 public interface UsuarioDAO extends JpaRepository<Usuario, Integer> {
 
-    Optional<Usuario> findByEmail(String email);
+    Optional<Usuario> findByEmailAndOrganizacion(String email, Organizacion organizacion);
     List<Usuario> findByOrganizacion(Organizacion organizacion);
     List<Usuario> findByOrganizacionAndRol(Organizacion organizacion, RolUsuario rol);
-    boolean existsByEmail(String email);
+    boolean existsByEmailAndOrganizacion(String email, Organizacion organizacion);
 }

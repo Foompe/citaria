@@ -10,30 +10,46 @@ import java.util.List;
 /**
  * Contrato del servicio de gestión del catálogo.
  * Incluye gestión de servicios, categorías y skills.
+ * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 public interface CatalogoService {
 
     // Categorías
-    List<CategoriaDTO> obtenerCategoriasPorOrganizacion(Integer organizacionId);
+    List<CategoriaDTO> obtenerCategorias();
     CategoriaDTO obtenerCategoriaPorId(Integer id);
-    CategoriaDTO crearCategoria(Integer organizacionId, CategoriaDTO dto);
+    CategoriaDTO crearCategoria(CategoriaDTO dto);
     CategoriaDTO actualizarCategoria(Integer id, CategoriaDTO dto);
-    boolean eliminarCategoria(Integer id);
+
+    /**
+     * Desactiva una categoría de forma lógica (activo = false).
+     * Lanza {@link com.citaria.exception.RecursoNoEncontradoException} si el id no existe.
+     */
+    void eliminarCategoria(Integer id);
 
     // Skills
-    List<SkillDTO> obtenerSkillsPorOrganizacion(Integer organizacionId);
+    List<SkillDTO> obtenerSkills();
     SkillDTO obtenerSkillPorId(Integer id);
-    SkillDTO crearSkill(Integer organizacionId, SkillDTO dto);
+    SkillDTO crearSkill(SkillDTO dto);
     SkillDTO actualizarSkill(Integer id, SkillDTO dto);
-    boolean eliminarSkill(Integer id);
+
+    /**
+     * Desactiva una skill de forma lógica (activo = false).
+     * Lanza {@link com.citaria.exception.RecursoNoEncontradoException} si el id no existe.
+     */
+    void eliminarSkill(Integer id);
 
     // Servicios
-    List<ServicioDTO> obtenerServiciosPorOrganizacion(Integer organizacionId);
+    List<ServicioDTO> obtenerServicios();
     List<ServicioDTO> obtenerServiciosPorCategoria(Integer categoriaId);
     ServicioDTO obtenerServicioPorId(Integer id);
-    ServicioDTO crearServicio(Integer organizacionId, ServicioDTO dto);
+    ServicioDTO crearServicio(ServicioDTO dto);
     ServicioDTO actualizarServicio(Integer id, ServicioDTO dto);
-    boolean eliminarServicio(Integer id);
+
+    /**
+     * Desactiva un servicio de forma lógica (activo = false).
+     * Lanza {@link com.citaria.exception.RecursoNoEncontradoException} si el id no existe.
+     */
+    void eliminarServicio(Integer id);
 
     // Skills de servicio
     List<ServicioSkillDTO> obtenerSkillsPorServicio(Integer servicioId);

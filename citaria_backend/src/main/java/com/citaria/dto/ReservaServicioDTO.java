@@ -1,5 +1,6 @@
 package com.citaria.dto;
 
+import com.citaria.model.EstadoReservaServicio;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -36,6 +37,8 @@ public class ReservaServicioDTO {
     @Min(value = 1, message = "La cantidad debe ser al menos 1")
     private Integer cantidad;
 
+    private EstadoReservaServicio estado;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -65,4 +68,7 @@ public class ReservaServicioDTO {
 
     public Integer getCantidad() { return cantidad; }
     public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+
+    public EstadoReservaServicio getEstado() { return estado; }
+    public void setEstado(EstadoReservaServicio estado) { this.estado = estado; }
 }

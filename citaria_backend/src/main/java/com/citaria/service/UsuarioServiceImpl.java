@@ -4,46 +4,49 @@ import com.citaria.dto.UsuarioDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.citaria.security.ContextoSeguridad;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Implementación del servicio de gestión de usuarios del sistema.
+ * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    private UsuarioDAO usuarioDAO;
-    private OrganizacionDAO organizacionDAO;
-    private ClienteDAO clienteDAO;
-    private EmpleadoDAO empleadoDAO;
-    private PasswordEncoder passwordEncoder;
+    private static final String NOMBRE_ANONIMIZADO = "Anónimo";
+    private static final String DOMINIO_ANONIMIZADO = "@eliminado.local";
 
-    @Autowired
+    private final UsuarioDAO usuarioDAO;
+    private final ClienteDAO clienteDAO;
+    private final EmpleadoDAO empleadoDAO;
+    private final PasswordEncoder passwordEncoder;
+    private final ContextoSeguridad contextoSeguridad;
+
     public UsuarioServiceImpl(UsuarioDAO usuarioDAO,
-                              OrganizacionDAO organizacionDAO,
                               ClienteDAO clienteDAO,
                               EmpleadoDAO empleadoDAO,
-                              PasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder,
+                              ContextoSeguridad contextoSeguridad) {
         this.usuarioDAO = usuarioDAO;
-        this.organizacionDAO = organizacionDAO;
         this.clienteDAO = clienteDAO;
         this.empleadoDAO = empleadoDAO;
         this.passwordEncoder = passwordEncoder;
+        this.contextoSeguridad = contextoSeguridad;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> obtenerTodos(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public List<UsuarioDTO> obtenerTodos() {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         List<Usuario> usuarios = usuarioDAO.findByOrganizacion(organizacion);
         List<UsuarioDTO> usuariosDTO = new ArrayList<>();
         for (Usuario usuario : usuarios) {
@@ -54,10 +57,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UsuarioDTO> obtenerPorRol(Integer organizacionId, RolUsuario rol) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public List<UsuarioDTO> obtenerPorRol(RolUsuario rol) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         List<Usuario> usuarios = usuarioDAO.findByOrganizacionAndRol(organizacion, rol);
         List<UsuarioDTO> usuariosDTO = new ArrayList<>();
         for (Usuario usuario : usuarios) {
@@ -69,27 +70,28 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional(readOnly = true)
     public UsuarioDTO obtenerPorId(Integer id) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Usuario usuario = usuarioDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Usuario con id " + id + " no encontrado"));
+        verificarTenencia(usuario, organizacion);
         return convertirADTO(usuario);
     }
 
     @Override
     @Transactional(readOnly = true)
     public UsuarioDTO obtenerPorEmail(String email) {
-        Usuario usuario = usuarioDAO.findByEmail(email)
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Usuario usuario = usuarioDAO.findByEmailAndOrganizacion(email, organizacion)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario con email " + email + " no encontrado"));
+                        "Usuario no encontrado"));
         return convertirADTO(usuario);
     }
 
     @Override
     @Transactional
-    public UsuarioDTO crear(Integer organizacionId, UsuarioDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public UsuarioDTO crear(UsuarioDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Usuario usuario = convertirAEntidad(dto);
         usuario.setOrganizacion(organizacion);
         if (dto.getClienteId() != null) {
@@ -106,9 +108,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public UsuarioDTO actualizar(Integer id, UsuarioDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Usuario usuario = usuarioDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Usuario con id " + id + " no encontrado"));
+        verificarTenencia(usuario, organizacion);
         actualizarCamposUsuario(usuario, dto);
         if (dto.getClienteId() != null) {
             Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
@@ -121,14 +125,59 @@ public class UsuarioServiceImpl implements UsuarioService {
         return convertirADTO(usuarioDAO.save(usuario));
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * El email se sustituye por un placeholder único con UUID para respetar
+     * la constraint UNIQUE(email, organizacion_id) sin dejar datos personales.
+     * El passwordHash se reemplaza por un hash de UUID aleatorio — inutilizable para login.
+     */
     @Override
     @Transactional
-    public boolean eliminar(Integer id) {
-        if (usuarioDAO.existsById(id)) {
-            usuarioDAO.deleteById(id);
-            return true;
+    public void eliminar(Integer id) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Usuario usuario = usuarioDAO.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Usuario con id " + id + " no encontrado"));
+        verificarTenencia(usuario, organizacion);
+        anonimizarUsuario(usuario);
+        if (usuario.getCliente() != null) {
+            anonimizarCliente(usuario.getCliente());
         }
-        return false;
+        if (usuario.getEmpleado() != null) {
+            anonimizarEmpleado(usuario.getEmpleado());
+        }
+    }
+
+    // ===== ANONIMIZACIÓN =====
+
+    private void anonimizarUsuario(Usuario usuario) {
+        usuario.setEmail("anonimizado-" + UUID.randomUUID() + DOMINIO_ANONIMIZADO);
+        usuario.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+        usuario.setActivo(false);
+    }
+
+    private void anonimizarCliente(Cliente cliente) {
+        cliente.setNombre(NOMBRE_ANONIMIZADO);
+        cliente.setApellidos(null);
+        cliente.setDni(null);
+        cliente.setEmail(null);
+        cliente.setTelefono(null);
+        cliente.setNotas(null);
+        cliente.setAnonimizadoAt(LocalDateTime.now());
+    }
+
+    private void anonimizarEmpleado(Empleado empleado) {
+        empleado.setActivo(false);
+        empleado.setAnonimizadoAt(LocalDateTime.now());
+    }
+
+    // ===== VERIFICACIÓN DE TENENCIA =====
+
+    private void verificarTenencia(Usuario usuario, Organizacion organizacion) {
+        if (!usuario.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Usuario con id " + usuario.getId() + " no encontrado");
+        }
     }
 
     // ===== CONVERSIONES =====

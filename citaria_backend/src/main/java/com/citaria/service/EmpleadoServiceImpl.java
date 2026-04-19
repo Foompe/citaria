@@ -6,7 +6,7 @@ import com.citaria.dto.HorarioEmpleadoDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.citaria.security.ContextoSeguridad;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,37 +16,36 @@ import java.util.List;
 /**
  * Implementación del servicio de gestión de empleados.
  * Incluye gestión de horarios y skills del empleado.
+ * La organización se resuelve automáticamente desde el contexto de seguridad,
+ * garantizando que un usuario solo puede acceder a datos de su organización.
  */
 @Service
 public class EmpleadoServiceImpl implements EmpleadoService {
 
-    private EmpleadoDAO empleadoDAO;
-    private HorarioEmpleadoDAO horarioEmpleadoDAO;
-    private EmpleadoSkillDAO empleadoSkillDAO;
-    private SkillDAO skillDAO;
-    private OrganizacionDAO organizacionDAO;
+    private final EmpleadoDAO empleadoDAO;
+    private final HorarioEmpleadoDAO horarioEmpleadoDAO;
+    private final EmpleadoSkillDAO empleadoSkillDAO;
+    private final SkillDAO skillDAO;
+    private final ContextoSeguridad contextoSeguridad;
 
-    @Autowired
     public EmpleadoServiceImpl(EmpleadoDAO empleadoDAO,
                                HorarioEmpleadoDAO horarioEmpleadoDAO,
                                EmpleadoSkillDAO empleadoSkillDAO,
                                SkillDAO skillDAO,
-                               OrganizacionDAO organizacionDAO) {
+                               ContextoSeguridad contextoSeguridad) {
         this.empleadoDAO = empleadoDAO;
         this.horarioEmpleadoDAO = horarioEmpleadoDAO;
         this.empleadoSkillDAO = empleadoSkillDAO;
         this.skillDAO = skillDAO;
-        this.organizacionDAO = organizacionDAO;
+        this.contextoSeguridad = contextoSeguridad;
     }
 
-    // ===== EMPLEADO =====
+    // EMPLEADO
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmpleadoDTO> obtenerTodos(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public List<EmpleadoDTO> obtenerTodos() {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         List<Empleado> empleados = empleadoDAO.findByOrganizacion(organizacion);
         List<EmpleadoDTO> empleadosDTO = new ArrayList<>();
         for (Empleado empleado : empleados) {
@@ -58,18 +57,18 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     @Override
     @Transactional(readOnly = true)
     public EmpleadoDTO obtenerPorId(Integer id) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + id + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         return convertirEmpleadoADTO(empleado);
     }
 
     @Override
     @Transactional
-    public EmpleadoDTO crear(Integer organizacionId, EmpleadoDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public EmpleadoDTO crear(EmpleadoDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = convertirEmpleadoAEntidad(dto);
         empleado.setOrganizacion(organizacion);
         return convertirEmpleadoADTO(empleadoDAO.save(empleado));
@@ -78,31 +77,25 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     @Override
     @Transactional
     public EmpleadoDTO actualizar(Integer id, EmpleadoDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + id + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         actualizarCamposEmpleado(empleado, dto);
         return convertirEmpleadoADTO(empleadoDAO.save(empleado));
     }
 
-    @Override
-    @Transactional
-    public boolean eliminar(Integer id) {
-        if (empleadoDAO.existsById(id)) {
-            empleadoDAO.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    // ===== HORARIO EMPLEADO =====
+    // HORARIO EMPLEADO
 
     @Override
     @Transactional(readOnly = true)
     public List<HorarioEmpleadoDTO> obtenerHorariosPorEmpleado(Integer empleadoId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(empleadoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + empleadoId + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         List<HorarioEmpleado> horarios = horarioEmpleadoDAO.findByEmpleado(empleado);
         List<HorarioEmpleadoDTO> horariosDTO = new ArrayList<>();
         for (HorarioEmpleado horario : horarios) {
@@ -114,9 +107,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     @Override
     @Transactional
     public HorarioEmpleadoDTO crearHorario(Integer empleadoId, HorarioEmpleadoDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(empleadoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + empleadoId + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         HorarioEmpleado horario = convertirHorarioAEntidad(dto);
         horario.setEmpleado(empleado);
         return convertirHorarioADTO(horarioEmpleadoDAO.save(horario));
@@ -142,14 +137,16 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         return false;
     }
 
-    // ===== SKILLS EMPLEADO =====
+    // SKILLS EMPLEADO
 
     @Override
     @Transactional(readOnly = true)
     public List<EmpleadoSkillDTO> obtenerSkillsPorEmpleado(Integer empleadoId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(empleadoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + empleadoId + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         List<EmpleadoSkill> skills = empleadoSkillDAO.findByEmpleado(empleado);
         List<EmpleadoSkillDTO> skillsDTO = new ArrayList<>();
         for (EmpleadoSkill empleadoSkill : skills) {
@@ -161,9 +158,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     @Override
     @Transactional
     public EmpleadoSkillDTO asignarSkill(Integer empleadoId, Integer skillId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Empleado empleado = empleadoDAO.findById(empleadoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Empleado con id " + empleadoId + " no encontrado"));
+        verificarTenencia(empleado, organizacion);
         Skill skill = skillDAO.findById(skillId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Skill con id " + skillId + " no encontrada"));
@@ -182,7 +181,15 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         return false;
     }
 
-    // ===== CONVERSIONES =====
+    // MÉTODOS PRIVADOS
+
+    private void verificarTenencia(Empleado empleado, Organizacion organizacion) {
+        if (!empleado.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Empleado con id " + empleado.getId() + " no encontrado");
+        }
+    }
+
+    // CONVERSIONES
 
     private EmpleadoDTO convertirEmpleadoADTO(Empleado empleado) {
         EmpleadoDTO dto = new EmpleadoDTO();

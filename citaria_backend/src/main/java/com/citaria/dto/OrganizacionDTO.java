@@ -1,10 +1,12 @@
 package com.citaria.dto;
 
 import jakarta.validation.constraints.*;
-import java.time.LocalDateTime;
 
 /**
  * DTO para la transferencia de datos de una organización.
+ * El tokenRegistro se expone en respuestas para que el admin
+ * pueda compartirlo, pero nunca se acepta como entrada — el sistema
+ * lo genera automáticamente al crear la organización.
  */
 public class OrganizacionDTO {
 
@@ -38,6 +40,9 @@ public class OrganizacionDTO {
     @Size(max = 2, message = "El país debe ser un código de 2 caracteres")
     private String pais;
 
+    // Solo lectura — generado por el sistema, nunca enviado por el cliente
+    private String tokenRegistro;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
@@ -64,4 +69,7 @@ public class OrganizacionDTO {
 
     public String getPais() { return pais; }
     public void setPais(String pais) { this.pais = pais; }
+
+    public String getTokenRegistro() { return tokenRegistro; }
+    public void setTokenRegistro(String tokenRegistro) { this.tokenRegistro = tokenRegistro; }
 }

@@ -5,8 +5,7 @@ import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.Cliente;
 import com.citaria.model.Organizacion;
 import com.citaria.repository.ClienteDAO;
-import com.citaria.repository.OrganizacionDAO;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.citaria.security.ContextoSeguridad;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,26 +14,25 @@ import java.util.List;
 
 /**
  * Implementación del servicio de gestión de clientes.
+ * La organización se resuelve automáticamente desde el contexto de seguridad,
+ * garantizando que un usuario solo puede acceder a datos de su organización.
  */
 @Service
 public class ClienteServiceImpl implements ClienteService {
 
-    private ClienteDAO clienteDAO;
-    private OrganizacionDAO organizacionDAO;
+    private final ClienteDAO clienteDAO;
+    private final ContextoSeguridad contextoSeguridad;
 
-    @Autowired
     public ClienteServiceImpl(ClienteDAO clienteDAO,
-                              OrganizacionDAO organizacionDAO) {
+                              ContextoSeguridad contextoSeguridad) {
         this.clienteDAO = clienteDAO;
-        this.organizacionDAO = organizacionDAO;
+        this.contextoSeguridad = contextoSeguridad;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteDTO> obtenerTodos(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public List<ClienteDTO> obtenerTodos() {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         List<Cliente> clientes = clienteDAO.findByOrganizacion(organizacion);
         List<ClienteDTO> clientesDTO = new ArrayList<>();
         for (Cliente cliente : clientes) {
@@ -43,21 +41,27 @@ public class ClienteServiceImpl implements ClienteService {
         return clientesDTO;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Verifica que el cliente pertenezca a la organización del usuario autenticado.
+     * Devuelve 404 en vez de 403 para no revelar que el recurso existe en otra organización.
+     */
     @Override
     @Transactional(readOnly = true)
     public ClienteDTO obtenerPorId(Integer id) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Cliente cliente = clienteDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Cliente con id " + id + " no encontrado"));
+        verificarTenencia(cliente, organizacion);
         return convertirClienteADTO(cliente);
     }
 
     @Override
     @Transactional
-    public ClienteDTO crear(Integer organizacionId, ClienteDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    public ClienteDTO crear(ClienteDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Cliente cliente = convertirClienteAEntidad(dto);
         cliente.setOrganizacion(organizacion);
         return convertirClienteADTO(clienteDAO.save(cliente));
@@ -66,24 +70,29 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     @Transactional
     public ClienteDTO actualizar(Integer id, ClienteDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Cliente cliente = clienteDAO.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Cliente con id " + id + " no encontrado"));
+        verificarTenencia(cliente, organizacion);
         actualizarCamposCliente(cliente, dto);
         return convertirClienteADTO(clienteDAO.save(cliente));
     }
 
-    @Override
-    @Transactional
-    public boolean eliminar(Integer id) {
-        if (clienteDAO.existsById(id)) {
-            clienteDAO.deleteById(id);
-            return true;
+    // MÉTODOS PRIVADOS
+
+    /**
+     * Verifica que el cliente pertenezca a la organización del usuario autenticado.
+     * Lanza RecursoNoEncontradoException (404) en vez de un error de autorización (403)
+     * para no revelar la existencia de recursos de otras organizaciones.
+     */
+    private void verificarTenencia(Cliente cliente, Organizacion organizacion) {
+        if (!cliente.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Cliente con id " + cliente.getId() + " no encontrado");
         }
-        return false;
     }
 
-    // ===== CONVERSIONES =====
+    // CONVERSIONES
 
     private ClienteDTO convertirClienteADTO(Cliente cliente) {
         ClienteDTO dto = new ClienteDTO();

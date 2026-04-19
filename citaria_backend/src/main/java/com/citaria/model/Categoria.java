@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 /**
  * Agrupación de servicios dentro de una organización.
  * La combinación organizacion_id + nombre es única.
+ * El campo activo permite desactivar la categoría sin perder el histórico.
  */
 @Entity
 @Table(name = "categoria")
@@ -24,6 +25,10 @@ public class Categoria {
     @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
+
+    @NotNull
+    @Column(nullable = false)
+    private Boolean activo = true;
 
     public Integer getId() {
         return id;
@@ -49,6 +54,14 @@ public class Categoria {
         this.nombre = nombre;
     }
 
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -67,6 +80,7 @@ public class Categoria {
                 "id=" + id +
                 ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
                 ", nombre='" + nombre + '\'' +
+                ", activo=" + activo +
                 '}';
     }
 }

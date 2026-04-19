@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +17,10 @@ import java.util.List;
 /**
  * Controlador REST para la gestión de empleados.
  * Incluye endpoints de horarios y skills del empleado.
+ * La organización se resuelve automáticamente desde el token JWT.
+ * La eliminación de un empleado se gestiona exclusivamente a través de
+ * DELETE /api/usuarios/{id}, que aplica la anonimización completa
+ * de datos personales en una única transacción.
  */
 @Tag(name = "Empleados", description = "Gestión de empleados, horarios y skills")
 @RestController
@@ -26,20 +29,19 @@ public class EmpleadoController {
 
     private final EmpleadoService empleadoService;
 
-    @Autowired
     public EmpleadoController(EmpleadoService empleadoService) {
         this.empleadoService = empleadoService;
     }
 
-    // ===== EMPLEADO =====
+    // EMPLEADO
 
-    @Operation(summary = "Obtener todos los empleados de una organización")
+    @Operation(summary = "Obtener todos los empleados de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<List<EmpleadoDTO>> obtenerTodos(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(empleadoService.obtenerTodos(organizacionId));
+    @GetMapping
+    public ResponseEntity<List<EmpleadoDTO>> obtenerTodos() {
+        return ResponseEntity.ok(empleadoService.obtenerTodos());
     }
 
     @Operation(summary = "Obtener empleado por ID")
@@ -52,13 +54,13 @@ public class EmpleadoController {
         return ResponseEntity.ok(empleadoService.obtenerPorId(id));
     }
 
-    @Operation(summary = "Crear un nuevo empleado en una organización")
+    @Operation(summary = "Crear un nuevo empleado en la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Empleado creado correctamente")
     })
-    @PostMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<EmpleadoDTO> crear(@PathVariable Integer organizacionId, @Valid @RequestBody EmpleadoDTO dto) {
-        return ResponseEntity.status(201).body(empleadoService.crear(organizacionId, dto));
+    @PostMapping
+    public ResponseEntity<EmpleadoDTO> crear(@Valid @RequestBody EmpleadoDTO dto) {
+        return ResponseEntity.status(201).body(empleadoService.crear(dto));
     }
 
     @Operation(summary = "Actualizar un empleado existente")
@@ -67,24 +69,12 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody EmpleadoDTO dto) {
+    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id,
+                                                  @Valid @RequestBody EmpleadoDTO dto) {
         return ResponseEntity.ok(empleadoService.actualizar(id, dto));
     }
 
-    @Operation(summary = "Eliminar un empleado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Empleado eliminado correctamente"),
-            @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
-    })
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        if (empleadoService.eliminar(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    // ===== HORARIOS =====
+    // HORARIOS
 
     @Operation(summary = "Obtener horarios de un empleado")
     @ApiResponses({
@@ -131,7 +121,7 @@ public class EmpleadoController {
         return ResponseEntity.notFound().build();
     }
 
-    // ===== SKILLS =====
+    // SKILLS
 
     @Operation(summary = "Obtener skills de un empleado")
     @ApiResponses({

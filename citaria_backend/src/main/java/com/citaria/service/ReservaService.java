@@ -10,21 +10,32 @@ import java.util.List;
 /**
  * Contrato del servicio de gestión de reservas.
  * Incluye gestión de líneas de detalle de cada reserva.
+ * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 public interface ReservaService {
 
     // Reserva
-    List<ReservaDTO> obtenerTodas(Integer organizacionId);
+    List<ReservaDTO> obtenerTodas();
     List<ReservaDTO> obtenerPorCliente(Integer clienteId);
-    List<ReservaDTO> obtenerPorFecha(Integer organizacionId, LocalDate fecha);
-    List<ReservaDTO> obtenerPorEstado(Integer organizacionId, EstadoReserva estado);
+    List<ReservaDTO> obtenerPorFecha(LocalDate fecha);
+    List<ReservaDTO> obtenerPorEstado(EstadoReserva estado);
     ReservaDTO obtenerPorId(Integer id);
-    ReservaDTO crear(Integer organizacionId, Integer clienteId, ReservaDTO dto);
+    ReservaDTO crear(Integer clienteId, ReservaDTO dto);
     ReservaDTO actualizarEstado(Integer id, EstadoReserva estado);
-    boolean eliminar(Integer id);
+
+    /**
+     * Cancela una reserva y todas sus líneas de detalle activas en una sola transacción.
+     * Lanza {@link com.citaria.exception.RecursoNoEncontradoException} si el id no existe.
+     */
+    void eliminar(Integer id);
 
     // Líneas de detalle
     List<ReservaServicioDTO> obtenerDetallesPorReserva(Integer reservaId);
     ReservaServicioDTO agregarDetalle(Integer reservaId, ReservaServicioDTO dto);
-    boolean eliminarDetalle(Integer id);
+
+    /**
+     * Cancela una línea de detalle individual sin afectar al resto de la reserva.
+     * Lanza {@link com.citaria.exception.RecursoNoEncontradoException} si el id no existe.
+     */
+    void eliminarDetalle(Integer id);
 }

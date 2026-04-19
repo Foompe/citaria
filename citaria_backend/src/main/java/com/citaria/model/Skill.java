@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 /**
  * Habilidad requerida por un servicio o disponible en un empleado.
  * La combinación organizacion_id + nombre es única.
+ * El campo activo permite desactivar la skill sin perder el histórico.
  */
 @Entity
 @Table(name = "skill")
@@ -27,6 +28,10 @@ public class Skill {
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
+
+    @NotNull
+    @Column(nullable = false)
+    private Boolean activo = true;
 
     public Integer getId() {
         return id;
@@ -60,6 +65,14 @@ public class Skill {
         this.descripcion = descripcion;
     }
 
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -79,6 +92,7 @@ public class Skill {
                 ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
                 ", nombre='" + nombre + '\'' +
                 ", descripcion='" + descripcion + '\'' +
+                ", activo=" + activo +
                 '}';
     }
 }

@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +18,7 @@ import java.util.List;
 /**
  * Controlador REST para la gestión del catálogo.
  * Incluye endpoints de servicios, categorías y skills.
+ * La organización se resuelve automáticamente desde el token JWT.
  */
 @Tag(name = "Catálogo", description = "Gestión de servicios, categorías y skills")
 @RestController
@@ -27,20 +27,19 @@ public class CatalogoController {
 
     private final CatalogoService cataloService;
 
-    @Autowired
     public CatalogoController(CatalogoService cataloService) {
         this.cataloService = cataloService;
     }
 
-    // ===== CATEGORÍAS =====
+    // CATEGORÍAS
 
-    @Operation(summary = "Obtener categorías de una organización")
+    @Operation(summary = "Obtener categorías de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/categorias/organizacion/{organizacionId}")
-    public ResponseEntity<List<CategoriaDTO>> obtenerCategorias(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(cataloService.obtenerCategoriasPorOrganizacion(organizacionId));
+    @GetMapping("/categorias")
+    public ResponseEntity<List<CategoriaDTO>> obtenerCategorias() {
+        return ResponseEntity.ok(cataloService.obtenerCategorias());
     }
 
     @Operation(summary = "Obtener categoría por ID")
@@ -53,14 +52,13 @@ public class CatalogoController {
         return ResponseEntity.ok(cataloService.obtenerCategoriaPorId(id));
     }
 
-    @Operation(summary = "Crear categoría en una organización")
+    @Operation(summary = "Crear categoría en la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Categoría creada correctamente")
     })
-    @PostMapping("/categorias/organizacion/{organizacionId}")
-    public ResponseEntity<CategoriaDTO> crearCategoria(@PathVariable Integer organizacionId,
-                                                       @Valid @RequestBody CategoriaDTO dto) {
-        return ResponseEntity.status(201).body(cataloService.crearCategoria(organizacionId, dto));
+    @PostMapping("/categorias")
+    public ResponseEntity<CategoriaDTO> crearCategoria(@Valid @RequestBody CategoriaDTO dto) {
+        return ResponseEntity.status(201).body(cataloService.crearCategoria(dto));
     }
 
     @Operation(summary = "Actualizar una categoría existente")
@@ -74,28 +72,26 @@ public class CatalogoController {
         return ResponseEntity.ok(cataloService.actualizarCategoria(id, dto));
     }
 
-    @Operation(summary = "Eliminar una categoría")
+    @Operation(summary = "Desactivar una categoría — borrado lógico irreversible")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Categoría eliminada correctamente"),
+            @ApiResponse(responseCode = "204", description = "Categoría desactivada correctamente"),
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
     })
     @DeleteMapping("/categorias/{id}")
     public ResponseEntity<Void> eliminarCategoria(@PathVariable Integer id) {
-        if (cataloService.eliminarCategoria(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        cataloService.eliminarCategoria(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // ===== SKILLS =====
+    // SKILLS
 
-    @Operation(summary = "Obtener skills de una organización")
+    @Operation(summary = "Obtener skills de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/skills/organizacion/{organizacionId}")
-    public ResponseEntity<List<SkillDTO>> obtenerSkills(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(cataloService.obtenerSkillsPorOrganizacion(organizacionId));
+    @GetMapping("/skills")
+    public ResponseEntity<List<SkillDTO>> obtenerSkills() {
+        return ResponseEntity.ok(cataloService.obtenerSkills());
     }
 
     @Operation(summary = "Obtener skill por ID")
@@ -108,13 +104,13 @@ public class CatalogoController {
         return ResponseEntity.ok(cataloService.obtenerSkillPorId(id));
     }
 
-    @Operation(summary = "Crear skill en una organización")
+    @Operation(summary = "Crear skill en la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Skill creada correctamente")
     })
-    @PostMapping("/skills/organizacion/{organizacionId}")
-    public ResponseEntity<SkillDTO> crearSkill(@PathVariable Integer organizacionId, @Valid @RequestBody SkillDTO dto) {
-        return ResponseEntity.status(201).body(cataloService.crearSkill(organizacionId, dto));
+    @PostMapping("/skills")
+    public ResponseEntity<SkillDTO> crearSkill(@Valid @RequestBody SkillDTO dto) {
+        return ResponseEntity.status(201).body(cataloService.crearSkill(dto));
     }
 
     @Operation(summary = "Actualizar una skill existente")
@@ -123,32 +119,31 @@ public class CatalogoController {
             @ApiResponse(responseCode = "404", description = "Skill no encontrada")
     })
     @PutMapping("/skills/{id}")
-    public ResponseEntity<SkillDTO> actualizarSkill(@PathVariable Integer id, @Valid @RequestBody SkillDTO dto) {
+    public ResponseEntity<SkillDTO> actualizarSkill(@PathVariable Integer id,
+                                                    @Valid @RequestBody SkillDTO dto) {
         return ResponseEntity.ok(cataloService.actualizarSkill(id, dto));
     }
 
-    @Operation(summary = "Eliminar una skill")
+    @Operation(summary = "Desactivar una skill — borrado lógico irreversible")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Skill eliminada correctamente"),
+            @ApiResponse(responseCode = "204", description = "Skill desactivada correctamente"),
             @ApiResponse(responseCode = "404", description = "Skill no encontrada")
     })
     @DeleteMapping("/skills/{id}")
     public ResponseEntity<Void> eliminarSkill(@PathVariable Integer id) {
-        if (cataloService.eliminarSkill(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        cataloService.eliminarSkill(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ===== SERVICIOS =====
 
-    @Operation(summary = "Obtener servicios de una organización")
+    @Operation(summary = "Obtener servicios de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/servicios/organizacion/{organizacionId}")
-    public ResponseEntity<List<ServicioDTO>> obtenerServicios(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(cataloService.obtenerServiciosPorOrganizacion(organizacionId));
+    @GetMapping("/servicios")
+    public ResponseEntity<List<ServicioDTO>> obtenerServicios() {
+        return ResponseEntity.ok(cataloService.obtenerServicios());
     }
 
     @Operation(summary = "Obtener servicios por categoría")
@@ -170,13 +165,13 @@ public class CatalogoController {
         return ResponseEntity.ok(cataloService.obtenerServicioPorId(id));
     }
 
-    @Operation(summary = "Crear servicio en una organización")
+    @Operation(summary = "Crear servicio en la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Servicio creado correctamente")
     })
-    @PostMapping("/servicios/organizacion/{organizacionId}")
-    public ResponseEntity<ServicioDTO> crearServicio(@PathVariable Integer organizacionId, @Valid @RequestBody ServicioDTO dto) {
-        return ResponseEntity.status(201).body(cataloService.crearServicio(organizacionId, dto));
+    @PostMapping("/servicios")
+    public ResponseEntity<ServicioDTO> crearServicio(@Valid @RequestBody ServicioDTO dto) {
+        return ResponseEntity.status(201).body(cataloService.crearServicio(dto));
     }
 
     @Operation(summary = "Actualizar un servicio existente")
@@ -185,21 +180,20 @@ public class CatalogoController {
             @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
     })
     @PutMapping("/servicios/{id}")
-    public ResponseEntity<ServicioDTO> actualizarServicio(@PathVariable Integer id, @Valid @RequestBody ServicioDTO dto) {
+    public ResponseEntity<ServicioDTO> actualizarServicio(@PathVariable Integer id,
+                                                          @Valid @RequestBody ServicioDTO dto) {
         return ResponseEntity.ok(cataloService.actualizarServicio(id, dto));
     }
 
-    @Operation(summary = "Eliminar un servicio")
+    @Operation(summary = "Desactivar un servicio — borrado lógico irreversible")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Servicio eliminado correctamente"),
+            @ApiResponse(responseCode = "204", description = "Servicio desactivado correctamente"),
             @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
     })
     @DeleteMapping("/servicios/{id}")
     public ResponseEntity<Void> eliminarServicio(@PathVariable Integer id) {
-        if (cataloService.eliminarServicio(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        cataloService.eliminarServicio(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ===== SKILLS DE SERVICIO =====
@@ -218,7 +212,8 @@ public class CatalogoController {
             @ApiResponse(responseCode = "201", description = "Skill asignada correctamente")
     })
     @PostMapping("/servicios/{id}/skills/{skillId}")
-    public ResponseEntity<ServicioSkillDTO> asignarSkill(@PathVariable Integer id, @PathVariable Integer skillId) {
+    public ResponseEntity<ServicioSkillDTO> asignarSkill(@PathVariable Integer id,
+                                                         @PathVariable Integer skillId) {
         return ResponseEntity.status(201).body(cataloService.asignarSkillAServicio(id, skillId));
     }
 
@@ -228,7 +223,8 @@ public class CatalogoController {
             @ApiResponse(responseCode = "404", description = "Skill no encontrada")
     })
     @DeleteMapping("/servicios/{id}/skills/{skillId}")
-    public ResponseEntity<Void> eliminarSkillServicio(@PathVariable Integer id, @PathVariable Integer skillId) {
+    public ResponseEntity<Void> eliminarSkillServicio(@PathVariable Integer id,
+                                                      @PathVariable Integer skillId) {
         if (cataloService.eliminarSkillDeServicio(id, skillId)) {
             return ResponseEntity.noContent().build();
         }

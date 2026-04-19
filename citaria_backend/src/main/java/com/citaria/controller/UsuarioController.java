@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +15,7 @@ import java.util.List;
 
 /**
  * Controlador REST para la gestión de usuarios del sistema.
+ * La organización se resuelve automáticamente desde el token JWT.
  */
 @Tag(name = "Usuarios", description = "Gestión de usuarios y control de acceso")
 @RestController
@@ -24,28 +24,26 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @Autowired
     public UsuarioController(UsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
 
-    @Operation(summary = "Obtener todos los usuarios de una organización")
+    @Operation(summary = "Obtener todos los usuarios de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<List<UsuarioDTO>> obtenerTodos(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(usuarioService.obtenerTodos(organizacionId));
+    @GetMapping
+    public ResponseEntity<List<UsuarioDTO>> obtenerTodos() {
+        return ResponseEntity.ok(usuarioService.obtenerTodos());
     }
 
-    @Operation(summary = "Obtener usuarios de una organización filtrados por rol")
+    @Operation(summary = "Obtener usuarios de la organización filtrados por rol")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}/rol/{rol}")
-    public ResponseEntity<List<UsuarioDTO>> obtenerPorRol(@PathVariable Integer organizacionId,
-                                                          @PathVariable RolUsuario rol) {
-        return ResponseEntity.ok(usuarioService.obtenerPorRol(organizacionId, rol));
+    @GetMapping("/rol/{rol}")
+    public ResponseEntity<List<UsuarioDTO>> obtenerPorRol(@PathVariable RolUsuario rol) {
+        return ResponseEntity.ok(usuarioService.obtenerPorRol(rol));
     }
 
     @Operation(summary = "Obtener usuario por ID")
@@ -58,14 +56,13 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.obtenerPorId(id));
     }
 
-    @Operation(summary = "Crear un nuevo usuario en una organización")
+    @Operation(summary = "Crear un nuevo usuario en la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuario creado correctamente")
     })
-    @PostMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<UsuarioDTO> crear(@PathVariable Integer organizacionId,
-                                            @Valid @RequestBody UsuarioDTO dto) {
-        return ResponseEntity.status(201).body(usuarioService.crear(organizacionId, dto));
+    @PostMapping
+    public ResponseEntity<UsuarioDTO> crear(@Valid @RequestBody UsuarioDTO dto) {
+        return ResponseEntity.status(201).body(usuarioService.crear(dto));
     }
 
     @Operation(summary = "Actualizar un usuario existente")
@@ -79,16 +76,14 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.actualizar(id, dto));
     }
 
-    @Operation(summary = "Eliminar un usuario")
+    @Operation(summary = "Anonimizar un usuario — elimina sus datos personales de forma irreversible")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Usuario eliminado correctamente"),
+            @ApiResponse(responseCode = "204", description = "Usuario anonimizado correctamente"),
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        if (usuarioService.eliminar(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        usuarioService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

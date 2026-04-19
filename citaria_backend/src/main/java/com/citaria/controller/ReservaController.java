@@ -9,17 +9,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
 
-
 /**
  * Controlador REST para la gestión de reservas.
  * Incluye endpoints de líneas de detalle de cada reserva.
+ * La organización se resuelve automáticamente desde el token JWT.
  */
 @Tag(name = "Reservas", description = "Gestión de reservas y líneas de detalle")
 @RestController
@@ -28,20 +27,19 @@ public class ReservaController {
 
     private final ReservaService reservaService;
 
-    @Autowired
     public ReservaController(ReservaService reservaService) {
         this.reservaService = reservaService;
     }
 
     // ===== RESERVA =====
 
-    @Operation(summary = "Obtener todas las reservas de una organización")
+    @Operation(summary = "Obtener todas las reservas de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<List<ReservaDTO>> obtenerTodas(@PathVariable Integer organizacionId) {
-        return ResponseEntity.ok(reservaService.obtenerTodas(organizacionId));
+    @GetMapping
+    public ResponseEntity<List<ReservaDTO>> obtenerTodas() {
+        return ResponseEntity.ok(reservaService.obtenerTodas());
     }
 
     @Operation(summary = "Obtener reservas de un cliente")
@@ -57,20 +55,18 @@ public class ReservaController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}/fecha/{fecha}")
-    public ResponseEntity<List<ReservaDTO>> obtenerPorFecha(@PathVariable Integer organizacionId,
-                                                            @PathVariable LocalDate fecha) {
-        return ResponseEntity.ok(reservaService.obtenerPorFecha(organizacionId, fecha));
+    @GetMapping("/fecha/{fecha}")
+    public ResponseEntity<List<ReservaDTO>> obtenerPorFecha(@PathVariable LocalDate fecha) {
+        return ResponseEntity.ok(reservaService.obtenerPorFecha(fecha));
     }
 
     @Operation(summary = "Obtener reservas por estado")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/organizacion/{organizacionId}/estado/{estado}")
-    public ResponseEntity<List<ReservaDTO>> obtenerPorEstado(@PathVariable Integer organizacionId,
-                                                             @PathVariable EstadoReserva estado) {
-        return ResponseEntity.ok(reservaService.obtenerPorEstado(organizacionId, estado));
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<List<ReservaDTO>> obtenerPorEstado(@PathVariable EstadoReserva estado) {
+        return ResponseEntity.ok(reservaService.obtenerPorEstado(estado));
     }
 
     @Operation(summary = "Obtener reserva por ID")
@@ -83,15 +79,14 @@ public class ReservaController {
         return ResponseEntity.ok(reservaService.obtenerPorId(id));
     }
 
-    @Operation(summary = "Crear una nueva reserva")
+    @Operation(summary = "Crear una nueva reserva para un cliente")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Reserva creada correctamente")
     })
-    @PostMapping("/organizacion/{organizacionId}/cliente/{clienteId}")
-    public ResponseEntity<ReservaDTO> crear(@PathVariable Integer organizacionId,
-                                            @PathVariable Integer clienteId,
+    @PostMapping("/cliente/{clienteId}")
+    public ResponseEntity<ReservaDTO> crear(@PathVariable Integer clienteId,
                                             @Valid @RequestBody ReservaDTO dto) {
-        return ResponseEntity.status(201).body(reservaService.crear(organizacionId, clienteId, dto));
+        return ResponseEntity.status(201).body(reservaService.crear(clienteId, dto));
     }
 
     @Operation(summary = "Actualizar estado de una reserva")
@@ -105,17 +100,15 @@ public class ReservaController {
         return ResponseEntity.ok(reservaService.actualizarEstado(id, estado));
     }
 
-    @Operation(summary = "Eliminar una reserva")
+    @Operation(summary = "Cancelar una reserva y todas sus líneas de detalle activas")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Reserva eliminada correctamente"),
+            @ApiResponse(responseCode = "204", description = "Reserva cancelada correctamente"),
             @ApiResponse(responseCode = "404", description = "Reserva no encontrada")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        if (reservaService.eliminar(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        reservaService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ===== LÍNEAS DE DETALLE =====
@@ -139,17 +132,15 @@ public class ReservaController {
         return ResponseEntity.status(201).body(reservaService.agregarDetalle(id, dto));
     }
 
-    @Operation(summary = "Eliminar detalle de una reserva")
+    @Operation(summary = "Cancelar una línea de detalle individual de una reserva")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Detalle eliminado correctamente"),
+            @ApiResponse(responseCode = "204", description = "Detalle cancelado correctamente"),
             @ApiResponse(responseCode = "404", description = "Detalle no encontrado")
     })
     @DeleteMapping("/{id}/detalles/{detalleId}")
     public ResponseEntity<Void> eliminarDetalle(@PathVariable Integer id,
                                                 @PathVariable Integer detalleId) {
-        if (reservaService.eliminarDetalle(detalleId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        reservaService.eliminarDetalle(detalleId);
+        return ResponseEntity.noContent().build();
     }
 }

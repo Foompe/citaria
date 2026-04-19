@@ -10,6 +10,8 @@ import java.time.LocalTime;
  * Línea de detalle de una reserva.
  * Representa un servicio concreto dentro de una reserva,
  * con el empleado asignado, franja horaria y precio aplicado.
+ * El campo estado permite cancelar líneas individualmente
+ * para estadísticas de importes cancelados.
  */
 @Entity
 @Table(name = "reserva_servicio")
@@ -52,6 +54,11 @@ public class ReservaServicio {
     @Min(1)
     @Column(nullable = false)
     private Integer cantidad = 1;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoReservaServicio estado = EstadoReservaServicio.activo;
 
     public Integer getId() {
         return id;
@@ -117,6 +124,14 @@ public class ReservaServicio {
         this.cantidad = cantidad;
     }
 
+    public EstadoReservaServicio getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoReservaServicio estado) {
+        this.estado = estado;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -140,6 +155,7 @@ public class ReservaServicio {
                 ", horaFin=" + horaFin +
                 ", precioUnitario=" + precioUnitario +
                 ", cantidad=" + cantidad +
+                ", estado=" + estado +
                 '}';
     }
 }

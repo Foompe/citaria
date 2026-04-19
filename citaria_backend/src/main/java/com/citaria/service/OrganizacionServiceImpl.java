@@ -13,12 +13,13 @@ import com.citaria.repository.ConfiguracionVisualDAO;
 import com.citaria.repository.OrganizacionDAO;
 import com.citaria.repository.OrganizacionHorarioCierreDAO;
 import com.citaria.repository.OrganizacionHorarioDAO;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.citaria.security.ContextoSeguridad;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Implementación del servicio de gestión de organizaciones.
@@ -27,23 +28,25 @@ import java.util.List;
 @Service
 public class OrganizacionServiceImpl implements OrganizacionService {
 
-    private OrganizacionDAO organizacionDAO;
-    private ConfiguracionVisualDAO configuracionVisualDAO;
-    private OrganizacionHorarioDAO organizacionHorarioDAO;
-    private OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO;
+    private final OrganizacionDAO organizacionDAO;
+    private final ConfiguracionVisualDAO configuracionVisualDAO;
+    private final OrganizacionHorarioDAO organizacionHorarioDAO;
+    private final OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO;
+    private final ContextoSeguridad contextoSeguridad;
 
-    @Autowired
     public OrganizacionServiceImpl(OrganizacionDAO organizacionDAO,
                                    ConfiguracionVisualDAO configuracionVisualDAO,
                                    OrganizacionHorarioDAO organizacionHorarioDAO,
-                                   OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO) {
+                                   OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO,
+                                   ContextoSeguridad contextoSeguridad) {
         this.organizacionDAO = organizacionDAO;
         this.configuracionVisualDAO = configuracionVisualDAO;
         this.organizacionHorarioDAO = organizacionHorarioDAO;
         this.organizacionHorarioCierreDAO = organizacionHorarioCierreDAO;
+        this.contextoSeguridad = contextoSeguridad;
     }
 
-    // ===== ORGANIZACIÓN =====
+    // ORGANIZACIÓN
 
     @Override
     @Transactional(readOnly = true)
@@ -65,10 +68,17 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         return convertirOrganizacionADTO(organizacion);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * El tokenRegistro se genera automáticamente con UUID — el admin no lo elige.
+     * Esto garantiza que sea único, opaco e impredecible.
+     */
     @Override
     @Transactional
     public OrganizacionDTO crear(OrganizacionDTO dto) {
         Organizacion organizacion = convertirOrganizacionAEntidad(dto);
+        organizacion.setTokenRegistro(UUID.randomUUID().toString().replace("-", ""));
         return convertirOrganizacionADTO(organizacionDAO.save(organizacion));
     }
 
@@ -92,7 +102,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         return false;
     }
 
-    // ===== CONFIGURACIÓN VISUAL =====
+    // CONFIGURACIÓN VISUAL
 
     @Override
     @Transactional(readOnly = true)
@@ -130,7 +140,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         return convertirConfiguracionADTO(configuracionVisualDAO.save(configuracion));
     }
 
-    // ===== HORARIOS =====
+    // HORARIOS
 
     @Override
     @Transactional(readOnly = true)
@@ -177,7 +187,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         return false;
     }
 
-    // ===== CIERRES =====
+    // CIERRES
 
     @Override
     @Transactional(readOnly = true)
@@ -214,7 +224,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         return false;
     }
 
-    // ===== CONVERSIONES =====
+    // CONVERSIONES
 
     private OrganizacionDTO convertirOrganizacionADTO(Organizacion organizacion) {
         OrganizacionDTO dto = new OrganizacionDTO();
@@ -227,6 +237,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         dto.setCodigoPostal(organizacion.getCodigoPostal());
         dto.setCiudad(organizacion.getCiudad());
         dto.setPais(organizacion.getPais());
+        dto.setTokenRegistro(organizacion.getTokenRegistro());
         return dto;
     }
 

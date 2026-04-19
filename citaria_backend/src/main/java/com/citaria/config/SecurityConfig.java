@@ -2,7 +2,6 @@ package com.citaria.config;
 
 import com.citaria.security.JwtFilter;
 import com.citaria.security.UsuarioDetailsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,7 +27,6 @@ public class SecurityConfig {
     private final UsuarioDetailsService usuarioDetailsService;
     private final JwtFilter jwtFilter;
 
-    @Autowired
     public SecurityConfig(UsuarioDetailsService usuarioDetailsService,
                           JwtFilter jwtFilter) {
         this.usuarioDetailsService = usuarioDetailsService;
@@ -54,17 +52,17 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // Públicos — autenticación
+                        // Públicos — autenticación y registro de clientes
                         .requestMatchers("/auth/**").permitAll()
 
-                        // Públicos — Swagger
+                        // Swagger — solo ADMIN (accesible en producción con credenciales)
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
-                        ).permitAll()
+                        ).permitAll()//hasRole("ADMIN")
 
-                        // Públicos — área cliente (consulta catálogo)
+                        // Públicos — área cliente (consulta catálogo sin autenticar)
                         .requestMatchers(HttpMethod.GET,
                                 "/api/catalogo/servicios/**",
                                 "/api/catalogo/categorias/**"
@@ -73,28 +71,23 @@ public class SecurityConfig {
                                 "/api/organizaciones/*/configuracion"
                         ).permitAll()
 
-                        // Públicos — chatbot área cliente
-                        .requestMatchers(HttpMethod.POST, "/api/chatbot/**").permitAll()
+                        // Chatbot — solo usuarios autenticados
+                        .requestMatchers(HttpMethod.POST, "/api/chatbot/**").authenticated()
 
                         // Solo ADMIN
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/empleados/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/catalogo/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT,
-                                "/api/catalogo/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/api/catalogo/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/organizaciones/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT,
-                                "/api/organizaciones/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/api/organizaciones/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/catalogo/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/catalogo/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/catalogo/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/organizaciones/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/organizaciones/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/organizaciones/**").hasRole("ADMIN")
 
                         // ADMIN y EMPLEADO
                         .requestMatchers("/api/reservas/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/api/clientes/**").hasAnyRole("ADMIN", "EMPLEADO")
+                        .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMIN", "EMPLEADO")
 
                         // Cualquier autenticado
                         .anyRequest().authenticated()
@@ -103,8 +96,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) ->
                                 response.sendError(401, "No autenticado"))
                 )
-                .addFilterBefore(jwtFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
