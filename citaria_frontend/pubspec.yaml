@@ -1,32 +1,40 @@
 name: citaria_frontend
-description: "A new Flutter project."
+description: "Aplicación de gestión de citas para negocios de servicios."
 
-publish_to: 'none' 
-
+publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
   sdk: ^3.10.1
 
-
 dependencies:
   flutter:
     sdk: flutter
 
-  flutter_riverpod: ^2.5.1
-  dio: ^5.4.0
-
-  
-  cupertino_icons: ^1.0.8
+  provider: ^6.1.0
+  shared_preferences: ^2.3.0
+  flutter_secure_storage: ^9.0.0
+  google_fonts: ^6.2.0
+  fl_chart: ^0.68.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
 
   flutter_lints: ^6.0.0
-
+  test: ^1.24.0
 
 flutter:
-
   uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon_citaria.png"
+  remove_alpha_ios: true
