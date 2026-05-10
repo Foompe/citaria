@@ -8,11 +8,12 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Repositorio para la entidad Empleado.
+ * Repositorio para Empleado.
  */
 @Repository
 public interface EmpleadoDAO extends JpaRepository<Empleado, Integer> {
 
     List<Empleado> findByOrganizacion(Organizacion organizacion);
+    List<Empleado> findByOrganizacionAndActivo(Organizacion organizacion, Boolean activo);
 
 }

@@ -1,44 +1,45 @@
 package com.citaria.service;
 
 import com.citaria.dto.UsuarioDTO;
+import com.citaria.exception.EmpleadoConReservasActivasException;
 import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import com.citaria.security.ContextoSeguridad;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Implementación del servicio de gestión de usuarios del sistema.
- * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    private static final String NOMBRE_ANONIMIZADO = "Anónimo";
-    private static final String DOMINIO_ANONIMIZADO = "@eliminado.local";
-
     private final UsuarioDAO usuarioDAO;
     private final ClienteDAO clienteDAO;
     private final EmpleadoDAO empleadoDAO;
+    private final ReservaDAO reservaDAO;
     private final PasswordEncoder passwordEncoder;
     private final ContextoSeguridad contextoSeguridad;
 
+    @Autowired
     public UsuarioServiceImpl(UsuarioDAO usuarioDAO,
                               ClienteDAO clienteDAO,
                               EmpleadoDAO empleadoDAO,
+                              ReservaDAO reservaDAO,
                               PasswordEncoder passwordEncoder,
                               ContextoSeguridad contextoSeguridad) {
         this.usuarioDAO = usuarioDAO;
         this.clienteDAO = clienteDAO;
         this.empleadoDAO = empleadoDAO;
+        this.reservaDAO = reservaDAO;
         this.passwordEncoder = passwordEncoder;
         this.contextoSeguridad = contextoSeguridad;
     }
@@ -71,20 +72,12 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioDTO obtenerPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Usuario usuario = usuarioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario con id " + id + " no encontrado"));
-        verificarTenencia(usuario, organizacion);
-        return convertirADTO(usuario);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public UsuarioDTO obtenerPorEmail(String email) {
-        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Usuario usuario = usuarioDAO.findByEmailAndOrganizacion(email, organizacion)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario no encontrado"));
+        Optional<Usuario> usuarioOptional = usuarioDAO.findById(id);
+        if (usuarioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Usuario con id " + id + " no encontrado");
+        }
+        Usuario usuario = usuarioOptional.get();
+        verificarPertenencia(usuario, organizacion);
         return convertirADTO(usuario);
     }
 
@@ -96,11 +89,25 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setOrganizacion(organizacion);
         if (dto.getClienteId() != null) {
             Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
-            cliente.ifPresent(usuario::setCliente);
+            if (cliente.isPresent()) {
+                Cliente clienteEncontrado = cliente.get();
+                if (!clienteEncontrado.getOrganizacion().getId().equals(organizacion.getId())) {
+                    throw new RecursoNoEncontradoException(
+                            "Cliente con id " + dto.getClienteId() + " no encontrado");
+                }
+                usuario.setCliente(clienteEncontrado);
+            }
         }
         if (dto.getEmpleadoId() != null) {
             Optional<Empleado> empleado = empleadoDAO.findById(dto.getEmpleadoId());
-            empleado.ifPresent(usuario::setEmpleado);
+            if (empleado.isPresent()) {
+                Empleado empleadoEncontrado = empleado.get();
+                if (!empleadoEncontrado.getOrganizacion().getId().equals(organizacion.getId())) {
+                    throw new RecursoNoEncontradoException(
+                            "Empleado con id " + dto.getEmpleadoId() + " no encontrado");
+                }
+                usuario.setEmpleado(empleadoEncontrado);
+            }
         }
         return convertirADTO(usuarioDAO.save(usuario));
     }
@@ -109,18 +116,34 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public UsuarioDTO actualizar(Integer id, UsuarioDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Usuario usuario = usuarioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario con id " + id + " no encontrado"));
-        verificarTenencia(usuario, organizacion);
+        Optional<Usuario> usuarioOptional = usuarioDAO.findById(id);
+        if (usuarioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Usuario con id " + id + " no encontrado");
+        }
+        Usuario usuario = usuarioOptional.get();
+        verificarPertenencia(usuario, organizacion);
         actualizarCamposUsuario(usuario, dto);
         if (dto.getClienteId() != null) {
             Optional<Cliente> cliente = clienteDAO.findById(dto.getClienteId());
-            cliente.ifPresent(usuario::setCliente);
+            if (cliente.isPresent()) {
+                Cliente clienteEncontrado = cliente.get();
+                if (!clienteEncontrado.getOrganizacion().getId().equals(organizacion.getId())) {
+                    throw new RecursoNoEncontradoException(
+                            "Cliente con id " + dto.getClienteId() + " no encontrado");
+                }
+                usuario.setCliente(clienteEncontrado);
+            }
         }
         if (dto.getEmpleadoId() != null) {
             Optional<Empleado> empleado = empleadoDAO.findById(dto.getEmpleadoId());
-            empleado.ifPresent(usuario::setEmpleado);
+            if (empleado.isPresent()) {
+                Empleado empleadoEncontrado = empleado.get();
+                if (!empleadoEncontrado.getOrganizacion().getId().equals(organizacion.getId())) {
+                    throw new RecursoNoEncontradoException(
+                            "Empleado con id " + dto.getEmpleadoId() + " no encontrado");
+                }
+                usuario.setEmpleado(empleadoEncontrado);
+            }
         }
         return convertirADTO(usuarioDAO.save(usuario));
     }
@@ -128,19 +151,36 @@ public class UsuarioServiceImpl implements UsuarioService {
     /**
      * {@inheritDoc}
      *
-     * El email se sustituye por un placeholder único con UUID para respetar
-     * la constraint UNIQUE(email, organizacion_id) sin dejar datos personales.
-     * El passwordHash se reemplaza por un hash de UUID aleatorio — inutilizable para login.
+     * Si el usuario es un empleado con reservas futuras activas lanza una exception.
+     * El front debe consultar GET /api/empleados/{id}/reservas-activas antes de proceder con la baja.
+     * <p>
+     * La cuenta de usuario se elimina físicamente, conservando las entidades
+     * históricas vinculadas con sus datos personales anonimizados.
      */
     @Override
     @Transactional
     public void eliminar(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Usuario usuario = usuarioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario con id " + id + " no encontrado"));
-        verificarTenencia(usuario, organizacion);
-        anonimizarUsuario(usuario);
+        Optional<Usuario> usuarioOptional = usuarioDAO.findById(id);
+        if (usuarioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Usuario con id " + id + " no encontrado");
+        }
+        Usuario usuario = usuarioOptional.get();
+        verificarPertenencia(usuario, organizacion);
+
+        if (usuario.getEmpleado() != null) {
+            List<EstadoReserva> estadosActivos = new ArrayList<>();
+            estadosActivos.add(EstadoReserva.pendiente);
+            estadosActivos.add(EstadoReserva.confirmada);
+
+            List<Reserva> reservasActivas = reservaDAO.findReservasFuturasActivasPorEmpleado(
+                    usuario.getEmpleado(), LocalDate.now(), estadosActivos);
+            if (!reservasActivas.isEmpty()) {
+                throw new EmpleadoConReservasActivasException();
+            }
+        }
+
+        usuarioDAO.delete(usuario);
         if (usuario.getCliente() != null) {
             anonimizarCliente(usuario.getCliente());
         }
@@ -149,38 +189,40 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
     }
 
-    // ===== ANONIMIZACIÓN =====
-
-    private void anonimizarUsuario(Usuario usuario) {
-        usuario.setEmail("anonimizado-" + UUID.randomUUID() + DOMINIO_ANONIMIZADO);
-        usuario.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        usuario.setActivo(false);
-    }
+    // ANONIMIZACIÓN
 
     private void anonimizarCliente(Cliente cliente) {
-        cliente.setNombre(NOMBRE_ANONIMIZADO);
+        cliente.setNombre(AnonimizacionConstantes.NOMBRE_ANONIMIZADO);
         cliente.setApellidos(null);
         cliente.setDni(null);
         cliente.setEmail(null);
         cliente.setTelefono(null);
         cliente.setNotas(null);
         cliente.setAnonimizadoAt(LocalDateTime.now());
+        clienteDAO.save(cliente);
     }
 
     private void anonimizarEmpleado(Empleado empleado) {
+        empleado.setNombre(AnonimizacionConstantes.NOMBRE_ANONIMIZADO);
+        empleado.setApellidos(null);
+        empleado.setEmail(null);
+        empleado.setTelefono(null);
         empleado.setActivo(false);
         empleado.setAnonimizadoAt(LocalDateTime.now());
+        empleadoDAO.save(empleado);
     }
 
-    // ===== VERIFICACIÓN DE TENENCIA =====
+    //MÉTODOS AUXILIARES
 
-    private void verificarTenencia(Usuario usuario, Organizacion organizacion) {
+    // VERIFICACIÓN DE PERTENENCIA
+
+    private void verificarPertenencia(Usuario usuario, Organizacion organizacion) {
         if (!usuario.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Usuario con id " + usuario.getId() + " no encontrado");
         }
     }
 
-    // ===== CONVERSIONES =====
+    // CONVERSIONES
 
     private UsuarioDTO convertirADTO(Usuario usuario) {
         UsuarioDTO dto = new UsuarioDTO();
@@ -205,7 +247,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setEmail(dto.getEmail());
         usuario.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         usuario.setRol(dto.getRol());
-        usuario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        if (dto.getActivo() != null) {
+            usuario.setActivo(dto.getActivo());
+        } else {
+            usuario.setActivo(true);
+        }
         usuario.setEmailVerificado(false);
         return usuario;
     }

@@ -1,9 +1,7 @@
 package com.citaria.model;
 
 /**
- * Estados posibles de una línea de detalle de una reserva.
- * Permite registrar cancelaciones individuales de servicios
- * para su uso en estadísticas e informes.
+ * Estados de cada uno de las lineas de la reserva
  */
 public enum EstadoReservaServicio {
     activo,

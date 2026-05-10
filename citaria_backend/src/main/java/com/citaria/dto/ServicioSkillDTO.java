@@ -1,7 +1,7 @@
 package com.citaria.dto;
 
 /**
- * DTO para la transferencia de datos de la relación servicio-skill.
+ * DTO de skill de servicio.
  */
 public class ServicioSkillDTO {
 

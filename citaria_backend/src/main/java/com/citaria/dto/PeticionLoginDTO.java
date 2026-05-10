@@ -4,16 +4,15 @@ import jakarta.validation.constraints.*;
 
 /**
  * DTO de entrada para el proceso de autenticación.
- * El organizacionId es necesario para identificar unívocamente al usuario
- * cuando el mismo email puede existir en múltiples organizaciones.
  */
-public class LoginRequestDTO {
+public class PeticionLoginDTO {
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email no tiene un formato válido")
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
     private String password;
 
     @NotNull(message = "El id de organización es obligatorio")

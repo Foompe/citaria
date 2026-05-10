@@ -1,30 +1,31 @@
 package com.citaria.service;
 
-import com.citaria.dto.EstadisticaEmpleadoDTO;
+import com.citaria.dto.EstadisticaItemDTO;
 import com.citaria.dto.EstadisticaMesDTO;
-import com.citaria.dto.EstadisticaServicioDTO;
-
+import com.citaria.dto.ResumenEstadisticaDTO;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Contrato del servicio de estadísticas.
- * Todas las métricas se filtran automáticamente por la organización
- * del usuario autenticado a través del contexto de seguridad.
+ * Servicio de estadísticas.
  */
 public interface EstadisticaService {
+
+    // Resumen general
+    ResumenEstadisticaDTO obtenerResumen();
 
     // Clientes
     List<EstadisticaMesDTO> clientesNuevosVsRecurrentes(LocalDate desde, LocalDate hasta);
     List<EstadisticaMesDTO> fidelizacionClientes(LocalDate desde, LocalDate hasta);
 
     // Empleados
-    List<EstadisticaEmpleadoDTO> reservasPorEmpleado(LocalDate desde, LocalDate hasta);
-    List<EstadisticaEmpleadoDTO> importePorEmpleado(LocalDate desde, LocalDate hasta);
-    List<EstadisticaEmpleadoDTO> cancelacionesPorEmpleado(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> reservasPorEmpleado(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> importePorEmpleado(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> cancelacionesPorEmpleado(LocalDate desde, LocalDate hasta);
 
     // Servicios
-    List<EstadisticaServicioDTO> serviciosMasSolicitados(LocalDate desde, LocalDate hasta);
-    List<EstadisticaServicioDTO> importePorServicio(LocalDate desde, LocalDate hasta);
-    List<EstadisticaServicioDTO> cancelacionesPorServicio(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> serviciosMasSolicitados(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> importePorServicio(LocalDate desde, LocalDate hasta);
+    List<EstadisticaItemDTO> cancelacionesPorServicio(LocalDate desde, LocalDate hasta);
+
 }

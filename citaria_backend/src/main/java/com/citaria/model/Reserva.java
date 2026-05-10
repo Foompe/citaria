@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
- * Reserva realizada por un cliente en una organización.
- * Una reserva puede contener múltiples servicios a través de ReservaServicio.
+ * Cada una de las reservas que puede tener un cliente, está compuesta por líneas de reserva.
  */
 @Entity
 @Table(name = "reserva")
@@ -17,27 +17,24 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoReserva estado = EstadoReserva.pendiente;
 
-    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
-    @Column(columnDefinition = "TEXT")
     private String notas;
+
+    private String motivo;
 
     public Integer getId() {
         return id;
@@ -87,16 +84,18 @@ public class Reserva {
         this.notas = notas;
     }
 
+    public String getMotivo() { return motivo; }
+    public void setMotivo(String motivo) { this.motivo = motivo; }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Reserva that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Reserva reserva)) return false;
+        return Objects.equals(id, reserva.id) && Objects.equals(organizacion, reserva.organizacion) && Objects.equals(cliente, reserva.cliente) && estado == reserva.estado && Objects.equals(fecha, reserva.fecha) && Objects.equals(notas, reserva.notas) && Objects.equals(motivo, reserva.motivo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, cliente, estado, fecha, notas, motivo);
     }
 
     @Override

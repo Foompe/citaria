@@ -6,17 +6,17 @@ import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import com.citaria.security.ContextoSeguridad;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementación del servicio de gestión de reservas.
- * Incluye gestión de líneas de detalle de cada reserva.
- * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 @Service
 public class ReservaServiceImpl implements ReservaService {
@@ -26,23 +26,30 @@ public class ReservaServiceImpl implements ReservaService {
     private final ClienteDAO clienteDAO;
     private final ServicioDAO servicioDAO;
     private final EmpleadoDAO empleadoDAO;
+    private final EmpleadoSkillDAO empleadoSkillDAO;
+    private final ServicioSkillDAO servicioSkillDAO;
     private final ContextoSeguridad contextoSeguridad;
 
+    @Autowired
     public ReservaServiceImpl(ReservaDAO reservaDAO,
                               ReservaServicioDAO reservaServicioDAO,
                               ClienteDAO clienteDAO,
                               ServicioDAO servicioDAO,
                               EmpleadoDAO empleadoDAO,
+                              EmpleadoSkillDAO empleadoSkillDAO,
+                              ServicioSkillDAO servicioSkillDAO,
                               ContextoSeguridad contextoSeguridad) {
         this.reservaDAO = reservaDAO;
         this.reservaServicioDAO = reservaServicioDAO;
         this.clienteDAO = clienteDAO;
         this.servicioDAO = servicioDAO;
         this.empleadoDAO = empleadoDAO;
+        this.empleadoSkillDAO = empleadoSkillDAO;
+        this.servicioSkillDAO = servicioSkillDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
 
-    // ===== RESERVA =====
+    // RESERVA
 
     @Override
     @Transactional(readOnly = true)
@@ -59,11 +66,18 @@ public class ReservaServiceImpl implements ReservaService {
     @Override
     @Transactional(readOnly = true)
     public List<ReservaDTO> obtenerPorCliente(Integer clienteId) {
-        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Cliente cliente = clienteDAO.findById(clienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cliente con id " + clienteId + " no encontrado"));
-        verificarTenenciaCliente(cliente, organizacion);
+        Usuario usuario = contextoSeguridad.obtenerUsuarioActual();
+        Organizacion organizacion = usuario.getOrganizacion();
+        Optional<Cliente> clienteOptional = clienteDAO.findById(clienteId);
+        if (clienteOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Cliente con id " + clienteId + " no encontrado");
+        }
+        Cliente cliente = clienteOptional.get();
+        verificarPertenenciaCliente(cliente, organizacion);
+        if (usuario.getRol() == RolUsuario.CLIENTE
+                && (usuario.getCliente() == null || !usuario.getCliente().getId().equals(clienteId))) {
+            throw new RecursoNoEncontradoException("Cliente con id " + clienteId + " no encontrado");
+        }
         List<Reserva> reservas = reservaDAO.findByCliente(cliente);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
         for (Reserva reserva : reservas) {
@@ -98,167 +112,390 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ReservaDTO> obtenerPorFechaYEstados(LocalDate fecha, List<EstadoReserva> estados) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        List<Reserva> reservas;
+        if (estados == null || estados.isEmpty()) {
+            reservas = reservaDAO.findByOrganizacionAndFecha(organizacion, fecha);
+        } else {
+            reservas = reservaDAO.findByOrganizacionAndFechaAndEstadoIn(organizacion, fecha, estados);
+        }
+        List<ReservaDTO> reservasDTO = new ArrayList<>();
+        for (Reserva reserva : reservas) {
+            reservasDTO.add(convertirReservaADTO(reserva));
+        }
+        return reservasDTO;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ReservaDTO obtenerPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Reserva reserva = reservaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Reserva con id " + id + " no encontrada"));
-        verificarTenenciaReserva(reserva, organizacion);
+        Optional<Reserva> reservaOptional = reservaDAO.findById(id);
+        if (reservaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Reserva con id " + id + " no encontrada");
+        }
+        Reserva reserva = reservaOptional.get();
+        verificarPertenenciaReserva(reserva, organizacion);
         return convertirReservaADTO(reserva);
     }
 
+    /**
+     * Si no se indica empleadoId en el DTO, el sistema asigna automáticamente
+     * al empleado con menos reservas ese día que cumpla los requisitos de skill.
+     */
     @Override
     @Transactional
     public ReservaDTO crear(Integer clienteId, ReservaDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Cliente cliente = clienteDAO.findById(clienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Cliente con id " + clienteId + " no encontrado"));
-        verificarTenenciaCliente(cliente, organizacion);
-        Reserva reserva = convertirReservaAEntidad(dto);
+        Optional<Cliente> clienteOptional = clienteDAO.findById(clienteId);
+        if (clienteOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Cliente con id " + clienteId + " no encontrado");
+        }
+        Cliente cliente = clienteOptional.get();
+        verificarPertenenciaCliente(cliente, organizacion);
+
+        if (dto.getServicioIds() == null || dto.getServicioIds().isEmpty()) {
+            throw new IllegalStateException("Debe seleccionar al menos un servicio");
+        }
+        if (dto.getHoraInicio() == null) {
+            throw new IllegalStateException("La hora de inicio es obligatoria");
+        }
+
+        // Resolver empleado — manual o automático
+        Empleado empleado = buscarEmpleadoDisponible(dto, organizacion);
+
+        List<Servicio> servicios = servicioDAO.findAllById(dto.getServicioIds());
+        LocalTime horaFinReserva = dto.getHoraInicio();
+        for (Servicio servicio : servicios) {
+            verificarPertenenciaServicio(servicio, organizacion);
+            if (!Boolean.TRUE.equals(servicio.getActivo())) {
+                throw new RecursoNoEncontradoException("Servicio con id " + servicio.getId() + " no encontrado");
+            }
+            horaFinReserva = horaFinReserva.plusMinutes(servicio.getDuracionMinutos());
+        }
+
+        long solapamientos = reservaServicioDAO.contarSolapamientos(
+                empleado.getId(), dto.getFecha(), dto.getHoraInicio(), horaFinReserva);
+        if (solapamientos > 0) {
+            throw new IllegalStateException("No hay disponibilidad para el horario solicitado");
+        }
+
+        // Crear cabecera de reserva
+        Reserva reserva = crearCabeceraReserva(dto, organizacion, cliente);
+        reserva = reservaDAO.save(reserva);
+
+        // Crear líneas de detalle acumulando duraciones — una sola query para todos los servicios
+        LocalTime horaActual = dto.getHoraInicio();
+        for (Servicio servicio : servicios) {
+            LocalTime horaFinServicio = horaActual.plusMinutes(servicio.getDuracionMinutos());
+            ReservaServicio detalle = crearDetalleReserva(reserva, servicio, empleado, horaActual, horaFinServicio);
+            reservaServicioDAO.save(detalle);
+            horaActual = horaFinServicio;
+        }
+
+        return convertirReservaADTO(reserva);
+    }
+
+    // MÉTODOS AUXILIARES
+
+    /**
+     * Busca el empleado para la reserva.
+     */
+    private Empleado buscarEmpleadoDisponible(ReservaDTO dto, Organizacion organizacion) {
+        if (dto.getEmpleadoId() != null) {
+            Optional<Empleado> empleadoOptional = empleadoDAO.findById(dto.getEmpleadoId());
+            if (empleadoOptional.isEmpty()) {
+                throw new RecursoNoEncontradoException("Empleado con id " + dto.getEmpleadoId() + " no encontrado");
+            }
+            Empleado empleado = empleadoOptional.get();
+            verificarPertenenciaEmpleado(empleado, organizacion);
+            return empleado;
+        }
+
+        // Asignación automática — menor carga entre empleados válidos
+        List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(dto.getServicioIds());
+        List<Empleado> candidatos = empleadoDAO.findByOrganizacionAndActivo(organizacion, true);
+
+        Empleado seleccionado = null;
+        long menorCarga = Long.MAX_VALUE;
+
+        for (Empleado candidato : candidatos) {
+            if (!skillsRequeridas.isEmpty()) {
+                long skillsQueElEmpleadoTiene = empleadoSkillDAO
+                        .contarSkillsQueCoinciden(candidato, skillsRequeridas);
+                if (skillsQueElEmpleadoTiene < skillsRequeridas.size()) {
+                    continue;
+                }
+            }
+            long carga = reservaServicioDAO.contarReservasPorEmpleadoYFecha(candidato.getId(), dto.getFecha());
+            if (carga < menorCarga) {
+                menorCarga = carga;
+                seleccionado = candidato;
+            }
+        }
+
+        if (seleccionado == null) {
+            throw new IllegalStateException("No hay ningún empleado disponible con las skills requeridas para esa fecha");
+        }
+        return seleccionado;
+    }
+
+    /**
+     * Construye la cabecera de una reserva a partir del DTO y las entidades resueltas.
+     *
+     * @param dto          datos de la reserva
+     * @param organizacion organización de la reserva
+     * @param cliente      cliente de la reserva
+     * @return reserva
+     */
+    private Reserva crearCabeceraReserva(ReservaDTO dto,
+                                         Organizacion organizacion,
+                                         Cliente cliente) {
+        Reserva reserva = new Reserva();
         reserva.setOrganizacion(organizacion);
         reserva.setCliente(cliente);
-        return convertirReservaADTO(reservaDAO.save(reserva));
+        reserva.setFecha(dto.getFecha());
+        reserva.setNotas(dto.getNotas());
+        reserva.setEstado(EstadoReserva.pendiente);
+        return reserva;
+    }
+
+    /**
+     * Construye una línea de detalle de reserva.
+     *
+     * @param reserva    cabecera de la reserva
+     * @param servicio   servicio de la línea
+     * @param empleado   empleado asignado
+     * @param horaInicio hora de inicio de la línea
+     * @param horaFin    hora de fin de la línea
+     * @return detalle listo para persistir
+     */
+    private ReservaServicio crearDetalleReserva(Reserva reserva,
+                                                Servicio servicio,
+                                                Empleado empleado,
+                                                LocalTime horaInicio,
+                                                LocalTime horaFin) {
+        ReservaServicio detalle = new ReservaServicio();
+        detalle.setReserva(reserva);
+        detalle.setServicio(servicio);
+        detalle.setEmpleado(empleado);
+        detalle.setHoraInicio(horaInicio);
+        detalle.setHoraFin(horaFin);
+        detalle.setPrecioUnitario(servicio.getPrecio());
+        detalle.setCantidad(1);
+        detalle.setEstado(EstadoReservaServicio.activo);
+        return detalle;
     }
 
     @Override
     @Transactional
     public ReservaDTO actualizarEstado(Integer id, EstadoReserva estado) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Reserva reserva = reservaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Reserva con id " + id + " no encontrada"));
-        verificarTenenciaReserva(reserva, organizacion);
+        Optional<Reserva> reservaOptional = reservaDAO.findById(id);
+        if (reservaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Reserva con id " + id + " no encontrada");
+        }
+        Reserva reserva = reservaOptional.get();
+        verificarPertenenciaReserva(reserva, organizacion);
         reserva.setEstado(estado);
         return convertirReservaADTO(reservaDAO.save(reserva));
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * Cancela las líneas activas via JPQL bulk update antes de cancelar la cabecera,
-     * todo en la misma transacción para garantizar consistencia.
-     */
     @Override
     @Transactional
-    public void eliminar(Integer id) {
+    public void cancelar(Integer id, String motivo) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Reserva reserva = reservaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Reserva con id " + id + " no encontrada"));
-        verificarTenenciaReserva(reserva, organizacion);
-        reservaServicioDAO.cancelarDetallesPorReserva(reserva, EstadoReservaServicio.cancelado);
+        Optional<Reserva> reservaOptional = reservaDAO.findById(id);
+        if (reservaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Reserva con id " + id + " no encontrada");
+        }
+        Reserva reserva = reservaOptional.get();
+        verificarPertenenciaReserva(reserva, organizacion);
+
+        Usuario usuario = contextoSeguridad.obtenerUsuarioActual();
+        if (usuario.getRol() == RolUsuario.CLIENTE) {
+            if (!reserva.getCliente().getId().equals(contextoSeguridad.obtenerClienteIdActual())) {
+                throw new RecursoNoEncontradoException("Reserva con id " + id + " no encontrada");
+            }
+            if (reserva.getEstado() != EstadoReserva.pendiente
+                    && reserva.getEstado() != EstadoReserva.confirmada) {
+                throw new IllegalStateException("Solo puedes cancelar reservas en estado pendiente o confirmada");
+            }
+        }
+
         reserva.setEstado(EstadoReserva.cancelada);
+        reserva.setMotivo(motivo);
+        reservaServicioDAO.cancelarDetallesPorReserva(reserva, EstadoReservaServicio.cancelado);
     }
 
-    // ===== LÍNEAS DE DETALLE =====
+    // LÍNEAS DE RESERVA
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReservaServicioDTO> obtenerDetallesPorReserva(Integer reservaId) {
+    public List<ReservaServicioDTO> obtenerLineasPorReserva(Integer reservaId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Reserva reserva = reservaDAO.findById(reservaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Reserva con id " + reservaId + " no encontrada"));
-        verificarTenenciaReserva(reserva, organizacion);
+        Optional<Reserva> reservaOptional = reservaDAO.findById(reservaId);
+        if (reservaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Reserva con id " + reservaId + " no encontrada");
+        }
+        Reserva reserva = reservaOptional.get();
+        verificarPertenenciaReserva(reserva, organizacion);
         List<ReservaServicio> detalles = reservaServicioDAO.findByReserva(reserva);
         List<ReservaServicioDTO> detallesDTO = new ArrayList<>();
         for (ReservaServicio detalle : detalles) {
-            detallesDTO.add(convertirDetalleADTO(detalle));
+            detallesDTO.add(convertirLineaADTO(detalle));
         }
         return detallesDTO;
     }
 
     @Override
     @Transactional
-    public ReservaServicioDTO agregarDetalle(Integer reservaId, ReservaServicioDTO dto) {
+    public ReservaServicioDTO agregarLineaAReserva(Integer reservaId, ReservaServicioDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Reserva reserva = reservaDAO.findById(reservaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Reserva con id " + reservaId + " no encontrada"));
-        verificarTenenciaReserva(reserva, organizacion);
-        Servicio servicio = servicioDAO.findById(dto.getServicioId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + dto.getServicioId() + " no encontrado"));
-        Empleado empleado = empleadoDAO.findById(dto.getEmpleadoId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Empleado con id " + dto.getEmpleadoId() + " no encontrado"));
-        ReservaServicio detalle = convertirDetalleAEntidad(dto);
+        Optional<Reserva> reservaOptional = reservaDAO.findById(reservaId);
+        if (reservaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Reserva con id " + reservaId + " no encontrada");
+        }
+        Reserva reserva = reservaOptional.get();
+        verificarPertenenciaReserva(reserva, organizacion);
+        Optional<Servicio> servicioOptional = servicioDAO.findById(dto.getServicioId());
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + dto.getServicioId() + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPertenenciaServicio(servicio, organizacion);
+        Optional<Empleado> empleadoOptional = empleadoDAO.findById(dto.getEmpleadoId());
+        if (empleadoOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Empleado con id " + dto.getEmpleadoId() + " no encontrado");
+        }
+        Empleado empleado = empleadoOptional.get();
+        verificarPertenenciaEmpleado(empleado, organizacion);
+        ReservaServicio detalle = convertirLineaAEntidad(dto);
         detalle.setReserva(reserva);
         detalle.setServicio(servicio);
         detalle.setEmpleado(empleado);
-        return convertirDetalleADTO(reservaServicioDAO.save(detalle));
+        return convertirLineaADTO(reservaServicioDAO.save(detalle));
     }
 
     @Override
     @Transactional
-    public void eliminarDetalle(Integer id) {
-        ReservaServicio detalle = reservaServicioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Línea de detalle con id " + id + " no encontrada"));
+    public void eliminarLinea(Integer reservaId, Integer detalleId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Optional<ReservaServicio> detalleOptional = reservaServicioDAO.findById(detalleId);
+        if (detalleOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Línea de detalle con id " + detalleId + " no encontrada");
+        }
+        ReservaServicio detalle = detalleOptional.get();
+        verificarPertenenciaReserva(detalle.getReserva(), organizacion);
+        if (!detalle.getReserva().getId().equals(reservaId)) {
+            throw new RecursoNoEncontradoException(
+                    "Línea de detalle con id " + detalleId + " no encontrada");
+        }
         detalle.setEstado(EstadoReservaServicio.cancelado);
+        reservaServicioDAO.save(detalle);
     }
 
-    // ===== VERIFICACIÓN DE TENENCIA =====
+    @Override
+    @Transactional
+    public ReservaServicioDTO reasignarEmpleadoDetalle(Integer reservaId, Integer detalleId, Integer nuevoEmpleadoId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Optional<ReservaServicio> detalleOptional = reservaServicioDAO.findById(detalleId);
+        if (detalleOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Línea de detalle con id " + detalleId + " no encontrada");
+        }
+        ReservaServicio detalle = detalleOptional.get();
+        verificarPertenenciaReserva(detalle.getReserva(), organizacion);
+        if (!detalle.getReserva().getId().equals(reservaId)) {
+            throw new RecursoNoEncontradoException(
+                    "Línea de detalle con id " + detalleId + " no encontrada");
+        }
+        Optional<Empleado> empleadoOptional = empleadoDAO.findById(nuevoEmpleadoId);
+        if (empleadoOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Empleado con id " + nuevoEmpleadoId + " no encontrado");
+        }
+        Empleado nuevoEmpleado = empleadoOptional.get();
+        verificarPertenenciaEmpleado(nuevoEmpleado, organizacion);
+        detalle.setEmpleado(nuevoEmpleado);
+        return convertirLineaADTO(reservaServicioDAO.save(detalle));
+    }
 
-    private void verificarTenenciaReserva(Reserva reserva, Organizacion organizacion) {
+    //MÉTODOS AUXILIARES
+
+    // VERIFICACIÓN DE PERTENENCIA
+
+    private void verificarPertenenciaReserva(Reserva reserva, Organizacion organizacion) {
         if (!reserva.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Reserva con id " + reserva.getId() + " no encontrada");
         }
     }
 
-    private void verificarTenenciaCliente(Cliente cliente, Organizacion organizacion) {
+    private void verificarPertenenciaCliente(Cliente cliente, Organizacion organizacion) {
         if (!cliente.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Cliente con id " + cliente.getId() + " no encontrado");
         }
     }
 
-    // ===== CONVERSIONES =====
+    private void verificarPertenenciaEmpleado(Empleado empleado, Organizacion organizacion) {
+        if (!empleado.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Empleado con id " + empleado.getId() + " no encontrado");
+        }
+    }
+
+    private void verificarPertenenciaServicio(Servicio servicio, Organizacion organizacion) {
+        if (!servicio.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Servicio con id " + servicio.getId() + " no encontrado");
+        }
+    }
+
+    // CONVERSIONES
 
     private ReservaDTO convertirReservaADTO(Reserva reserva) {
         ReservaDTO dto = new ReservaDTO();
         dto.setId(reserva.getId());
         dto.setOrganizacionId(reserva.getOrganizacion().getId());
         dto.setClienteId(reserva.getCliente().getId());
-        dto.setNombreCliente(reserva.getCliente().getNombre() + " " +
-                (reserva.getCliente().getApellidos() != null ? reserva.getCliente().getApellidos() : ""));
+        String apellidos = reserva.getCliente().getApellidos();
+        if (apellidos != null) {
+            dto.setNombreCliente(reserva.getCliente().getNombre() + " " + apellidos);
+        } else {
+            dto.setNombreCliente(reserva.getCliente().getNombre());
+        }
         dto.setEstado(reserva.getEstado());
         dto.setFecha(reserva.getFecha());
         dto.setNotas(reserva.getNotas());
+        dto.setMotivo(reserva.getMotivo());
         return dto;
     }
 
-    private Reserva convertirReservaAEntidad(ReservaDTO dto) {
-        Reserva reserva = new Reserva();
-        reserva.setFecha(dto.getFecha());
-        reserva.setNotas(dto.getNotas());
-        reserva.setEstado(dto.getEstado() != null ? dto.getEstado() : EstadoReserva.pendiente);
-        return reserva;
-    }
-
-    private ReservaServicioDTO convertirDetalleADTO(ReservaServicio detalle) {
+    private ReservaServicioDTO convertirLineaADTO(ReservaServicio linea) {
         ReservaServicioDTO dto = new ReservaServicioDTO();
-        dto.setId(detalle.getId());
-        dto.setReservaId(detalle.getReserva().getId());
-        dto.setServicioId(detalle.getServicio().getId());
-        dto.setNombreServicio(detalle.getServicio().getNombre());
-        dto.setEmpleadoId(detalle.getEmpleado().getId());
-        dto.setNombreEmpleado(detalle.getEmpleado().getNombre() + " " + detalle.getEmpleado().getApellidos());
-        dto.setHoraInicio(detalle.getHoraInicio());
-        dto.setHoraFin(detalle.getHoraFin());
-        dto.setPrecioUnitario(detalle.getPrecioUnitario());
-        dto.setCantidad(detalle.getCantidad());
-        dto.setEstado(detalle.getEstado());
+        dto.setId(linea.getId());
+        dto.setReservaId(linea.getReserva().getId());
+        dto.setServicioId(linea.getServicio().getId());
+        dto.setNombreServicio(linea.getServicio().getNombre());
+        dto.setEmpleadoId(linea.getEmpleado().getId());
+        dto.setNombreEmpleado(linea.getEmpleado().getNombre() + " " + linea.getEmpleado().getApellidos());
+        dto.setHoraInicio(linea.getHoraInicio());
+        dto.setHoraFin(linea.getHoraFin());
+        dto.setPrecioUnitario(linea.getPrecioUnitario());
+        dto.setCantidad(linea.getCantidad());
+        dto.setEstado(linea.getEstado());
         return dto;
     }
 
-    private ReservaServicio convertirDetalleAEntidad(ReservaServicioDTO dto) {
-        ReservaServicio detalle = new ReservaServicio();
-        detalle.setHoraInicio(dto.getHoraInicio());
-        detalle.setHoraFin(dto.getHoraFin());
-        detalle.setPrecioUnitario(dto.getPrecioUnitario());
-        detalle.setCantidad(dto.getCantidad() != null ? dto.getCantidad() : 1);
-        detalle.setEstado(EstadoReservaServicio.activo);
-        return detalle;
+    private ReservaServicio convertirLineaAEntidad(ReservaServicioDTO dto) {
+        ReservaServicio linea = new ReservaServicio();
+        linea.setHoraInicio(dto.getHoraInicio());
+        linea.setHoraFin(dto.getHoraFin());
+        linea.setPrecioUnitario(dto.getPrecioUnitario());
+        if (dto.getCantidad() != null) {
+            linea.setCantidad(dto.getCantidad());
+        } else {
+            linea.setCantidad(1);
+        }
+        linea.setEstado(EstadoReservaServicio.activo);
+        return linea;
     }
+
 }

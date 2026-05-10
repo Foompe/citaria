@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
- * Servicio ofrecido por una organización.
- * Pertenece a una categoría opcional y puede requerir skills específicas.
+ * Cada uno de los servicios que ofrece una organizacion
  */
 @Entity
 @Table(name = "servicio")
@@ -17,7 +17,6 @@ public class Servicio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
@@ -26,30 +25,20 @@ public class Servicio {
     @JoinColumn(name = "categoria_id")
     private Categoria categoria;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Size(max = 500)
     @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    @Digits(integer = 8, fraction = 2)
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
-    @NotNull
-    @Min(1)
-    @Column(name = "duracion_minutos", nullable = false, columnDefinition = "SMALLINT")
+    @Column(name = "duracion_minutos", nullable = false)
     private Integer duracionMinutos;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -127,14 +116,13 @@ public class Servicio {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Servicio that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Servicio servicio)) return false;
+        return Objects.equals(id, servicio.id) && Objects.equals(organizacion, servicio.organizacion) && Objects.equals(categoria, servicio.categoria) && Objects.equals(nombre, servicio.nombre) && Objects.equals(descripcion, servicio.descripcion) && Objects.equals(imagenUrl, servicio.imagenUrl) && Objects.equals(precio, servicio.precio) && Objects.equals(duracionMinutos, servicio.duracionMinutos) && Objects.equals(activo, servicio.activo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, categoria, nombre, descripcion, imagenUrl, precio, duracionMinutos, activo);
     }
 
     @Override

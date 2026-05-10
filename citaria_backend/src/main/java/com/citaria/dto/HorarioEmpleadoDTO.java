@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalTime;
 
 /**
- * DTO para la transferencia de datos del horario de un empleado.
+ * DTO del horario de un empleado.
  */
 public class HorarioEmpleadoDTO {
 

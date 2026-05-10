@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
- * Festivos y cierres puntuales de una organización.
- * La combinación organizacion_id + fecha es única.
+ * Días que cierra la organización en el año
  */
 @Entity
 @Table(name = "organizacion_horario_cierre")
@@ -17,16 +17,13 @@ public class OrganizacionHorarioCierre {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotNull
     @Column(nullable = false)
     private LocalDate fecha;
 
-    @Size(max = 100)
     @Column(length = 100)
     private String motivo;
 
@@ -64,14 +61,13 @@ public class OrganizacionHorarioCierre {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof OrganizacionHorarioCierre that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(organizacion, that.organizacion) && Objects.equals(fecha, that.fecha) && Objects.equals(motivo, that.motivo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, fecha, motivo);
     }
 
     @Override

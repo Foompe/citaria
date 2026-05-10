@@ -1,7 +1,7 @@
 package com.citaria.model;
 
 /**
- * Estados posibles de una reserva.
+ * Estados de una reserva.
  */
 public enum EstadoReserva {
     pendiente,

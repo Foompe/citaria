@@ -3,24 +3,21 @@ package com.citaria.controller;
 import com.citaria.dto.EmpleadoDTO;
 import com.citaria.dto.EmpleadoSkillDTO;
 import com.citaria.dto.HorarioEmpleadoDTO;
+import com.citaria.dto.ReservaDTO;
 import com.citaria.service.EmpleadoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Controlador REST para la gestión de empleados.
- * Incluye endpoints de horarios y skills del empleado.
- * La organización se resuelve automáticamente desde el token JWT.
- * La eliminación de un empleado se gestiona exclusivamente a través de
- * DELETE /api/usuarios/{id}, que aplica la anonimización completa
- * de datos personales en una única transacción.
+ * Controlador REST para la gestión de empleados, sus horarios y skills.
  */
 @Tag(name = "Empleados", description = "Gestión de empleados, horarios y skills")
 @RestController
@@ -29,6 +26,7 @@ public class EmpleadoController {
 
     private final EmpleadoService empleadoService;
 
+    @Autowired
     public EmpleadoController(EmpleadoService empleadoService) {
         this.empleadoService = empleadoService;
     }
@@ -69,9 +67,32 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id,
-                                                  @Valid @RequestBody EmpleadoDTO dto) {
+    public ResponseEntity<EmpleadoDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody EmpleadoDTO dto) {
         return ResponseEntity.ok(empleadoService.actualizar(id, dto));
+    }
+
+    @Operation(summary = "Subir foto de un empleado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Imagen subida correctamente"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado"),
+            @ApiResponse(responseCode = "502", description = "Error al subir la imagen")
+    })
+    @PostMapping("/{id}/imagen")
+    public ResponseEntity<Void> subirFotoEmpleado(@PathVariable Integer id, @RequestParam MultipartFile archivo) {
+        empleadoService.subirFotoEmpleado(id, archivo);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Obtener reservas futuras activas de un empleado",
+            description = "Devuelve reservas en estado pendiente o confirmada. " +
+                    "Debe consultarse antes de dar de baja al empleado para gestionar la reasignación.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
+    })
+    @GetMapping("/{id}/reservas-activas")
+    public ResponseEntity<List<ReservaDTO>> obtenerReservasActivas(@PathVariable Integer id) {
+        return ResponseEntity.ok(empleadoService.obtenerReservasActivas(id));
     }
 
     // HORARIOS
@@ -104,7 +125,7 @@ public class EmpleadoController {
     public ResponseEntity<HorarioEmpleadoDTO> actualizarHorario(@PathVariable Integer id,
                                                                 @PathVariable Integer horarioId,
                                                                 @Valid @RequestBody HorarioEmpleadoDTO dto) {
-        return ResponseEntity.ok(empleadoService.actualizarHorario(horarioId, dto));
+        return ResponseEntity.ok(empleadoService.actualizarHorario(id, horarioId, dto));
     }
 
     @Operation(summary = "Eliminar horario de un empleado")
@@ -115,10 +136,8 @@ public class EmpleadoController {
     @DeleteMapping("/{id}/horarios/{horarioId}")
     public ResponseEntity<Void> eliminarHorario(@PathVariable Integer id,
                                                 @PathVariable Integer horarioId) {
-        if (empleadoService.eliminarHorario(horarioId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        empleadoService.eliminarHorario(id, horarioId);
+        return ResponseEntity.noContent().build();
     }
 
     // SKILLS
@@ -137,8 +156,7 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "201", description = "Skill asignada correctamente")
     })
     @PostMapping("/{id}/skills/{skillId}")
-    public ResponseEntity<EmpleadoSkillDTO> asignarSkill(@PathVariable Integer id,
-                                                         @PathVariable Integer skillId) {
+    public ResponseEntity<EmpleadoSkillDTO> asignarSkill(@PathVariable Integer id, @PathVariable Integer skillId) {
         return ResponseEntity.status(201).body(empleadoService.asignarSkill(id, skillId));
     }
 
@@ -148,11 +166,8 @@ public class EmpleadoController {
             @ApiResponse(responseCode = "404", description = "Skill no encontrada")
     })
     @DeleteMapping("/{id}/skills/{skillId}")
-    public ResponseEntity<Void> eliminarSkill(@PathVariable Integer id,
-                                              @PathVariable Integer skillId) {
-        if (empleadoService.eliminarSkill(id, skillId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Void> eliminarSkill(@PathVariable Integer id, @PathVariable Integer skillId) {
+        empleadoService.eliminarSkill(id, skillId);
+        return ResponseEntity.noContent().build();
     }
 }

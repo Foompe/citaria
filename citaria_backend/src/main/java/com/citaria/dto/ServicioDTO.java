@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 /**
- * DTO para la transferencia de datos de un servicio.
+ * DTO de un servicio.
  */
 public class ServicioDTO {
 

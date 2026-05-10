@@ -4,9 +4,6 @@ import jakarta.validation.constraints.*;
 
 /**
  * DTO de entrada para el registro de un nuevo cliente.
- * El tokenRegistro identifica la organización de forma opaca — el cliente
- * lo obtiene del enlace o QR que le proporciona la empresa, sin necesidad
- * de conocer ningún identificador interno del sistema.
  */
 public class RegistroRequestDTO {
 

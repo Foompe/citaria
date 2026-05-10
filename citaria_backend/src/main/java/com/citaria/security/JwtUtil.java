@@ -3,38 +3,34 @@ package com.citaria.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
- * Utilidad para la generación y validación de tokens JWT.
+ * Generación y validación de tokens JWT.
  * El token incluye email, rol y organizacionId del usuario.
- * La inclusión del organizacionId en el token evita una consulta
- * a BD en cada petición para resolver la organización del usuario.
  */
 @Component
 public class JwtUtil {
 
     private static final String CLAIM_ROL = "rol";
     private static final String CLAIM_ORGANIZACION_ID = "organizacionId";
-    private static final long EXPIRACION_MS = 3_600_000L;
-
     private final SecretKey secretKey;
+    private final long expiracionMs;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret) {
+    @Autowired
+    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration-ms}") long expiracionMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expiracionMs = expiracionMs;
     }
 
     /**
      * Genera un token JWT firmado con email, rol y organizacionId del usuario.
      *
-     * @param email          email del usuario
-     * @param rol            rol del usuario
-     * @param organizacionId id de la organización a la que pertenece
      * @return token JWT firmado
      */
     public String generateToken(String email, String rol, Integer organizacionId) {
@@ -43,7 +39,7 @@ public class JwtUtil {
                 .claim(CLAIM_ROL, rol)
                 .claim(CLAIM_ORGANIZACION_ID, organizacionId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRACION_MS))
+                .expiration(new Date(System.currentTimeMillis() + expiracionMs))
                 .signWith(secretKey)
                 .compact();
     }
@@ -64,6 +60,7 @@ public class JwtUtil {
      * @param token token JWT
      * @return rol del usuario
      */
+    //TODO: Revisar si se borra
     public String getRol(String token) {
         return getClaims(token).get(CLAIM_ROL, String.class);
     }

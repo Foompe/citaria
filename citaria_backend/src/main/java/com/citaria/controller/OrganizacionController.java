@@ -4,6 +4,7 @@ import com.citaria.dto.ConfiguracionVisualDTO;
 import com.citaria.dto.OrganizacionDTO;
 import com.citaria.dto.OrganizacionHorarioCierreDTO;
 import com.citaria.dto.OrganizacionHorarioDTO;
+import com.citaria.dto.OrganizacionPublicaDTO;
 import com.citaria.service.OrganizacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,8 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST para la gestión de organizaciones.
- * Incluye endpoints de horarios, cierres y configuración visual.
+ * Controlador REST para la gestión de organizaciones, sus horarios, cierres y configuración visual.
  */
 @Tag(name = "Organizaciones", description = "Gestión de organizaciones, horarios, cierres y configuración visual")
 @RestController
@@ -32,15 +32,15 @@ public class OrganizacionController {
         this.organizacionService = organizacionService;
     }
 
-    // ===== ORGANIZACIÓN =====
+    // ORGANIZACIÓN
 
-    @Operation(summary = "Obtener todas las organizaciones")
+    @Operation(summary = "Obtener organizaciones públicas")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping
-    public ResponseEntity<List<OrganizacionDTO>> obtenerTodas() {
-        return ResponseEntity.ok(organizacionService.obtenerTodas());
+    @GetMapping("/publico")
+    public ResponseEntity<List<OrganizacionPublicaDTO>> obtenerPublicas() {
+        return ResponseEntity.ok(organizacionService.obtenerPublicas());
     }
 
     @Operation(summary = "Obtener organización por ID")
@@ -53,6 +53,7 @@ public class OrganizacionController {
         return ResponseEntity.ok(organizacionService.obtenerPorId(id));
     }
 
+    //TODO: Pendiente revisar, en principio se sube desde BD
     @Operation(summary = "Crear una nueva organización")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Organización creada correctamente")
@@ -80,22 +81,22 @@ public class OrganizacionController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        if (organizacionService.eliminar(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        organizacionService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
-    // ===== CONFIGURACIÓN VISUAL =====
+    // CONFIGURACIÓN VISUAL
 
-    @Operation(summary = "Obtener configuración visual de una organización")
+    @Operation(summary = "Obtener configuración visual por token de registro",
+            description = "Endpoint público. El token es el código opaco de la organización.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Configuración encontrada"),
-            @ApiResponse(responseCode = "404", description = "Configuración no encontrada")
+            @ApiResponse(responseCode = "404", description = "Token inválido o configuración no encontrada")
     })
-    @GetMapping("/{id}/configuracion")
-    public ResponseEntity<ConfiguracionVisualDTO> obtenerConfiguracion(@PathVariable Integer id) {
-        return ResponseEntity.ok(organizacionService.obtenerConfiguracionPorOrganizacion(id));
+    @GetMapping("/configuracion")
+    public ResponseEntity<ConfiguracionVisualDTO> obtenerConfiguracionPorToken(
+            @RequestParam String token) {
+        return ResponseEntity.ok(organizacionService.obtenerConfiguracionPorToken(token));
     }
 
     @Operation(summary = "Crear configuración visual de una organización")
@@ -119,7 +120,7 @@ public class OrganizacionController {
         return ResponseEntity.ok(organizacionService.actualizarConfiguracion(id, dto));
     }
 
-    // ===== HORARIOS =====
+    // HORARIOS
 
     @Operation(summary = "Obtener horarios de una organización")
     @ApiResponses({
@@ -160,13 +161,11 @@ public class OrganizacionController {
     @DeleteMapping("/{id}/horarios/{horarioId}")
     public ResponseEntity<Void> eliminarHorario(@PathVariable Integer id,
                                                 @PathVariable Integer horarioId) {
-        if (organizacionService.eliminarHorario(horarioId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        organizacionService.eliminarHorario(horarioId);
+        return ResponseEntity.noContent().build();
     }
 
-    // ===== CIERRES =====
+    // CIERRES
 
     @Operation(summary = "Obtener cierres puntuales de una organización")
     @ApiResponses({
@@ -195,9 +194,7 @@ public class OrganizacionController {
     @DeleteMapping("/{id}/cierres/{cierreId}")
     public ResponseEntity<Void> eliminarCierre(@PathVariable Integer id,
                                                @PathVariable Integer cierreId) {
-        if (organizacionService.eliminarCierre(cierreId)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        organizacionService.eliminarCierre(cierreId);
+        return ResponseEntity.noContent().build();
     }
 }

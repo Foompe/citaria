@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO para la transferencia de datos de un cliente.
+ * DTO de un cliente.
  */
 public class ClienteDTO {
 
@@ -29,7 +29,11 @@ public class ClienteDTO {
     private String telefono;
 
     private String notas;
+    private String fotoUrl;
     private LocalDateTime anonimizadoAt;
+
+    //Valor derivado calculado según si el cliente tiene un Usuario vinculado.
+    private boolean tieneUsuario;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -55,6 +59,12 @@ public class ClienteDTO {
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
 
+    public String getFotoUrl() { return fotoUrl; }
+    public void setFotoUrl(String fotoUrl) { this.fotoUrl = fotoUrl; }
+
     public LocalDateTime getAnonimizadoAt() { return anonimizadoAt; }
     public void setAnonimizadoAt(LocalDateTime anonimizadoAt) { this.anonimizadoAt = anonimizadoAt; }
+
+    public boolean isTieneUsuario() { return tieneUsuario; }
+    public void setTieneUsuario(boolean tieneUsuario) { this.tieneUsuario = tieneUsuario; }
 }

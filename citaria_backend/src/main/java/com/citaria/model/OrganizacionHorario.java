@@ -4,11 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalTime;
+import java.util.Objects;
 
 /**
- * Horario semanal de una organización.
- * Cada registro representa un día de la semana con su franja horaria.
- * El día se representa con un valor numérico del 1 (lunes) al 7 (domingo).
+ * Horario por día de la organización.
  */
 @Entity
 @Table(name = "organizacion_horario",
@@ -19,26 +18,19 @@ public class OrganizacionHorario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotNull
-    @Min(1)
-    @Max(7)
-    @Column(name = "dia_semana", nullable = false, columnDefinition = "TINYINT")
+    @Column(name = "dia_semana", nullable = false)
     private Integer diaSemana;
 
-    @NotNull
     @Column(name = "hora_apertura", nullable = false)
     private LocalTime horaApertura;
 
-    @NotNull
     @Column(name = "hora_cierre", nullable = false)
     private LocalTime horaCierre;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -92,14 +84,13 @@ public class OrganizacionHorario {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof OrganizacionHorario that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(organizacion, that.organizacion) && Objects.equals(diaSemana, that.diaSemana) && Objects.equals(horaApertura, that.horaApertura) && Objects.equals(horaCierre, that.horaCierre) && Objects.equals(activo, that.activo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, diaSemana, horaApertura, horaCierre, activo);
     }
 
     @Override

@@ -1,20 +1,20 @@
 package com.citaria.service;
 
 import com.citaria.dto.ClienteDTO;
-
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Contrato del servicio de gestión de clientes.
- * La organización se resuelve automáticamente desde el contexto de seguridad.
- * La eliminación de un cliente se gestiona exclusivamente a través de
- * {@link UsuarioService#eliminar(Integer)}, que garantiza la anonimización
- * de datos personales en una única transacción.
+ * Servicio de gestión de clientes.
  */
 public interface ClienteService {
 
     List<ClienteDTO> obtenerTodos();
+    List<ClienteDTO> buscarClientes(String dni, String email, String telefono);
     ClienteDTO obtenerPorId(Integer id);
     ClienteDTO crear(ClienteDTO dto);
     ClienteDTO actualizar(Integer id, ClienteDTO dto);
+    void subirFotoCliente(Integer id, MultipartFile archivo);
+    void anonimizarCliente(Integer id);
+
 }

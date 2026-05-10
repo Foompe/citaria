@@ -3,11 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
- * Entidad de autenticación del sistema.
- * Gestiona el acceso de admins, empleados y clientes.
- * Un usuario pertenece siempre a una organización.
+ * Persona registrada en la aplicación.
  */
 @Entity
 @Table(name = "usuario")
@@ -17,32 +16,23 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotBlank
-    @Email
-    @Size(max = 255)
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, length = 255)
     private String email;
 
-    @NotBlank
-    @Size(max = 255)
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RolUsuario rol;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
-    @NotNull
     @Column(name = "email_verificado", nullable = false)
     private Boolean emailVerificado = false;
 
@@ -89,15 +79,13 @@ public class Usuario {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Usuario)) return false;
-        Usuario that = (Usuario) o;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Usuario usuario)) return false;
+        return Objects.equals(id, usuario.id) && Objects.equals(organizacion, usuario.organizacion) && Objects.equals(email, usuario.email) && Objects.equals(passwordHash, usuario.passwordHash) && rol == usuario.rol && Objects.equals(activo, usuario.activo) && Objects.equals(emailVerificado, usuario.emailVerificado) && Objects.equals(ultimoAcceso, usuario.ultimoAcceso) && Objects.equals(cliente, usuario.cliente) && Objects.equals(empleado, usuario.empleado);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, email, passwordHash, rol, activo, emailVerificado, ultimoAcceso, cliente, empleado);
     }
 
     @Override

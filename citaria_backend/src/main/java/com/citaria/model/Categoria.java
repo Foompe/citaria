@@ -2,11 +2,10 @@ package com.citaria.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import java.util.Objects;
 
 /**
- * Agrupación de servicios dentro de una organización.
- * La combinación organizacion_id + nombre es única.
- * El campo activo permite desactivar la categoría sin perder el histórico.
+ * Categoría de los servicios
  */
 @Entity
 @Table(name = "categoria")
@@ -16,17 +15,13 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -64,14 +59,13 @@ public class Categoria {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Categoria that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Categoria categoria)) return false;
+        return Objects.equals(id, categoria.id) && Objects.equals(organizacion, categoria.organizacion) && Objects.equals(nombre, categoria.nombre) && Objects.equals(activo, categoria.activo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, nombre, activo);
     }
 
     @Override

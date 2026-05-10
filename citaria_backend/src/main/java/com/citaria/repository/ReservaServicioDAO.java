@@ -8,11 +8,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 /**
- * Repositorio para la entidad ReservaServicio.
+ * Repositorio para ReservaServicio.
  */
 @Repository
 public interface ReservaServicioDAO extends JpaRepository<ReservaServicio, Integer> {
@@ -21,15 +22,26 @@ public interface ReservaServicioDAO extends JpaRepository<ReservaServicio, Integ
 
     /**
      * Cancela en bloque todas las líneas activas de una reserva.
-     * Se usa en la misma transacción que la cancelación de la cabecera
-     * para garantizar consistencia. Solo afecta a líneas en estado activo
-     * para no sobreescribir cancelaciones individuales previas.
-     *
-     * @param reserva  reserva cuyas líneas se cancelan
-     * @param estado   estado destino (siempre cancelado)
      */
     @Modifying
-    @Query("UPDATE ReservaServicio rs SET rs.estado = :estado WHERE rs.reserva = :reserva AND rs.estado = com.citaria.model.EstadoReservaServicio.activo")
+    @Query("UPDATE ReservaServicio rs SET rs.estado = :estado " +
+            "WHERE rs.reserva = :reserva AND rs.estado = com.citaria.model.EstadoReservaServicio.activo")
     void cancelarDetallesPorReserva(@Param("reserva") Reserva reserva,
                                     @Param("estado") EstadoReservaServicio estado);
+
+    /**
+     * Detecta si un empleado tiene alguna línea activa que solape con la franja indicada.
+     */
+    @Query("SELECT COUNT(rs) FROM ReservaServicio rs WHERE rs.empleado.id = :empleadoId " +
+            "AND rs.reserva.fecha = :fecha AND rs.estado = com.citaria.model.EstadoReservaServicio.activo " +
+            "AND rs.horaInicio < :horaFin AND rs.horaFin > :horaInicio")
+    long contarSolapamientos(@Param("empleadoId") Integer empleadoId, @Param("fecha") LocalDate fecha,
+                             @Param("horaInicio") LocalTime horaInicio, @Param("horaFin") LocalTime horaFin);
+
+    /**
+     * Cuenta las reservas activas de un empleado en una fecha concreta.
+     */
+    @Query("SELECT COUNT(rs) FROM ReservaServicio rs WHERE rs.empleado.id = :empleadoId " +
+            "AND rs.reserva.fecha = :fecha AND rs.estado = com.citaria.model.EstadoReservaServicio.activo")
+    long contarReservasPorEmpleadoYFecha(@Param("empleadoId") Integer empleadoId, @Param("fecha") LocalDate fecha);
 }

@@ -3,7 +3,7 @@ package com.citaria.dto;
 import jakarta.validation.constraints.*;
 
 /**
- * DTO para la transferencia de datos de una categoría.
+ * DTO de categoría.
  */
 public class CategoriaDTO {
 

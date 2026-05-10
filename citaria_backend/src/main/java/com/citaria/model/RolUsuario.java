@@ -1,7 +1,7 @@
 package com.citaria.model;
 
 /**
- * Roles disponibles en el sistema de autenticación.
+ * Son los roles/ niveles de acceso de los usuarios.
  */
 public enum RolUsuario {
     ADMIN,

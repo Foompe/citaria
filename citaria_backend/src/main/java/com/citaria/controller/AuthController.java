@@ -1,6 +1,6 @@
 package com.citaria.controller;
 
-import com.citaria.dto.LoginRequestDTO;
+import com.citaria.dto.PeticionLoginDTO;
 import com.citaria.dto.LoginRespuestaDTO;
 import com.citaria.dto.RegistroRequestDTO;
 import com.citaria.service.AuthService;
@@ -9,17 +9,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controlador de autenticación.
- * Gestiona el login y el registro de nuevos clientes.
- * No contiene lógica de negocio ni acceso directo a repositorios.
+ * Controlador de autenticación. --> Gestiona el login y el registro de nuevos clientes.
  */
 @Tag(name = "Autenticación", description = "Login, registro y gestión de tokens JWT")
 @RestController
@@ -28,6 +26,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Autowired
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
@@ -45,21 +44,13 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "Organización no encontrada")
     })
     @PostMapping("/login")
-    public ResponseEntity<LoginRespuestaDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
-        try {
-            return ResponseEntity.ok(authService.login(loginRequest));
-        } catch (AuthenticationException ex) {
-            return ResponseEntity.status(401).build();
-        }
+    public ResponseEntity<LoginRespuestaDTO> login(@Valid @RequestBody PeticionLoginDTO loginRequest) {
+        return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     /**
      * Registra un nuevo cliente y devuelve un token JWT.
-     * El tokenRegistro identifica la organización de forma opaca —
-     * el cliente lo obtiene del enlace o QR que le proporciona la empresa.
-     * Si el email coincide con una ficha de cliente existente en la organización,
-     * el usuario se vincula automáticamente a esa ficha.
-     *
+
      * @param registroRequest DTO con tokenRegistro, email, password y datos del cliente
      * @return token JWT — el usuario queda autenticado tras el registro
      */

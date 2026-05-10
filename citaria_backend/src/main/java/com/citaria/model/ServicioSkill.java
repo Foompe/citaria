@@ -3,9 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.Objects;
+
 /**
- * Relación N:M entre Servicio y Skill.
- * Representa las habilidades requeridas por un servicio.
+ * Tabla intermedia que representa las skills necesarias para dar un servicio concreto.
  */
 @Entity
 @Table(name = "servicio_skill")
@@ -14,13 +15,11 @@ public class ServicioSkill {
     @EmbeddedId
     private ServicioSkillId id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("servicioId")
     @JoinColumn(name = "servicio_id", nullable = false)
     private Servicio servicio;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("skillId")
     @JoinColumn(name = "skill_id", nullable = false)
@@ -61,14 +60,13 @@ public class ServicioSkill {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof ServicioSkill that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(servicio, that.servicio) && Objects.equals(skill, that.skill);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, servicio, skill);
     }
 
     @Override

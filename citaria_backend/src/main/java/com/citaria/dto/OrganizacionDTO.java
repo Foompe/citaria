@@ -3,10 +3,7 @@ package com.citaria.dto;
 import jakarta.validation.constraints.*;
 
 /**
- * DTO para la transferencia de datos de una organización.
- * El tokenRegistro se expone en respuestas para que el admin
- * pueda compartirlo, pero nunca se acepta como entrada — el sistema
- * lo genera automáticamente al crear la organización.
+ * DTO de una organización.
  */
 public class OrganizacionDTO {
 

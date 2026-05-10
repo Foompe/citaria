@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Clave primaria compuesta para ServicioSkill.
+ * Clave primaria de la tabla intermedia entre servicio y skill
  */
 @Embeddable
 public class ServicioSkillId implements Serializable {
@@ -40,10 +40,8 @@ public class ServicioSkillId implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof ServicioSkillId that)) return false;
-        return Objects.equals(servicioId, that.servicioId) &&
-                Objects.equals(skillId, that.skillId);
+        return Objects.equals(servicioId, that.servicioId) && Objects.equals(skillId, that.skillId);
     }
 
     @Override

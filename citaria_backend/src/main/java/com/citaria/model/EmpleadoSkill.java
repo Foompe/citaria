@@ -3,9 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.Objects;
+
 /**
- * Relación N:M entre Empleado y Skill.
- * Representa las habilidades disponibles de un empleado.
+ * Tabla intermedia para representar la habilidad del empleado
  */
 @Entity
 @Table(name = "empleado_skill")
@@ -14,13 +15,11 @@ public class EmpleadoSkill {
     @EmbeddedId
     private EmpleadoSkillId id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("empleadoId")
     @JoinColumn(name = "empleado_id", nullable = false)
     private Empleado empleado;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("skillId")
     @JoinColumn(name = "skill_id", nullable = false)
@@ -61,14 +60,13 @@ public class EmpleadoSkill {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof EmpleadoSkill that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(empleado, that.empleado) && Objects.equals(skill, that.skill);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, empleado, skill);
     }
 
     @Override

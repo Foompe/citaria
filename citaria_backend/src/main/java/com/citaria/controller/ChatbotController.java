@@ -26,22 +26,14 @@ public class ChatbotController {
         this.chatbotService = chatbotService;
     }
 
-    /**
-     * Procesa la pregunta del cliente y devuelve la respuesta del chatbot.
-     *
-     * @param organizacionId id de la organización
-     * @param dto            DTO con la pregunta del cliente
-     * @return DTO con la respuesta generada por Gemini
-     */
     @Operation(summary = "Enviar pregunta al chatbot")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Respuesta generada correctamente"),
             @ApiResponse(responseCode = "400", description = "Pregunta vacía o inválida"),
             @ApiResponse(responseCode = "404", description = "Organización no encontrada")
     })
-    @PostMapping("/organizacion/{organizacionId}")
-    public ResponseEntity<ChatbotDTO> preguntar(@PathVariable Integer organizacionId,
-                                                @Valid @RequestBody ChatbotDTO dto) {
-        return ResponseEntity.ok(chatbotService.preguntar(organizacionId, dto));
+    @PostMapping
+    public ResponseEntity<ChatbotDTO> preguntar(@Valid @RequestBody ChatbotDTO dto) {
+        return ResponseEntity.ok(chatbotService.preguntar(dto));
     }
 }

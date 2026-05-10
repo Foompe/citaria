@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalTime;
 
 /**
- * DTO para la transferencia de datos de una línea de detalle de una reserva.
+ * DTO de una línea de detalle de una reserva.
  */
 public class ReservaServicioDTO {
 

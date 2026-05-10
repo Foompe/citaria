@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO para la transferencia de datos de un empleado.
+ * DTO de datos de un empleado.
  */
 public class EmpleadoDTO {
 

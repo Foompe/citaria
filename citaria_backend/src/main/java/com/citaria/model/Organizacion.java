@@ -3,11 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.util.Objects;
+
 /**
- * Entidad raíz del modelo multi-tenant.
- * Cada organización representa una empresa dentro de la plataforma.
- * El tokenRegistro es un código opaco único que se usa para generar
- * enlaces de registro seguros sin exponer datos internos.
+ * Representa a cada empresa registrada .
  */
 @Entity
 @Table(name = "organizacion")
@@ -17,44 +16,30 @@ public class Organizacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @NotBlank
-    @Email
-    @Size(max = 255)
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Size(max = 20)
     @Column(length = 20)
     private String telefono;
 
-    @Size(max = 20)
     @Column(unique = true, length = 20)
     private String cif;
 
-    @Size(max = 255)
     @Column(length = 255)
     private String calle;
 
-    @Size(max = 10)
     @Column(name = "codigo_postal", length = 10)
     private String codigoPostal;
 
-    @Size(max = 100)
     @Column(length = 100)
     private String ciudad;
 
-    @NotBlank
-    @Size(max = 2)
     @Column(nullable = false, length = 2)
     private String pais;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(name = "token_registro", nullable = false, unique = true, length = 100)
     private String tokenRegistro;
 
@@ -90,14 +75,13 @@ public class Organizacion {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof Organizacion that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(nombre, that.nombre) && Objects.equals(email, that.email) && Objects.equals(telefono, that.telefono) && Objects.equals(cif, that.cif) && Objects.equals(calle, that.calle) && Objects.equals(codigoPostal, that.codigoPostal) && Objects.equals(ciudad, that.ciudad) && Objects.equals(pais, that.pais) && Objects.equals(tokenRegistro, that.tokenRegistro);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, nombre, email, telefono, cif, calle, codigoPostal, ciudad, pais, tokenRegistro);
     }
 
     @Override

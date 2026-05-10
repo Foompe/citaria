@@ -3,9 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.util.Objects;
+
 /**
- * Configuración visual asociada a una organización.
- * Relación 1:1 con Organizacion — cada organización tiene exactamente una configuración visual.
+ * Configuración visual de una organización.
  */
 @Entity
 @Table(name = "configuracion_visual")
@@ -15,34 +16,32 @@ public class ConfiguracionVisual {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false, unique = true)
     private Organizacion organizacion;
 
-    @Size(max = 500)
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
 
-    @Size(max = 500)
     @Column(name = "favicon_url", length = 500)
     private String faviconUrl;
 
-    @Size(max = 500)
     @Column(name = "icono_app_url", length = 500)
     private String iconoAppUrl;
 
-    @Size(max = 7)
     @Column(name = "color_primario", length = 7)
     private String colorPrimario;
 
-    @Size(max = 7)
     @Column(name = "color_secundario", length = 7)
     private String colorSecundario;
 
-    @Size(max = 100)
     @Column(length = 100)
     private String tipografia;
+
+    //Para avisar al front de que debe actualizar
+    @Version
+    @Column(nullable = false)
+    private Integer version = 0;
 
     public Integer getId() {
         return id;
@@ -108,16 +107,18 @@ public class ConfiguracionVisual {
         this.tipografia = tipografia;
     }
 
+    public Integer getVersion() { return version; }
+    public void setVersion(Integer version) { this.version = version; }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof ConfiguracionVisual that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(organizacion, that.organizacion) && Objects.equals(logoUrl, that.logoUrl) && Objects.equals(faviconUrl, that.faviconUrl) && Objects.equals(iconoAppUrl, that.iconoAppUrl) && Objects.equals(colorPrimario, that.colorPrimario) && Objects.equals(colorSecundario, that.colorSecundario) && Objects.equals(tipografia, that.tipografia) && Objects.equals(version, that.version);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, logoUrl, faviconUrl, iconoAppUrl, colorPrimario, colorSecundario, tipografia, version);
     }
 
     @Override

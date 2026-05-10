@@ -1,7 +1,7 @@
 package com.citaria.dto;
 
 /**
- * DTO para la transferencia de datos de la configuración visual de una organización.
+ * DTO de la configuración visual de una organización.
  */
 public class ConfiguracionVisualDTO {
 
@@ -13,6 +13,7 @@ public class ConfiguracionVisualDTO {
     private String colorPrimario;
     private String colorSecundario;
     private String tipografia;
+    private Integer version;
 
     public Integer getId() {
         return id;
@@ -77,4 +78,8 @@ public class ConfiguracionVisualDTO {
     public void setTipografia(String tipografia) {
         this.tipografia = tipografia;
     }
+
+    public Integer getVersion() { return version; }
+
+    public void setVersion(Integer version) { this.version = version; }
 }

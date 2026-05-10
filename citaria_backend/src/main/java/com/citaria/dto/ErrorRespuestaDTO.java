@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 /**
  * DTO estándar para respuestas de error de la API.
- * Garantiza un formato consistente en todos los errores.
  */
 public class ErrorRespuestaDTO {
 

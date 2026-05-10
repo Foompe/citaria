@@ -1,12 +1,12 @@
 package com.citaria.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.citaria.model.RolUsuario;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO para la transferencia de datos de un usuario del sistema.
- * El password nunca se devuelve en la respuesta.
+ * DTO de usuario.
  */
 public class UsuarioDTO {
 
@@ -18,7 +18,8 @@ public class UsuarioDTO {
     @Size(max = 255, message = "El email no puede superar los 255 caracteres")
     private String email;
 
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @Size(min = 8, message = "La contraseña debe tener al menos 8 caracteres")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @NotNull(message = "El rol es obligatorio")

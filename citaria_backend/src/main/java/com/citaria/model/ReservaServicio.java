@@ -5,13 +5,10 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.Objects;
 
 /**
- * Línea de detalle de una reserva.
- * Representa un servicio concreto dentro de una reserva,
- * con el empleado asignado, franja horaria y precio aplicado.
- * El campo estado permite cancelar líneas individualmente
- * para estadísticas de importes cancelados.
+ * Hace referencia a cada una de las líneas de una reserva.
  */
 @Entity
 @Table(name = "reserva_servicio")
@@ -21,41 +18,30 @@ public class ReservaServicio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reserva_id", nullable = false)
     private Reserva reserva;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "servicio_id", nullable = false)
     private Servicio servicio;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empleado_id", nullable = false)
     private Empleado empleado;
 
-    @NotNull
     @Column(name = "hora_inicio", nullable = false)
     private LocalTime horaInicio;
 
-    @NotNull
     @Column(name = "hora_fin", nullable = false)
     private LocalTime horaFin;
 
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    @Digits(integer = 8, fraction = 2)
     @Column(name = "precio_unitario", nullable = false, precision = 10, scale = 2)
     private BigDecimal precioUnitario;
 
-    @NotNull
-    @Min(1)
     @Column(nullable = false)
     private Integer cantidad = 1;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoReservaServicio estado = EstadoReservaServicio.activo;
@@ -134,14 +120,13 @@ public class ReservaServicio {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof ReservaServicio that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(reserva, that.reserva) && Objects.equals(servicio, that.servicio) && Objects.equals(empleado, that.empleado) && Objects.equals(horaInicio, that.horaInicio) && Objects.equals(horaFin, that.horaFin) && Objects.equals(precioUnitario, that.precioUnitario) && Objects.equals(cantidad, that.cantidad) && estado == that.estado;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, reserva, servicio, empleado, horaInicio, horaFin, precioUnitario, cantidad, estado);
     }
 
     @Override

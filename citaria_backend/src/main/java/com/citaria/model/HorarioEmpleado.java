@@ -4,11 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalTime;
+import java.util.Objects;
 
 /**
- * Disponibilidad semanal de un empleado.
- * Cada registro representa un día de la semana con su franja horaria.
- * La combinación empleado_id + dia_semana es única.
+ * Disponibilidad del empleado por día.
  */
 @Entity
 @Table(name = "horario_empleado")
@@ -18,26 +17,19 @@ public class HorarioEmpleado {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empleado_id", nullable = false)
     private Empleado empleado;
 
-    @NotNull
-    @Min(1)
-    @Max(7)
-    @Column(name = "dia_semana", nullable = false, columnDefinition = "TINYINT")
+    @Column(name = "dia_semana", nullable = false)
     private Integer diaSemana;
 
-    @NotNull
     @Column(name = "hora_inicio", nullable = false)
     private LocalTime horaInicio;
 
-    @NotNull
     @Column(name = "hora_fin", nullable = false)
     private LocalTime horaFin;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -91,14 +83,13 @@ public class HorarioEmpleado {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (!(o instanceof HorarioEmpleado that)) return false;
-        return id != null && id.equals(that.id);
+        return Objects.equals(id, that.id) && Objects.equals(empleado, that.empleado) && Objects.equals(diaSemana, that.diaSemana) && Objects.equals(horaInicio, that.horaInicio) && Objects.equals(horaFin, that.horaFin) && Objects.equals(activo, that.activo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, empleado, diaSemana, horaInicio, horaFin, activo);
     }
 
     @Override

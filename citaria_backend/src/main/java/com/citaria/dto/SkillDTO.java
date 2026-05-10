@@ -3,7 +3,7 @@ package com.citaria.dto;
 import jakarta.validation.constraints.*;
 
 /**
- * DTO para la transferencia de datos de una skill.
+ * DTO de datos de skill.
  */
 public class SkillDTO {
 

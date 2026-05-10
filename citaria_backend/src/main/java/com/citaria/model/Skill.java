@@ -3,10 +3,10 @@ package com.citaria.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.util.Objects;
+
 /**
- * Habilidad requerida por un servicio o disponible en un empleado.
- * La combinación organizacion_id + nombre es única.
- * El campo activo permite desactivar la skill sin perder el histórico.
+ * Habilidad que requiere un servicio y que un empleado debe tener para poder darlo.
  */
 @Entity
 @Table(name = "skill")
@@ -16,20 +16,15 @@ public class Skill {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -75,14 +70,13 @@ public class Skill {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Skill that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Skill skill)) return false;
+        return Objects.equals(id, skill.id) && Objects.equals(organizacion, skill.organizacion) && Objects.equals(nombre, skill.nombre) && Objects.equals(descripcion, skill.descripcion) && Objects.equals(activo, skill.activo);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, nombre, descripcion, activo);
     }
 
     @Override

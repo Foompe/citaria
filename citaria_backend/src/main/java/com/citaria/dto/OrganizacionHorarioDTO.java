@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalTime;
 
 /**
- * DTO para la transferencia de datos del horario semanal de una organización.
+ * DTO del horario de una organización.
  */
 public class OrganizacionHorarioDTO {
 

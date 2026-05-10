@@ -5,10 +5,12 @@ import com.citaria.model.Organizacion;
 import com.citaria.model.Usuario;
 import com.citaria.repository.OrganizacionDAO;
 import com.citaria.repository.UsuarioDAO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import java.util.Optional;
 
 /**
  * Componente central para acceder al usuario y organización autenticados.
@@ -24,6 +26,7 @@ public class ContextoSeguridad {
     private final OrganizacionDAO organizacionDAO;
     private final UsuarioDAO usuarioDAO;
 
+    @Autowired
     public ContextoSeguridad(OrganizacionDAO organizacionDAO, UsuarioDAO usuarioDAO) {
         this.organizacionDAO = organizacionDAO;
         this.usuarioDAO = usuarioDAO;
@@ -31,20 +34,22 @@ public class ContextoSeguridad {
 
     /**
      * Devuelve la organización del usuario autenticado en la petición actual.
-     * El id de organización se extrae directamente del username compuesto del token
-     * sin consulta adicional a BD para resolver el id.
+     * Se extrae directamente del username compuesto del token.
      *
-     * @return organización del usuario autenticado
+     * @return devuelve la organización del usuario
      */
     public Organizacion obtenerOrganizacionActual() {
         Integer organizacionId = extraerOrganizacionId();
-        return organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización del usuario autenticado no encontrada"));
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findById(organizacionId);
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException(
+                    "Organización del usuario autenticado no encontrada");
+        }
+        return organizacionOptional.get();
     }
 
     /**
-     * Devuelve el usuario autenticado en la petición actual.
+     * Devuelve el usuario autenticado.
      *
      * @return usuario autenticado
      */
@@ -53,22 +58,45 @@ public class ContextoSeguridad {
         String email = partes[0];
         Integer organizacionId = Integer.parseInt(partes[1]);
 
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización del usuario autenticado no encontrada"));
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findById(organizacionId);
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException(
+                    "Organización del usuario autenticado no encontrada");
+        }
+        Organizacion organizacion = organizacionOptional.get();
 
-        return usuarioDAO.findByEmailAndOrganizacion(email, organizacion)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Usuario autenticado no encontrado"));
+        Optional<Usuario> usuarioOptional = usuarioDAO.findByEmailAndOrganizacion(email, organizacion);
+        if (usuarioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException(
+                    "Usuario autenticado no encontrado");
+        }
+        return usuarioOptional.get();
     }
 
     /**
-     * Devuelve el id de organización del usuario autenticado.
-     * Extracción directa del token sin consulta a BD.
+     * Devuelve el id de organización del usuario autenticado directamente del token sin tener que consultar la BD.
      */
     public Integer obtenerOrganizacionIdActual() {
         return extraerOrganizacionId();
     }
+
+    /**
+     * Devuelve el id del cliente vinculado al usuario autenticado.
+     *
+     * @return devuelve el id del cliente vinculado
+     * @throws IllegalStateException si el usuario autenticado no tiene cliente vinculado
+     */
+    public Integer obtenerClienteIdActual() {
+        Usuario usuario = obtenerUsuarioActual();
+        if (usuario.getCliente() == null) {
+            throw new IllegalStateException("El usuario autenticado no tiene cliente vinculado");
+        }
+        return usuario.getCliente().getId();
+    }
+
+
+    //  Métodos auxiliares
+
 
     private Integer extraerOrganizacionId() {
         return Integer.parseInt(extraerPartes()[1]);

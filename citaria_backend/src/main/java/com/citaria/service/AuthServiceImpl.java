@@ -1,6 +1,7 @@
 package com.citaria.service;
 
-import com.citaria.dto.LoginRequestDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.citaria.dto.PeticionLoginDTO;
 import com.citaria.dto.LoginRespuestaDTO;
 import com.citaria.dto.RegistroRequestDTO;
 import com.citaria.exception.EmailYaRegistradoException;
@@ -17,19 +18,15 @@ import com.citaria.security.UsuarioDetailsService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
  * Implementación del servicio de autenticación.
- *
- * El login delega la verificación al {@link AuthenticationManager} usando el username
- * compuesto (email:organizacionId) para identificar unívocamente al usuario.
- * El registro gestiona la vinculación automática con fichas de cliente existentes.
  */
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -41,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
 
+    @Autowired
     public AuthServiceImpl(AuthenticationManager authenticationManager,
                            UsuarioDAO usuarioDAO,
                            OrganizacionDAO organizacionDAO,
@@ -55,19 +53,19 @@ public class AuthServiceImpl implements AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // LOGIN
+
     /**
      * {@inheritDoc}
-     *
-     * Construye el username compuesto antes de delegar en el AuthenticationManager,
-     * que internamente usa UsuarioDetailsService para cargar el usuario correcto
-     * cuando el mismo email existe en varias organizaciones.
      */
     @Override
-    @Transactional(readOnly = true)
-    public LoginRespuestaDTO login(LoginRequestDTO loginRequest) {
-        Organizacion organizacion = organizacionDAO.findById(loginRequest.getOrganizacionId())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización no encontrada"));
+    @Transactional
+    public LoginRespuestaDTO login(PeticionLoginDTO loginRequest) {
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findById(loginRequest.getOrganizacionId());
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Organización no encontrada");
+        }
+        Organizacion organizacion = organizacionOptional.get();
 
         String usernameCompuesto = UsuarioDetailsService.construirUsername(
                 loginRequest.getEmail(), organizacion.getId());
@@ -79,51 +77,14 @@ public class AuthServiceImpl implements AuthService {
                 )
         );
 
-        UserDetails usuarioDetails = (UserDetails) autenticacion.getPrincipal();
-
-        Usuario usuario = usuarioDAO.findByEmailAndOrganizacion(
-                        loginRequest.getEmail(), organizacion)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Inconsistencia interna: usuario autenticado no encontrado en BD"));
-
-        String token = jwtUtil.generateToken(
-                usuario.getEmail(),
-                usuario.getRol().name(),
-                organizacion.getId()
-        );
-        return new LoginRespuestaDTO(token);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * Busca la organización por tokenRegistro opaco — el cliente nunca conoce
-     * el id interno de la organización. Si el email coincide con una ficha de
-     * cliente existente se vincula para preservar el historial de reservas previas.
-     */
-    @Override
-    @Transactional
-    public LoginRespuestaDTO registro(RegistroRequestDTO registroRequest) {
-        Organizacion organizacion = organizacionDAO.findByTokenRegistro(
-                        registroRequest.getTokenRegistro())
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Token de registro inválido"));
-
-        if (usuarioDAO.existsByEmailAndOrganizacion(registroRequest.getEmail(), organizacion)) {
-            throw new EmailYaRegistradoException(
-                    "El email ya está registrado en el sistema");
+        Optional<Usuario> usuarioOptional = usuarioDAO.findByEmailAndOrganizacion(
+                loginRequest.getEmail(), organizacion);
+        if (usuarioOptional.isEmpty()) {
+            throw new IllegalStateException("Inconsistencia interna: usuario autenticado no encontrado en BD");
         }
+        Usuario usuario = usuarioOptional.get();
 
-        Cliente cliente = resolverCliente(registroRequest, organizacion);
-
-        Usuario usuario = new Usuario();
-        usuario.setEmail(registroRequest.getEmail());
-        usuario.setPasswordHash(passwordEncoder.encode(registroRequest.getPassword()));
-        usuario.setRol(RolUsuario.CLIENTE);
-        usuario.setActivo(true);
-        usuario.setEmailVerificado(false);
-        usuario.setOrganizacion(organizacion);
-        usuario.setCliente(cliente);
+        usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioDAO.save(usuario);
 
         String token = jwtUtil.generateToken(
@@ -134,18 +95,77 @@ public class AuthServiceImpl implements AuthService {
         return new LoginRespuestaDTO(token);
     }
 
+    // REGISTRO
+
     /**
-     * Busca una ficha de cliente existente por email en la organización.
-     * Si existe y aún no tiene usuario vinculado, la reutiliza para preservar
-     * el historial de reservas creadas por el admin antes del registro.
-     * Si no existe crea una nueva ficha con los datos del registro.
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public LoginRespuestaDTO registro(RegistroRequestDTO registroRequest) {
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findByTokenRegistro(
+                registroRequest.getTokenRegistro());
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Token de registro inválido");
+        }
+        Organizacion organizacion = organizacionOptional.get();
+
+        if (usuarioDAO.existsByEmailAndOrganizacion(registroRequest.getEmail(), organizacion)) {
+            throw new EmailYaRegistradoException("El email ya está registrado en el sistema");
+        }
+
+        Cliente cliente = resolverCliente(registroRequest, organizacion);
+
+        Usuario usuario = crearUsuarioDesdeRegistro(registroRequest, organizacion, cliente);
+        usuarioDAO.save(usuario);
+
+        String token = jwtUtil.generateToken(
+                usuario.getEmail(),
+                usuario.getRol().name(),
+                organizacion.getId()
+        );
+        return new LoginRespuestaDTO(token);
+    }
+
+    // MÉTODOS AUXILIARES
+
+    /**
+     * Crea un nuevo Usuario a partir de los datos de registro.
+     * La contraseña se codifica con BCrypt antes de persistir.
+     *
+     * @param registroRequest datos del registro
+     * @param organizacion    organización a la que pertenece el usuario
+     * @param cliente         ficha de cliente vinculada al usuario
+     * @return usuario listo para persistir
+     */
+    private Usuario crearUsuarioDesdeRegistro(RegistroRequestDTO registroRequest,
+                                              Organizacion organizacion,
+                                              Cliente cliente) {
+        Usuario usuario = new Usuario();
+        usuario.setEmail(registroRequest.getEmail());
+        usuario.setPasswordHash(passwordEncoder.encode(registroRequest.getPassword()));
+        usuario.setRol(RolUsuario.CLIENTE);
+        usuario.setActivo(true);
+        usuario.setEmailVerificado(false);
+        usuario.setOrganizacion(organizacion);
+        usuario.setCliente(cliente);
+        return usuario;
+    }
+
+    /**
+     * Busca un cliente existente por email en la organización.
+     * Si existe y aún no tiene usuario vinculado, la reutiliza.
+     * Si no existe crea un nuevo registro.
      */
     private Cliente resolverCliente(RegistroRequestDTO registroRequest, Organizacion organizacion) {
         Optional<Cliente> clienteExistente = clienteDAO.findByEmailAndOrganizacion(
                 registroRequest.getEmail(), organizacion);
 
         if (clienteExistente.isPresent()) {
-            return clienteExistente.get();
+            Cliente cliente = clienteExistente.get();
+            if (usuarioDAO.findByCliente(cliente).isEmpty()) {
+                return cliente;
+            }
         }
 
         Cliente nuevoCliente = new Cliente();

@@ -1,15 +1,15 @@
 package com.citaria.service;
 
 import com.citaria.dto.ChatbotDTO;
-import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.Organizacion;
 import com.citaria.model.OrganizacionHorario;
 import com.citaria.model.Servicio;
-import com.citaria.repository.OrganizacionDAO;
 import com.citaria.repository.OrganizacionHorarioDAO;
 import com.citaria.repository.ServicioDAO;
+import com.citaria.security.ContextoSeguridad;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -23,9 +23,25 @@ import java.util.Map;
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
-    private final OrganizacionDAO organizacionDAO;
+    private static final String MENSAJE_FALLBACK_GEMINI =
+            "Lo siento, no puedo responder en este momento. Por favor contacta directamente con nosotros.";
+    private static final String CLAVE_CANDIDATES = "candidates";
+    private static final String CLAVE_CONTENT = "content";
+    private static final String CLAVE_CONTENTS = "contents";
+    private static final String CLAVE_PARTS = "parts";
+    private static final String CLAVE_TEXT = "text";
+    private static final String CABECERA_CONTENT_TYPE = "Content-Type";
+    private static final String MEDIA_TYPE_JSON = "application/json";
+    private static final String[] DIAS_SEMANA = {
+            "", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
+    };
+    private static final ParameterizedTypeReference<Map<String, Object>> TIPO_RESPUESTA_GEMINI =
+            new ParameterizedTypeReference<>() {
+            };
+
     private final ServicioDAO servicioDAO;
     private final OrganizacionHorarioDAO organizacionHorarioDAO;
+    private final ContextoSeguridad contextoSeguridad;
     private final WebClient webClient;
 
     @Value("${gemini.api.key}")
@@ -35,22 +51,21 @@ public class ChatbotServiceImpl implements ChatbotService {
     private String apiUrl;
 
     @Autowired
-    public ChatbotServiceImpl(OrganizacionDAO organizacionDAO,
-                              ServicioDAO servicioDAO,
+    public ChatbotServiceImpl(ServicioDAO servicioDAO,
                               OrganizacionHorarioDAO organizacionHorarioDAO,
+                              ContextoSeguridad contextoSeguridad,
                               WebClient.Builder webClientBuilder) {
-        this.organizacionDAO = organizacionDAO;
         this.servicioDAO = servicioDAO;
         this.organizacionHorarioDAO = organizacionHorarioDAO;
+        this.contextoSeguridad = contextoSeguridad;
         this.webClient = webClientBuilder.build();
     }
 
-    @Override
-    public ChatbotDTO preguntar(Integer organizacionId, ChatbotDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+    // CHATBOT
 
+    @Override
+    public ChatbotDTO preguntar(ChatbotDTO dto) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         String contexto = construirContexto(organizacion);
         String prompt = contexto + "\n\nPregunta del cliente: " + dto.getPregunta();
 
@@ -58,6 +73,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         dto.setRespuesta(respuesta);
         return dto;
     }
+
+    // CONSTRUCCIÓN DE CONTEXTO
 
     private String construirContexto(Organizacion organizacion) {
         StringBuilder contexto = new StringBuilder();
@@ -100,10 +117,9 @@ public class ChatbotServiceImpl implements ChatbotService {
         List<OrganizacionHorario> horarios = organizacionHorarioDAO.findByOrganizacion(organizacion);
         if (!horarios.isEmpty()) {
             contexto.append("\nHorarios:\n");
-            String[] diasSemana = {"", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"};
             for (OrganizacionHorario horario : horarios) {
                 if (horario.getActivo()) {
-                    contexto.append("- ").append(diasSemana[horario.getDiaSemana()])
+                    contexto.append("- ").append(DIAS_SEMANA[horario.getDiaSemana()])
                             .append(": ").append(horario.getHoraApertura())
                             .append(" - ").append(horario.getHoraCierre()).append("\n");
                 }
@@ -113,32 +129,67 @@ public class ChatbotServiceImpl implements ChatbotService {
         return contexto.toString();
     }
 
+    // LLAMADA A GEMINI
+
+    @SuppressWarnings("unchecked")
     private String llamarGemini(String prompt) {
+        Map<String, Object> texto = Map.of(CLAVE_TEXT, prompt);
+        List<Map<String, Object>> parts = List.of(texto);
+        Map<String, Object> content = Map.of(CLAVE_PARTS, parts);
+        List<Map<String, Object>> contents = List.of(content);
         Map<String, Object> cuerpo = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", prompt)
-                        ))
-                )
+                CLAVE_CONTENTS, contents
         );
 
-        Map respuesta = webClient.post()
+        Map<String, Object> respuesta = webClient.post()
                 .uri(apiUrl + "?key=" + apiKey)
-                .header("Content-Type", "application/json")
+                .header(CABECERA_CONTENT_TYPE, MEDIA_TYPE_JSON)
                 .bodyValue(cuerpo)
                 .retrieve()
-                .bodyToMono(Map.class)
+                .bodyToMono(TIPO_RESPUESTA_GEMINI)
                 .block();
 
-        try {
-            List candidates = (List) respuesta.get("candidates");
-            Map candidate = (Map) candidates.get(0);
-            Map content = (Map) candidate.get("content");
-            List parts = (List) content.get("parts");
-            Map part = (Map) parts.get(0);
-            return (String) part.get("text");
-        } catch (Exception e) {
-            return "Lo siento, no puedo responder en este momento. Por favor contacta directamente con nosotros.";
+        if (respuesta == null) {
+            return MENSAJE_FALLBACK_GEMINI;
         }
+
+        if (!(respuesta.get(CLAVE_CANDIDATES) instanceof List)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        List<Map<String, Object>> candidates =
+                (List<Map<String, Object>>) respuesta.get(CLAVE_CANDIDATES);
+        if (candidates.isEmpty()) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+
+        if (!(candidates.get(0) instanceof Map)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        Map<String, Object> candidate = candidates.get(0);
+        if (!(candidate.get(CLAVE_CONTENT) instanceof Map)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        Map<String, Object> responseContent =
+                (Map<String, Object>) candidate.get(CLAVE_CONTENT);
+
+        if (!(responseContent.get(CLAVE_PARTS) instanceof List)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        List<Map<String, Object>> responseParts =
+                (List<Map<String, Object>>) responseContent.get(CLAVE_PARTS);
+        if (responseParts.isEmpty()) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+
+        if (!(responseParts.get(0) instanceof Map)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        Map<String, Object> part = responseParts.get(0);
+        if (!(part.get(CLAVE_TEXT) instanceof String)) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
+        String text = (String) part.get(CLAVE_TEXT);
+
+        return text;
     }
 }

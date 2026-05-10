@@ -4,11 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
- * Cliente de una organización.
- * Puede existir con o sin cuenta de acceso — las credenciales son opcionales.
- * Incluye campo anonimizado_at para cumplimiento RGPD.
+ * Cliente de una orgnaización sin cuenta en la app
  */
 @Entity
 @Table(name = "cliente")
@@ -18,35 +17,29 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Size(max = 150)
     @Column(length = 150)
     private String apellidos;
 
-    @Size(max = 9)
     @Column(length = 9)
     private String dni;
 
-    @Email
-    @Size(max = 255)
     @Column(length = 255)
     private String email;
 
-    @Size(max = 20)
     @Column(length = 20)
     private String telefono;
 
-    @Column(columnDefinition = "TEXT")
     private String notas;
+
+    @Column(name = "foto_url", length = 500)
+    private String fotoUrl;
 
     @Column(name = "anonimizado_at")
     private LocalDateTime anonimizadoAt;
@@ -115,8 +108,15 @@ public class Cliente {
         this.notas = notas;
     }
 
-    public
-    LocalDateTime getAnonimizadoAt() {
+    public String getFotoUrl() {
+        return fotoUrl;
+    }
+
+    public void setFotoUrl(String fotoUrl) {
+        this.fotoUrl = fotoUrl;
+    }
+
+    public LocalDateTime getAnonimizadoAt() {
         return anonimizadoAt;
     }
 
@@ -126,14 +126,13 @@ public class Cliente {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Cliente that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Cliente cliente)) return false;
+        return Objects.equals(id, cliente.id) && Objects.equals(organizacion, cliente.organizacion) && Objects.equals(nombre, cliente.nombre) && Objects.equals(apellidos, cliente.apellidos) && Objects.equals(dni, cliente.dni) && Objects.equals(email, cliente.email) && Objects.equals(telefono, cliente.telefono) && Objects.equals(notas, cliente.notas) && Objects.equals(fotoUrl, cliente.fotoUrl) && Objects.equals(anonimizadoAt, cliente.anonimizadoAt);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, nombre, apellidos, dni, email, telefono, notas, fotoUrl, anonimizadoAt);
     }
 
     @Override

@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
- * Empleado de una organización.
- * Incluye campo anonimizado_at para cumplimiento RGPD.
+ * Empleado de una empresa
  */
 @Entity
 @Table(name = "empleado")
@@ -17,35 +17,25 @@ public class Empleado {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizacion_id", nullable = false)
     private Organizacion organizacion;
 
-    @NotBlank
-    @Size(max = 100)
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @NotBlank
-    @Size(max = 150)
     @Column(nullable = false, length = 150)
     private String apellidos;
 
-    @Email
-    @Size(max = 255)
     @Column(length = 255)
     private String email;
 
-    @Size(max = 20)
     @Column(length = 20)
     private String telefono;
 
-    @Size(max = 500)
     @Column(name = "foto_url", length = 500)
     private String fotoUrl;
 
-    @NotNull
     @Column(nullable = false)
     private Boolean activo = true;
 
@@ -126,14 +116,13 @@ public class Empleado {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Empleado that)) return false;
-        return id != null && id.equals(that.id);
+        if (!(o instanceof Empleado empleado)) return false;
+        return Objects.equals(id, empleado.id) && Objects.equals(organizacion, empleado.organizacion) && Objects.equals(nombre, empleado.nombre) && Objects.equals(apellidos, empleado.apellidos) && Objects.equals(email, empleado.email) && Objects.equals(telefono, empleado.telefono) && Objects.equals(fotoUrl, empleado.fotoUrl) && Objects.equals(activo, empleado.activo) && Objects.equals(anonimizadoAt, empleado.anonimizadoAt);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(id, organizacion, nombre, apellidos, email, telefono, fotoUrl, activo, anonimizadoAt);
     }
 
     @Override

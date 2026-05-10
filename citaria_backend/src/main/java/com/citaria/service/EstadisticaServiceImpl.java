@@ -1,25 +1,25 @@
 package com.citaria.service;
 
-import com.citaria.dto.EstadisticaEmpleadoDTO;
+import com.citaria.dto.EstadisticaItemDTO;
 import com.citaria.dto.EstadisticaMesDTO;
-import com.citaria.dto.EstadisticaServicioDTO;
+import com.citaria.dto.ResumenEstadisticaDTO;
 import com.citaria.repository.EstadisticaDAO;
+import com.citaria.repository.projection.FilaImporteEstadistica;
+import com.citaria.repository.projection.FilaItemEstadistica;
+import com.citaria.repository.projection.FilaMesEstadistica;
 import com.citaria.security.ContextoSeguridad;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Implementación del servicio de estadísticas.
- * Delega las queries agregadas al EstadisticaDAO y transforma
- * los resultados en DTOs listos para consumir desde el frontend.
- * El campo periodo devuelve formato "YYYY-MM" — la etiqueta legible
- * la construye el frontend según su locale.
  */
 @Service
 public class EstadisticaServiceImpl implements EstadisticaService {
@@ -27,17 +27,52 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     private final EstadisticaDAO estadisticaDAO;
     private final ContextoSeguridad contextoSeguridad;
 
+    @Autowired
     public EstadisticaServiceImpl(EstadisticaDAO estadisticaDAO,
                                   ContextoSeguridad contextoSeguridad) {
         this.estadisticaDAO = estadisticaDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
 
-    // ===== CLIENTES =====
+    @Override
+    @Transactional(readOnly = true)
+    public ResumenEstadisticaDTO obtenerResumen() {
+        Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
+        LocalDate hoy = LocalDate.now();
+        int anio = hoy.getYear();
+        int mes = hoy.getMonthValue();
+        LocalDate inicioMes = hoy.withDayOfMonth(1);
+        LocalDate finMes = inicioMes.withDayOfMonth(inicioMes.lengthOfMonth());
+
+        Long reservasHoy = estadisticaDAO.contarReservasPorFecha(organizacionId, hoy);
+        Long reservasMes = estadisticaDAO.contarReservasPorMes(organizacionId, anio, mes);
+
+        BigDecimal facturacionHoy = estadisticaDAO.facturacionPorFecha(organizacionId, hoy);
+        BigDecimal facturacionMes = estadisticaDAO.facturacionPorMes(organizacionId, anio, mes);
+
+        if (facturacionHoy == null) {
+            facturacionHoy = BigDecimal.ZERO;
+        }
+        if (facturacionMes == null) {
+            facturacionMes = BigDecimal.ZERO;
+        }
+
+        Long clientesNuevosMes = estadisticaDAO.contarClientesNuevosMes(organizacionId, inicioMes, finMes);
+        String servicioMasSolicitado = estadisticaDAO.servicioMasSolicitadoMes(organizacionId, anio, mes);
+
+        return new ResumenEstadisticaDTO(
+                reservasHoy,
+                reservasMes,
+                facturacionHoy,
+                facturacionMes,
+                clientesNuevosMes,
+                servicioMasSolicitado
+        );
+    }
+
+    // CLIENTES
 
     /**
-     * {@inheritDoc}
-     *
      * Combina los resultados de dos queries (nuevos y recurrentes) indexando
      * por período para garantizar que todos los meses del rango aparecen
      * en la respuesta aunque no haya clientes nuevos o recurrentes ese mes.
@@ -48,43 +83,43 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     public List<EstadisticaMesDTO> clientesNuevosVsRecurrentes(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
 
-        List<Object[]> nuevos = estadisticaDAO.contarClientesNuevosPorMes(organizacionId, desde, hasta);
-        List<Object[]> recurrentes = estadisticaDAO.contarClientesRecurrentesPorMes(organizacionId, desde, hasta);
+        List<FilaMesEstadistica> nuevos = estadisticaDAO.contarClientesNuevosPorMes(organizacionId, desde, hasta);
+        List<FilaMesEstadistica> recurrentes = estadisticaDAO.contarClientesRecurrentesPorMes(organizacionId, desde, hasta);
 
-        Map<String, Double> mapaRecurrentes = recurrentes.stream()
-                .collect(Collectors.toMap(
-                        row -> (String) row[0],
-                        row -> ((Number) row[1]).doubleValue()
-                ));
+        Map<String, Double> mapaRecurrentes = new HashMap<>();
+        for (FilaMesEstadistica fila : recurrentes) {
+            mapaRecurrentes.put(fila.getPeriodo(), fila.getValor1());
+        }
 
         List<EstadisticaMesDTO> resultado = new ArrayList<>();
-        for (Object[] fila : nuevos) {
-            String periodo = (String) fila[0];
-            Double cantidadNuevos = ((Number) fila[1]).doubleValue();
-            Double cantidadRecurrentes = mapaRecurrentes.getOrDefault(periodo, 0.0);
-            resultado.add(new EstadisticaMesDTO(periodo, cantidadNuevos, cantidadRecurrentes));
+        for (FilaMesEstadistica fila : nuevos) {
+            Double cantidadRecurrentes = mapaRecurrentes.getOrDefault(fila.getPeriodo(), 0.0);
+            resultado.add(new EstadisticaMesDTO(fila.getPeriodo(), fila.getValor1(), cantidadRecurrentes));
         }
         return resultado;
     }
 
     /**
-     * {@inheritDoc}
      * valor1=totalClientes, valor2=porcentajeRetencion
      */
     @Override
     @Transactional(readOnly = true)
     public List<EstadisticaMesDTO> fidelizacionClientes(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.calcularFidelizacionPorMes(organizacionId, desde, hasta);
+        List<FilaMesEstadistica> filas = estadisticaDAO.calcularFidelizacionPorMes(organizacionId, desde, hasta);
 
         List<EstadisticaMesDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            String periodo = (String) fila[0];
-            Double totalClientes = ((Number) fila[1]).doubleValue();
-            Double repiten = ((Number) fila[2]).doubleValue();
-            double porcentaje = totalClientes > 0 ? (repiten / totalClientes) * 100 : 0.0;
+        for (FilaMesEstadistica fila : filas) {
+            Double totalClientes = fila.getValor1();
+            Double repiten = fila.getValor2();
+            double porcentaje;
+            if (totalClientes > 0) {
+                porcentaje = (repiten / totalClientes) * 100;
+            } else {
+                porcentaje = 0.0;
+            }
             resultado.add(new EstadisticaMesDTO(
-                    periodo,
+                    fila.getPeriodo(),
                     totalClientes,
                     Math.round(porcentaje * 100.0) / 100.0
             ));
@@ -92,26 +127,30 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         return resultado;
     }
 
-    // ===== EMPLEADOS =====
+    // EMPLEADOS
 
     /**
-     * {@inheritDoc}
      * valor=totalReservas, porcentaje=tasaCancelacion
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaEmpleadoDTO> reservasPorEmpleado(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> reservasPorEmpleado(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.reservasPorEmpleado(organizacionId, desde, hasta);
+        List<FilaItemEstadistica> filas = estadisticaDAO.reservasPorEmpleado(organizacionId, desde, hasta);
 
-        List<EstadisticaEmpleadoDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            Double total = ((Number) fila[2]).doubleValue();
-            Double canceladas = ((Number) fila[3]).doubleValue();
-            double porcentajeCancelacion = total > 0 ? (canceladas / total) * 100 : 0.0;
-            resultado.add(new EstadisticaEmpleadoDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaItemEstadistica fila : filas) {
+            Double total = fila.getTotal();
+            Double canceladas = fila.getCanceladas();
+            double porcentajeCancelacion;
+            if (total > 0) {
+                porcentajeCancelacion = (canceladas / total) * 100;
+            } else {
+                porcentajeCancelacion = 0.0;
+            }
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
                     total,
                     Math.round(porcentajeCancelacion * 100.0) / 100.0
             ));
@@ -120,21 +159,20 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     }
 
     /**
-     * {@inheritDoc}
      * valor=importeTotal, porcentaje=null
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaEmpleadoDTO> importePorEmpleado(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> importePorEmpleado(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.importePorEmpleado(organizacionId, desde, hasta);
+        List<FilaImporteEstadistica> filas = estadisticaDAO.importePorEmpleado(organizacionId, desde, hasta);
 
-        List<EstadisticaEmpleadoDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            resultado.add(new EstadisticaEmpleadoDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
-                    ((Number) fila[2]).doubleValue(),
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaImporteEstadistica fila : filas) {
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
+                    fila.getImporte(),
                     null
             ));
         }
@@ -142,23 +180,27 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     }
 
     /**
-     * {@inheritDoc}
      * valor=totalCanceladas, porcentaje=tasaCancelacion
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaEmpleadoDTO> cancelacionesPorEmpleado(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> cancelacionesPorEmpleado(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.cancelacionesPorEmpleado(organizacionId, desde, hasta);
+        List<FilaItemEstadistica> filas = estadisticaDAO.cancelacionesPorEmpleado(organizacionId, desde, hasta);
 
-        List<EstadisticaEmpleadoDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            Double total = ((Number) fila[2]).doubleValue();
-            Double canceladas = ((Number) fila[3]).doubleValue();
-            double porcentaje = total > 0 ? (canceladas / total) * 100 : 0.0;
-            resultado.add(new EstadisticaEmpleadoDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaItemEstadistica fila : filas) {
+            Double total = fila.getTotal();
+            Double canceladas = fila.getCanceladas();
+            double porcentaje;
+            if (total > 0) {
+                porcentaje = (canceladas / total) * 100;
+            } else {
+                porcentaje = 0.0;
+            }
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
                     canceladas,
                     Math.round(porcentaje * 100.0) / 100.0
             ));
@@ -166,24 +208,23 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         return resultado;
     }
 
-    // ===== SERVICIOS =====
+    // SERVICIOS
 
     /**
-     * {@inheritDoc}
      * valor=totalReservas, porcentaje=null
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaServicioDTO> serviciosMasSolicitados(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> serviciosMasSolicitados(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.serviciosMasSolicitados(organizacionId, desde, hasta);
+        List<FilaItemEstadistica> filas = estadisticaDAO.serviciosMasSolicitados(organizacionId, desde, hasta);
 
-        List<EstadisticaServicioDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            resultado.add(new EstadisticaServicioDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
-                    ((Number) fila[2]).doubleValue(),
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaItemEstadistica fila : filas) {
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
+                    fila.getTotal(),
                     null
             ));
         }
@@ -191,21 +232,20 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     }
 
     /**
-     * {@inheritDoc}
      * valor=importeTotal, porcentaje=null
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaServicioDTO> importePorServicio(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> importePorServicio(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.importePorServicio(organizacionId, desde, hasta);
+        List<FilaImporteEstadistica> filas = estadisticaDAO.importePorServicio(organizacionId, desde, hasta);
 
-        List<EstadisticaServicioDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            resultado.add(new EstadisticaServicioDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
-                    ((Number) fila[2]).doubleValue(),
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaImporteEstadistica fila : filas) {
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
+                    fila.getImporte(),
                     null
             ));
         }
@@ -213,23 +253,27 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     }
 
     /**
-     * {@inheritDoc}
      * valor=totalCanceladas, porcentaje=tasaCancelacion
      */
     @Override
     @Transactional(readOnly = true)
-    public List<EstadisticaServicioDTO> cancelacionesPorServicio(LocalDate desde, LocalDate hasta) {
+    public List<EstadisticaItemDTO> cancelacionesPorServicio(LocalDate desde, LocalDate hasta) {
         Integer organizacionId = contextoSeguridad.obtenerOrganizacionIdActual();
-        List<Object[]> filas = estadisticaDAO.cancelacionesPorServicio(organizacionId, desde, hasta);
+        List<FilaItemEstadistica> filas = estadisticaDAO.cancelacionesPorServicio(organizacionId, desde, hasta);
 
-        List<EstadisticaServicioDTO> resultado = new ArrayList<>();
-        for (Object[] fila : filas) {
-            Double total = ((Number) fila[2]).doubleValue();
-            Double canceladas = ((Number) fila[3]).doubleValue();
-            double porcentaje = total > 0 ? (canceladas / total) * 100 : 0.0;
-            resultado.add(new EstadisticaServicioDTO(
-                    ((Number) fila[0]).intValue(),
-                    (String) fila[1],
+        List<EstadisticaItemDTO> resultado = new ArrayList<>();
+        for (FilaItemEstadistica fila : filas) {
+            Double total = fila.getTotal();
+            Double canceladas = fila.getCanceladas();
+            double porcentaje;
+            if (total > 0) {
+                porcentaje = (canceladas / total) * 100;
+            } else {
+                porcentaje = 0.0;
+            }
+            resultado.add(new EstadisticaItemDTO(
+                    fila.getId(),
+                    fila.getNombre(),
                     canceladas,
                     Math.round(porcentaje * 100.0) / 100.0
             ));

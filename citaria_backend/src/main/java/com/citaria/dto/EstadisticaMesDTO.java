@@ -3,10 +3,6 @@ package com.citaria.dto;
 /**
  * DTO de estadísticas agrupadas por mes.
  * Reutilizable para múltiples métricas mensuales.
- * periodo tiene formato "YYYY-MM" — el frontend construye la etiqueta legible.
- * valor1 y valor2 representan métricas distintas según el endpoint:
- * - nuevos-vs-recurrentes: valor1=nuevos, valor2=recurrentes
- * - fidelizacion: valor1=totalClientes, valor2=porcentajeRetencion
  */
 public class EstadisticaMesDTO {
 

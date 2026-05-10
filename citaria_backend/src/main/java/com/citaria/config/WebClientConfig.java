@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * Configuración del cliente HTTP para llamadas a APIs externas.
+ * Configuración del cliente HTTP para llamadas a APIs externas como Gemini
  */
 @Configuration
 public class WebClientConfig {

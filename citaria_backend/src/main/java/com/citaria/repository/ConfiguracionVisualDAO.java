@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Repositorio para la entidad ConfiguracionVisual.
+ * Repositorio para ConfiguracionVisual.
  */
 @Repository
 public interface ConfiguracionVisualDAO extends JpaRepository<ConfiguracionVisual, Integer> {

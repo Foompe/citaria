@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
- * DTO para la transferencia de datos de un cierre puntual de una organización.
+ * DTO de días de cierre de una organización.
  */
 public class OrganizacionHorarioCierreDTO {
 

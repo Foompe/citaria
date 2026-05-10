@@ -8,8 +8,7 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuración de Swagger/OpenAPI.
- * Habilita el botón Authorize para enviar tokens JWT en las peticiones.
+ * Configuración de Swagger.
  */
 @Configuration
 @OpenAPIDefinition(

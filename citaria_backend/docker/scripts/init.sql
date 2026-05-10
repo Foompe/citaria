@@ -16,7 +16,7 @@ CREATE TABLE organizacion_horario
 (
     id              INT     AUTO_INCREMENT PRIMARY KEY,
     organizacion_id INT     NOT NULL,
-    dia_semana      TINYINT NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
+    dia_semana      INT     NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
     hora_apertura   TIME    NOT NULL,
     hora_cierre     TIME    NOT NULL,
     activo          BOOLEAN NOT NULL DEFAULT TRUE,
@@ -48,6 +48,7 @@ CREATE TABLE configuracion_visual
     color_primario   VARCHAR(7)   NULL,
     color_secundario VARCHAR(7)   NULL,
     tipografia       VARCHAR(100) NULL,
+    version          INT          NOT NULL DEFAULT 0,
     CONSTRAINT fk_cv_organizacion FOREIGN KEY (organizacion_id)
         REFERENCES organizacion (id)
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -63,11 +64,13 @@ CREATE TABLE cliente
     email           VARCHAR(255) NULL,
     telefono        VARCHAR(20)  NULL,
     notas           TEXT         NULL,
+    foto_url        VARCHAR(500) NULL,
     anonimizado_at  DATETIME     NULL,
     CONSTRAINT fk_cli_organizacion FOREIGN KEY (organizacion_id)
         REFERENCES organizacion (id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT uq_cli_dni UNIQUE (organizacion_id, dni)
+    CONSTRAINT uq_cli_dni   UNIQUE (organizacion_id, dni),
+    CONSTRAINT uq_cli_email UNIQUE (organizacion_id, email)
 );
 
 CREATE TABLE empleado
@@ -108,7 +111,6 @@ CREATE TABLE usuario
     CONSTRAINT fk_usu_empleado FOREIGN KEY (empleado_id)
         REFERENCES empleado (id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
-    -- Un mismo email puede existir en organizaciones distintas
     CONSTRAINT uq_usu_email_organizacion UNIQUE (email, organizacion_id)
 );
 
@@ -116,7 +118,7 @@ CREATE TABLE horario_empleado
 (
     id          INT     AUTO_INCREMENT PRIMARY KEY,
     empleado_id INT     NOT NULL,
-    dia_semana  TINYINT NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
+    dia_semana  INT     NOT NULL CHECK (dia_semana BETWEEN 1 AND 7),
     hora_inicio TIME    NOT NULL,
     hora_fin    TIME    NOT NULL,
     activo      BOOLEAN NOT NULL DEFAULT TRUE,
@@ -160,7 +162,7 @@ CREATE TABLE servicio
     descripcion      TEXT           NULL,
     imagen_url       VARCHAR(500)   NULL,
     precio           DECIMAL(10, 2) NOT NULL,
-    duracion_minutos SMALLINT       NOT NULL,
+    duracion_minutos INT            NOT NULL,
     activo           BOOLEAN        NOT NULL DEFAULT TRUE,
     CONSTRAINT fk_srv_organizacion FOREIGN KEY (organizacion_id)
         REFERENCES organizacion (id)
@@ -205,6 +207,7 @@ CREATE TABLE reserva
                          NOT NULL DEFAULT 'pendiente',
     fecha           DATE NOT NULL,
     notas           TEXT NULL,
+    motivo          TEXT NULL,
     CONSTRAINT fk_res_organizacion FOREIGN KEY (organizacion_id)
         REFERENCES organizacion (id)
         ON DELETE RESTRICT ON UPDATE CASCADE,

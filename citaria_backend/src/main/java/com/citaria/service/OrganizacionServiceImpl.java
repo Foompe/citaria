@@ -4,26 +4,26 @@ import com.citaria.dto.ConfiguracionVisualDTO;
 import com.citaria.dto.OrganizacionDTO;
 import com.citaria.dto.OrganizacionHorarioCierreDTO;
 import com.citaria.dto.OrganizacionHorarioDTO;
+import com.citaria.dto.OrganizacionPublicaDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
-import com.citaria.model.ConfiguracionVisual;
-import com.citaria.model.Organizacion;
-import com.citaria.model.OrganizacionHorario;
-import com.citaria.model.OrganizacionHorarioCierre;
+import com.citaria.model.*;
 import com.citaria.repository.ConfiguracionVisualDAO;
 import com.citaria.repository.OrganizacionDAO;
 import com.citaria.repository.OrganizacionHorarioCierreDAO;
 import com.citaria.repository.OrganizacionHorarioDAO;
+import com.citaria.repository.ReservaDAO;
+import com.citaria.repository.ReservaServicioDAO;
 import com.citaria.security.ContextoSeguridad;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Implementación del servicio de gestión de organizaciones.
- * Incluye gestión de horarios, cierres y configuración visual.
  */
 @Service
 public class OrganizacionServiceImpl implements OrganizacionService {
@@ -32,17 +32,24 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     private final ConfiguracionVisualDAO configuracionVisualDAO;
     private final OrganizacionHorarioDAO organizacionHorarioDAO;
     private final OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO;
+    private final ReservaDAO reservaDAO;
+    private final ReservaServicioDAO reservaServicioDAO;
     private final ContextoSeguridad contextoSeguridad;
 
+    @Autowired
     public OrganizacionServiceImpl(OrganizacionDAO organizacionDAO,
                                    ConfiguracionVisualDAO configuracionVisualDAO,
                                    OrganizacionHorarioDAO organizacionHorarioDAO,
                                    OrganizacionHorarioCierreDAO organizacionHorarioCierreDAO,
+                                   ReservaDAO reservaDAO,
+                                   ReservaServicioDAO reservaServicioDAO,
                                    ContextoSeguridad contextoSeguridad) {
         this.organizacionDAO = organizacionDAO;
         this.configuracionVisualDAO = configuracionVisualDAO;
         this.organizacionHorarioDAO = organizacionHorarioDAO;
         this.organizacionHorarioCierreDAO = organizacionHorarioCierreDAO;
+        this.reservaDAO = reservaDAO;
+        this.reservaServicioDAO = reservaServicioDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
 
@@ -50,11 +57,12 @@ public class OrganizacionServiceImpl implements OrganizacionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OrganizacionDTO> obtenerTodas() {
+    public List<OrganizacionPublicaDTO> obtenerPublicas() {
         List<Organizacion> organizaciones = organizacionDAO.findAll();
-        List<OrganizacionDTO> organizacionesDTO = new ArrayList<>();
+        List<OrganizacionPublicaDTO> organizacionesDTO = new ArrayList<>();
         for (Organizacion organizacion : organizaciones) {
-            organizacionesDTO.add(convertirOrganizacionADTO(organizacion));
+            Optional<ConfiguracionVisual> configuracionOptional = configuracionVisualDAO.findByOrganizacion(organizacion);
+            organizacionesDTO.add(convertirOrganizacionAPublicaDTO(organizacion, configuracionOptional));
         }
         return organizacionesDTO;
     }
@@ -62,18 +70,11 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional(readOnly = true)
     public OrganizacionDTO obtenerPorId(Integer id) {
-        Organizacion organizacion = organizacionDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + id + " no encontrada"));
+        verificarPertenencia(id);
+        Organizacion organizacion = cargarOrganizacion(id);
         return convertirOrganizacionADTO(organizacion);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * El tokenRegistro se genera automáticamente con UUID — el admin no lo elige.
-     * Esto garantiza que sea único, opaco e impredecible.
-     */
     @Override
     @Transactional
     public OrganizacionDTO crear(OrganizacionDTO dto) {
@@ -85,43 +86,42 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional
     public OrganizacionDTO actualizar(Integer id, OrganizacionDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + id + " no encontrada"));
+        verificarPertenencia(id);
+        Organizacion organizacion = cargarOrganizacion(id);
         actualizarCamposOrganizacion(organizacion, dto);
         return convertirOrganizacionADTO(organizacionDAO.save(organizacion));
     }
 
     @Override
     @Transactional
-    public boolean eliminar(Integer id) {
-        if (organizacionDAO.existsById(id)) {
-            organizacionDAO.deleteById(id);
-            return true;
-        }
-        return false;
+    public void eliminar(Integer id) {
+        verificarPertenencia(id);
+        Organizacion organizacion = cargarOrganizacion(id);
+        organizacionDAO.delete(organizacion);
     }
 
     // CONFIGURACIÓN VISUAL
 
     @Override
     @Transactional(readOnly = true)
-    public ConfiguracionVisualDTO obtenerConfiguracionPorOrganizacion(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
-        ConfiguracionVisual configuracion = configuracionVisualDAO.findByOrganizacion(organizacion)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Configuración visual no encontrada para la organización " + organizacionId));
-        return convertirConfiguracionADTO(configuracion);
+    public ConfiguracionVisualDTO obtenerConfiguracionPorToken(String tokenRegistro) {
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findByTokenRegistro(tokenRegistro);
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Organización no encontrada para el token proporcionado");
+        }
+        Organizacion organizacion = organizacionOptional.get();
+        Optional<ConfiguracionVisual> configuracionOptional = configuracionVisualDAO.findByOrganizacion(organizacion);
+        if (configuracionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Configuración visual no encontrada para la organización");
+        }
+        return convertirConfiguracionADTO(configuracionOptional.get());
     }
 
     @Override
     @Transactional
     public ConfiguracionVisualDTO crearConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
         ConfiguracionVisual configuracion = convertirConfiguracionAEntidad(dto);
         configuracion.setOrganizacion(organizacion);
         return convertirConfiguracionADTO(configuracionVisualDAO.save(configuracion));
@@ -130,12 +130,14 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional
     public ConfiguracionVisualDTO actualizarConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
-        ConfiguracionVisual configuracion = configuracionVisualDAO.findByOrganizacion(organizacion)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Configuración visual no encontrada para la organización " + organizacionId));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
+        Optional<ConfiguracionVisual> configuracionOptional = configuracionVisualDAO.findByOrganizacion(organizacion);
+        if (configuracionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException(
+                    "Configuración visual no encontrada para la organización " + organizacionId);
+        }
+        ConfiguracionVisual configuracion = configuracionOptional.get();
         actualizarCamposConfiguracion(configuracion, dto);
         return convertirConfiguracionADTO(configuracionVisualDAO.save(configuracion));
     }
@@ -145,9 +147,8 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional(readOnly = true)
     public List<OrganizacionHorarioDTO> obtenerHorariosPorOrganizacion(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
         List<OrganizacionHorario> horarios = organizacionHorarioDAO.findByOrganizacion(organizacion);
         List<OrganizacionHorarioDTO> horariosDTO = new ArrayList<>();
         for (OrganizacionHorario horario : horarios) {
@@ -159,9 +160,8 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional
     public OrganizacionHorarioDTO crearHorario(Integer organizacionId, OrganizacionHorarioDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
         OrganizacionHorario horario = convertirHorarioAEntidad(dto);
         horario.setOrganizacion(organizacion);
         return convertirHorarioADTO(organizacionHorarioDAO.save(horario));
@@ -170,21 +170,18 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional
     public OrganizacionHorarioDTO actualizarHorario(Integer id, OrganizacionHorarioDTO dto) {
-        OrganizacionHorario horario = organizacionHorarioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Horario con id " + id + " no encontrado"));
+        OrganizacionHorario horario = cargarHorario(id);
+        verificarPertenencia(horario.getOrganizacion().getId());
         actualizarCamposHorario(horario, dto);
         return convertirHorarioADTO(organizacionHorarioDAO.save(horario));
     }
 
     @Override
     @Transactional
-    public boolean eliminarHorario(Integer id) {
-        if (organizacionHorarioDAO.existsById(id)) {
-            organizacionHorarioDAO.deleteById(id);
-            return true;
-        }
-        return false;
+    public void eliminarHorario(Integer id) {
+        OrganizacionHorario horario = cargarHorario(id);
+        verificarPertenencia(horario.getOrganizacion().getId());
+        organizacionHorarioDAO.deleteById(id);
     }
 
     // CIERRES
@@ -192,9 +189,8 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional(readOnly = true)
     public List<OrganizacionHorarioCierreDTO> obtenerCierresPorOrganizacion(Integer organizacionId) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
         List<OrganizacionHorarioCierre> cierres = organizacionHorarioCierreDAO.findByOrganizacion(organizacion);
         List<OrganizacionHorarioCierreDTO> cierresDTO = new ArrayList<>();
         for (OrganizacionHorarioCierre cierre : cierres) {
@@ -206,9 +202,22 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Override
     @Transactional
     public OrganizacionHorarioCierreDTO crearCierre(Integer organizacionId, OrganizacionHorarioCierreDTO dto) {
-        Organizacion organizacion = organizacionDAO.findById(organizacionId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Organización con id " + organizacionId + " no encontrada"));
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
+
+        // Cancelar en la misma transacción las reservas activas de esa fecha
+        List<EstadoReserva> estadosActivos = new ArrayList<>();
+        estadosActivos.add(EstadoReserva.pendiente);
+        estadosActivos.add(EstadoReserva.confirmada);
+
+        List<Reserva> afectadas = reservaDAO.findByOrganizacionAndFechaAndEstadoIn(
+                organizacion, dto.getFecha(), estadosActivos);
+        for (Reserva reserva : afectadas) {
+            reserva.setEstado(EstadoReserva.cancelada);
+            reserva.setMotivo("Cierre del establecimiento");
+            reservaServicioDAO.cancelarDetallesPorReserva(reserva, EstadoReservaServicio.cancelado);
+        }
+
         OrganizacionHorarioCierre cierre = convertirCierreAEntidad(dto);
         cierre.setOrganizacion(organizacion);
         return convertirCierreADTO(organizacionHorarioCierreDAO.save(cierre));
@@ -216,12 +225,47 @@ public class OrganizacionServiceImpl implements OrganizacionService {
 
     @Override
     @Transactional
-    public boolean eliminarCierre(Integer id) {
-        if (organizacionHorarioCierreDAO.existsById(id)) {
-            organizacionHorarioCierreDAO.deleteById(id);
-            return true;
+    public void eliminarCierre(Integer id) {
+        OrganizacionHorarioCierre cierre = cargarCierre(id);
+        verificarPertenencia(cierre.getOrganizacion().getId());
+        organizacionHorarioCierreDAO.deleteById(id);
+    }
+
+    // VERIFICACIÓN DE PERTENENCIA
+
+    /**
+     * Verifica que el organizacionId recibido coincide con la organización
+     * del usuario autenticado en el JWT.
+     */
+    private void verificarPertenencia(Integer organizacionId) {
+        Integer organizacionIdActual = contextoSeguridad.obtenerOrganizacionIdActual();
+        if (!organizacionIdActual.equals(organizacionId)) {
+            throw new RecursoNoEncontradoException("Organización con id " + organizacionId + " no encontrada");
         }
-        return false;
+    }
+
+    private Organizacion cargarOrganizacion(Integer id) {
+        Optional<Organizacion> organizacionOptional = organizacionDAO.findById(id);
+        if (organizacionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Organización con id " + id + " no encontrada");
+        }
+        return organizacionOptional.get();
+    }
+
+    private OrganizacionHorario cargarHorario(Integer id) {
+        Optional<OrganizacionHorario> horarioOptional = organizacionHorarioDAO.findById(id);
+        if (horarioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Horario con id " + id + " no encontrado");
+        }
+        return horarioOptional.get();
+    }
+
+    private OrganizacionHorarioCierre cargarCierre(Integer id) {
+        Optional<OrganizacionHorarioCierre> cierreOptional = organizacionHorarioCierreDAO.findById(id);
+        if (cierreOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Cierre con id " + id + " no encontrado");
+        }
+        return cierreOptional.get();
     }
 
     // CONVERSIONES
@@ -238,6 +282,19 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         dto.setCiudad(organizacion.getCiudad());
         dto.setPais(organizacion.getPais());
         dto.setTokenRegistro(organizacion.getTokenRegistro());
+        return dto;
+    }
+
+    private OrganizacionPublicaDTO convertirOrganizacionAPublicaDTO(Organizacion organizacion,
+                                                                    Optional<ConfiguracionVisual> configuracionOptional) {
+        OrganizacionPublicaDTO dto = new OrganizacionPublicaDTO();
+        dto.setId(organizacion.getId());
+        dto.setNombre(organizacion.getNombre());
+        if (configuracionOptional.isPresent()) {
+            dto.setLogoUrl(configuracionOptional.get().getLogoUrl());
+        } else {
+            dto.setLogoUrl(null);
+        }
         return dto;
     }
 
@@ -275,6 +332,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         dto.setColorPrimario(configuracion.getColorPrimario());
         dto.setColorSecundario(configuracion.getColorSecundario());
         dto.setTipografia(configuracion.getTipografia());
+        dto.setVersion(configuracion.getVersion());
         return dto;
     }
 
@@ -314,7 +372,11 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         horario.setDiaSemana(dto.getDiaSemana());
         horario.setHoraApertura(dto.getHoraApertura());
         horario.setHoraCierre(dto.getHoraCierre());
-        horario.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        if (dto.getActivo() != null) {
+            horario.setActivo(dto.getActivo());
+        } else {
+            horario.setActivo(true);
+        }
         return horario;
     }
 

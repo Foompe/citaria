@@ -4,24 +4,23 @@ import com.citaria.dto.ConfiguracionVisualDTO;
 import com.citaria.dto.OrganizacionDTO;
 import com.citaria.dto.OrganizacionHorarioCierreDTO;
 import com.citaria.dto.OrganizacionHorarioDTO;
-
+import com.citaria.dto.OrganizacionPublicaDTO;
 import java.util.List;
 
 /**
- * Contrato del servicio de gestión de organizaciones.
- * Incluye gestión de horarios, cierres y configuración visual.
+ * Servicio de gestión de organizaciones: horarios, cierres y configuración visual.
  */
 public interface OrganizacionService {
 
     // Organización
-    List<OrganizacionDTO> obtenerTodas();
+    List<OrganizacionPublicaDTO> obtenerPublicas();
     OrganizacionDTO obtenerPorId(Integer id);
     OrganizacionDTO crear(OrganizacionDTO dto);
     OrganizacionDTO actualizar(Integer id, OrganizacionDTO dto);
-    boolean eliminar(Integer id);
+    void eliminar(Integer id);
 
     // Configuración visual
-    ConfiguracionVisualDTO obtenerConfiguracionPorOrganizacion(Integer organizacionId);
+    ConfiguracionVisualDTO obtenerConfiguracionPorToken(String tokenRegistro);
     ConfiguracionVisualDTO crearConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto);
     ConfiguracionVisualDTO actualizarConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto);
 
@@ -29,10 +28,11 @@ public interface OrganizacionService {
     List<OrganizacionHorarioDTO> obtenerHorariosPorOrganizacion(Integer organizacionId);
     OrganizacionHorarioDTO crearHorario(Integer organizacionId, OrganizacionHorarioDTO dto);
     OrganizacionHorarioDTO actualizarHorario(Integer id, OrganizacionHorarioDTO dto);
-    boolean eliminarHorario(Integer id);
+    void eliminarHorario(Integer id);
 
     // Cierres
     List<OrganizacionHorarioCierreDTO> obtenerCierresPorOrganizacion(Integer organizacionId);
     OrganizacionHorarioCierreDTO crearCierre(Integer organizacionId, OrganizacionHorarioCierreDTO dto);
-    boolean eliminarCierre(Integer id);
+    void eliminarCierre(Integer id);
+
 }

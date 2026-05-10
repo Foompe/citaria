@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 
 /**
  * DTO para la comunicación con el chatbot.
- * Recibe la pregunta del usuario y devuelve la respuesta generada.
  */
 public class ChatbotDTO {
 

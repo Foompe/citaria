@@ -8,8 +8,10 @@ import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import com.citaria.security.ContextoSeguridad;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,8 +19,6 @@ import java.util.Optional;
 
 /**
  * Implementación del servicio de gestión del catálogo.
- * Incluye gestión de servicios, categorías y skills.
- * La organización se resuelve automáticamente desde el contexto de seguridad.
  */
 @Service
 public class CatalogoServiceImpl implements CatalogoService {
@@ -28,20 +28,24 @@ public class CatalogoServiceImpl implements CatalogoService {
     private final ServicioDAO servicioDAO;
     private final ServicioSkillDAO servicioSkillDAO;
     private final ContextoSeguridad contextoSeguridad;
+    private final ImagenService imagenService;
 
+    @Autowired
     public CatalogoServiceImpl(CategoriaDAO categoriaDAO,
                                SkillDAO skillDAO,
                                ServicioDAO servicioDAO,
                                ServicioSkillDAO servicioSkillDAO,
-                               ContextoSeguridad contextoSeguridad) {
+                               ContextoSeguridad contextoSeguridad,
+                               ImagenService imagenService) {
         this.categoriaDAO = categoriaDAO;
         this.skillDAO = skillDAO;
         this.servicioDAO = servicioDAO;
         this.servicioSkillDAO = servicioSkillDAO;
         this.contextoSeguridad = contextoSeguridad;
+        this.imagenService = imagenService;
     }
 
-    // ===== CATEGORÍAS =====
+    // CATEGORÍAS
 
     @Override
     @Transactional(readOnly = true)
@@ -59,10 +63,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public CategoriaDTO obtenerCategoriaPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Categoria categoria = categoriaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Categoría con id " + id + " no encontrada"));
-        verificarTenenciaCategoria(categoria, organizacion);
+        Optional<Categoria> categoriaOptional = categoriaDAO.findById(id);
+        if (categoriaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Categoría con id " + id + " no encontrada");
+        }
+        Categoria categoria = categoriaOptional.get();
+        verificarPertenenciaCategoria(categoria, organizacion);
         return convertirCategoriaADTO(categoria);
     }
 
@@ -79,23 +85,28 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional
     public CategoriaDTO actualizarCategoria(Integer id, CategoriaDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Categoria categoria = categoriaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Categoría con id " + id + " no encontrada"));
-        verificarTenenciaCategoria(categoria, organizacion);
+        Optional<Categoria> categoriaOptional = categoriaDAO.findById(id);
+        if (categoriaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Categoría con id " + id + " no encontrada");
+        }
+        Categoria categoria = categoriaOptional.get();
+        verificarPertenenciaCategoria(categoria, organizacion);
         categoria.setNombre(dto.getNombre());
         return convertirCategoriaADTO(categoriaDAO.save(categoria));
     }
 
     @Override
     @Transactional
-    public void eliminarCategoria(Integer id) {
+    public void desactivarCategoria(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Categoria categoria = categoriaDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Categoría con id " + id + " no encontrada"));
-        verificarTenenciaCategoria(categoria, organizacion);
+        Optional<Categoria> categoriaOptional = categoriaDAO.findById(id);
+        if (categoriaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Categoría con id " + id + " no encontrada");
+        }
+        Categoria categoria = categoriaOptional.get();
+        verificarPertenenciaCategoria(categoria, organizacion);
         categoria.setActivo(false);
+        categoriaDAO.save(categoria);
     }
 
     // SKILLS
@@ -116,10 +127,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public SkillDTO obtenerSkillPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Skill skill = skillDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Skill con id " + id + " no encontrada"));
-        verificarTenenciaSkill(skill, organizacion);
+        Optional<Skill> skillOptional = skillDAO.findById(id);
+        if (skillOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        }
+        Skill skill = skillOptional.get();
+        verificarPertenenciaSkill(skill, organizacion);
         return convertirSkillADTO(skill);
     }
 
@@ -136,10 +149,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional
     public SkillDTO actualizarSkill(Integer id, SkillDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Skill skill = skillDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Skill con id " + id + " no encontrada"));
-        verificarTenenciaSkill(skill, organizacion);
+        Optional<Skill> skillOptional = skillDAO.findById(id);
+        if (skillOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        }
+        Skill skill = skillOptional.get();
+        verificarPertenenciaSkill(skill, organizacion);
         skill.setNombre(dto.getNombre());
         skill.setDescripcion(dto.getDescripcion());
         return convertirSkillADTO(skillDAO.save(skill));
@@ -147,13 +162,16 @@ public class CatalogoServiceImpl implements CatalogoService {
 
     @Override
     @Transactional
-    public void eliminarSkill(Integer id) {
+    public void desactivarSkill(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Skill skill = skillDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Skill con id " + id + " no encontrada"));
-        verificarTenenciaSkill(skill, organizacion);
+        Optional<Skill> skillOptional = skillDAO.findById(id);
+        if (skillOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        }
+        Skill skill = skillOptional.get();
+        verificarPertenenciaSkill(skill, organizacion);
         skill.setActivo(false);
+        skillDAO.save(skill);
     }
 
     // SERVICIOS
@@ -174,10 +192,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public List<ServicioDTO> obtenerServiciosPorCategoria(Integer categoriaId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Categoria categoria = categoriaDAO.findById(categoriaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Categoría con id " + categoriaId + " no encontrada"));
-        verificarTenenciaCategoria(categoria, organizacion);
+        Optional<Categoria> categoriaOptional = categoriaDAO.findById(categoriaId);
+        if (categoriaOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Categoría con id " + categoriaId + " no encontrada");
+        }
+        Categoria categoria = categoriaOptional.get();
+        verificarPertenenciaCategoria(categoria, organizacion);
         List<Servicio> servicios = servicioDAO.findByCategoria(categoria);
         List<ServicioDTO> serviciosDTO = new ArrayList<>();
         for (Servicio servicio : servicios) {
@@ -190,10 +210,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public ServicioDTO obtenerServicioPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Servicio servicio = servicioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + id + " no encontrado"));
-        verificarTenenciaServicio(servicio, organizacion);
+        Optional<Servicio> servicioOptional = servicioDAO.findById(id);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + id + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
         return convertirServicioADTO(servicio);
     }
 
@@ -204,24 +226,53 @@ public class CatalogoServiceImpl implements CatalogoService {
         Servicio servicio = convertirServicioAEntidad(dto);
         servicio.setOrganizacion(organizacion);
         if (dto.getCategoriaId() != null) {
-            Optional<Categoria> categoria = categoriaDAO.findById(dto.getCategoriaId());
-            categoria.ifPresent(servicio::setCategoria);
+            Optional<Categoria> categoriaOptional = categoriaDAO.findById(dto.getCategoriaId());
+            if (categoriaOptional.isEmpty()) {
+                throw new RecursoNoEncontradoException(
+                        "Categoría con id " + dto.getCategoriaId() + " no encontrada");
+            }
+            Categoria categoria = categoriaOptional.get();
+            verificarPertenenciaCategoria(categoria, organizacion);
+            servicio.setCategoria(categoria);
         }
         return convertirServicioADTO(servicioDAO.save(servicio));
     }
 
     @Override
     @Transactional
+    public void subirImagenServicio(Integer id, MultipartFile archivo) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Optional<Servicio> servicioOptional = servicioDAO.findById(id);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + id + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
+        String imagenUrl = imagenService.subirImagen(archivo);
+        servicio.setImagenUrl(imagenUrl);
+        servicioDAO.save(servicio);
+    }
+
+    @Override
+    @Transactional
     public ServicioDTO actualizarServicio(Integer id, ServicioDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Servicio servicio = servicioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + id + " no encontrado"));
-        verificarTenenciaServicio(servicio, organizacion);
+        Optional<Servicio> servicioOptional = servicioDAO.findById(id);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + id + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
         actualizarCamposServicio(servicio, dto);
         if (dto.getCategoriaId() != null) {
-            Optional<Categoria> categoria = categoriaDAO.findById(dto.getCategoriaId());
-            categoria.ifPresent(servicio::setCategoria);
+            Optional<Categoria> categoriaOptional = categoriaDAO.findById(dto.getCategoriaId());
+            if (categoriaOptional.isEmpty()) {
+                throw new RecursoNoEncontradoException(
+                        "Categoría con id " + dto.getCategoriaId() + " no encontrada");
+            }
+            Categoria categoria = categoriaOptional.get();
+            verificarPertenenciaCategoria(categoria, organizacion);
+            servicio.setCategoria(categoria);
         } else {
             servicio.setCategoria(null);
         }
@@ -230,13 +281,16 @@ public class CatalogoServiceImpl implements CatalogoService {
 
     @Override
     @Transactional
-    public void eliminarServicio(Integer id) {
+    public void desactivarServicio(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Servicio servicio = servicioDAO.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + id + " no encontrado"));
-        verificarTenenciaServicio(servicio, organizacion);
+        Optional<Servicio> servicioOptional = servicioDAO.findById(id);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + id + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
         servicio.setActivo(false);
+        servicioDAO.save(servicio);
     }
 
     // SKILLS DE SERVICIO
@@ -245,10 +299,12 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public List<ServicioSkillDTO> obtenerSkillsPorServicio(Integer servicioId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Servicio servicio = servicioDAO.findById(servicioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + servicioId + " no encontrado"));
-        verificarTenenciaServicio(servicio, organizacion);
+        Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + servicioId + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
         List<ServicioSkill> skills = servicioSkillDAO.findByServicio(servicio);
         List<ServicioSkillDTO> skillsDTO = new ArrayList<>();
         for (ServicioSkill servicioSkill : skills) {
@@ -261,43 +317,64 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional
     public ServicioSkillDTO asignarSkillAServicio(Integer servicioId, Integer skillId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Servicio servicio = servicioDAO.findById(servicioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Servicio con id " + servicioId + " no encontrado"));
-        verificarTenenciaServicio(servicio, organizacion);
-        Skill skill = skillDAO.findById(skillId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Skill con id " + skillId + " no encontrada"));
+        Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + servicioId + " no encontrado");
+        }
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
+        Optional<Skill> skillOptional = skillDAO.findById(skillId);
+        if (skillOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Skill con id " + skillId + " no encontrada");
+        }
+        Skill skill = skillOptional.get();
+        verificarPertenenciaSkill(skill, organizacion);
         ServicioSkill servicioSkill = new ServicioSkill(servicio, skill);
         return convertirServicioSkillADTO(servicioSkillDAO.save(servicioSkill));
     }
 
     @Override
     @Transactional
-    public boolean eliminarSkillDeServicio(Integer servicioId, Integer skillId) {
-        ServicioSkillId servicioSkillId = new ServicioSkillId(servicioId, skillId);
-        if (servicioSkillDAO.existsById(servicioSkillId)) {
-            servicioSkillDAO.deleteById(servicioSkillId);
-            return true;
+    public void quitarSkillDeServicio(Integer servicioId, Integer skillId) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
+        if (servicioOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Servicio con id " + servicioId + " no encontrado");
         }
-        return false;
+        Servicio servicio = servicioOptional.get();
+        verificarPerenenciaServicio(servicio, organizacion);
+        Optional<Skill> skillOptional = skillDAO.findById(skillId);
+        if (skillOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Skill con id " + skillId + " no encontrada");
+        }
+        Skill skill = skillOptional.get();
+        verificarPertenenciaSkill(skill, organizacion);
+        ServicioSkillId servicioSkillId = new ServicioSkillId(servicioId, skillId);
+        if (!servicioSkillDAO.existsById(servicioSkillId)) {
+            throw new RecursoNoEncontradoException(
+                    "Asignación de skill " + skillId + " al servicio " + servicioId + " no encontrada");
+        }
+        servicioSkillDAO.deleteById(servicioSkillId);
     }
 
-    // VERIFICACIÓN DE TENENCIA
+    //      MÉTODOS AUXILIARES
 
-    private void verificarTenenciaCategoria(Categoria categoria, Organizacion organizacion) {
+
+    // VERIFICACIÓN DE PERTENENCIA
+
+    private void verificarPertenenciaCategoria(Categoria categoria, Organizacion organizacion) {
         if (!categoria.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Categoría con id " + categoria.getId() + " no encontrada");
         }
     }
 
-    private void verificarTenenciaSkill(Skill skill, Organizacion organizacion) {
+    private void verificarPertenenciaSkill(Skill skill, Organizacion organizacion) {
         if (!skill.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Skill con id " + skill.getId() + " no encontrada");
         }
     }
 
-    private void verificarTenenciaServicio(Servicio servicio, Organizacion organizacion) {
+    private void verificarPerenenciaServicio(Servicio servicio, Organizacion organizacion) {
         if (!servicio.getOrganizacion().getId().equals(organizacion.getId())) {
             throw new RecursoNoEncontradoException("Servicio con id " + servicio.getId() + " no encontrado");
         }
@@ -317,7 +394,11 @@ public class CatalogoServiceImpl implements CatalogoService {
     private Categoria convertirCategoriaAEntidad(CategoriaDTO dto) {
         Categoria categoria = new Categoria();
         categoria.setNombre(dto.getNombre());
-        categoria.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        if (dto.getActivo() != null) {
+            categoria.setActivo(dto.getActivo());
+        } else {
+            categoria.setActivo(true);
+        }
         return categoria;
     }
 
@@ -335,7 +416,11 @@ public class CatalogoServiceImpl implements CatalogoService {
         Skill skill = new Skill();
         skill.setNombre(dto.getNombre());
         skill.setDescripcion(dto.getDescripcion());
-        skill.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        if (dto.getActivo() != null) {
+            skill.setActivo(dto.getActivo());
+        } else {
+            skill.setActivo(true);
+        }
         return skill;
     }
 
@@ -363,7 +448,11 @@ public class CatalogoServiceImpl implements CatalogoService {
         servicio.setImagenUrl(dto.getImagenUrl());
         servicio.setPrecio(dto.getPrecio());
         servicio.setDuracionMinutos(dto.getDuracionMinutos());
-        servicio.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        if (dto.getActivo() != null) {
+            servicio.setActivo(dto.getActivo());
+        } else {
+            servicio.setActivo(true);
+        }
         return servicio;
     }
 

@@ -2,7 +2,6 @@ package com.citaria.dto;
 
 /**
  * DTO de respuesta para el proceso de autenticación.
- * Encapsula el token JWT generado tras un login exitoso.
  */
 public class LoginRespuestaDTO {
 
