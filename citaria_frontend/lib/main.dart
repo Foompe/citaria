@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:citaria_frontend/ui/navegacion/rutas.dart';
+import 'package:citaria_frontend/ui/navigation/rutas.dart';
 import 'package:citaria_frontend/ui/theme/tema_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_detalle_servicio.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_detalle_reserva_cliente.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_servicio.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_reserva_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_reserva.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';

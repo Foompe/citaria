@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_splash.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_splash.dart';
 // ── Bloque 4: área admin común ────────────────────────────────────────────────
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_inicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
@@ -7,21 +7,21 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_seleccion_clien
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_clientes.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_calendario.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_seleccion_empresa.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_login.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_registro.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_vincular_cuenta.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_inicio_cliente.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_catalogo_cliente.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_mis_reservas.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_perfil.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_chatbot.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_login.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_registro.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_vincular_cuenta.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_inicio_cliente.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_catalogo_cliente.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_mis_reservas.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_perfil.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_chatbot.dart';
 // ── Bloque 3: wizard de reserva ───────────────────────────────────────────────
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_wizard_servicios.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_wizard_empleado.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_wizard_fecha.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_wizard_hora.dart';
-import 'package:citaria_frontend/ui/screens/cliente/pantalla_wizard_confirmar.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_servicios.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_empleado.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_fecha.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_hora.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_confirmar.dart';
 
 /// Inventario centralizado de rutas de la aplicación Citaria.
 ///

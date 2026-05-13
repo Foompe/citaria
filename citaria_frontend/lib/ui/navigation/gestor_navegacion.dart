@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:citaria_frontend/ui/navegacion/rutas.dart';
-import 'package:citaria_frontend/ui/navegacion/sesion_pin.dart';
+import 'package:citaria_frontend/ui/navigation/rutas.dart';
+import 'package:citaria_frontend/ui/navigation/sesion_pin.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_empleados.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_empleado.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
@@ -9,7 +9,7 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_servicio.
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_horarios.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_estadisticas.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_ajustes.dart';
-import 'package:citaria_frontend/ui/screens/publico/pantalla_seleccion_empresa.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.dart';
 import 'package:citaria_frontend/ui/widgets/dialogo_pin.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:citaria_frontend/ui/navegacion/gestor_navegacion.dart';
+import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_citaria.dart';
 
 /// Secciones principales del área de administración.

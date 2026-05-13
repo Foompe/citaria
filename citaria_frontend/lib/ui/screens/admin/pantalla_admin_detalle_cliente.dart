@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:citaria_frontend/ui/navegacion/gestor_navegacion.dart';
+import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';

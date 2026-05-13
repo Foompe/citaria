@@ -9,8 +9,8 @@ VALUES ('DetailCarWash', 'info@detailcarwash.com', '981234567', 'B12345678',
         'Calle Real 45', '15001', 'A Coruña', 'ES', 'DCW2026');
 
 -- CONFIGURACIÓN VISUAL
-INSERT INTO configuracion_visual (organizacion_id, logo_url, color_primario, color_secundario, tipografia, version)
-VALUES (1, 'https://res.cloudinary.com/dvvsp9a09/image/upload/v1778440147/logoDCW_x1uq6r.png', '#2E6BFF', '#F5F6FA', 'Syne', 1);
+INSERT INTO configuracion_visual (organizacion_id, logo_url,icono_app_url, color_primario, color_secundario, tipografia, version)
+VALUES (1, 'https://res.cloudinary.com/dvvsp9a09/image/upload/q_auto/f_auto/v1778605619/foto_taller_krhnh3.png', 'https://res.cloudinary.com/dvvsp9a09/image/upload/q_auto/f_auto/v1778605099/app_icon_DetailCarWash_sens8v.png', '#2E6BFF', '#F5F6FA', 'Syne', 1);
 
 -- CATEGORÍAS
 INSERT INTO categoria (organizacion_id, nombre, activo) VALUES

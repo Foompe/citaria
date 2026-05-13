@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:citaria_frontend/ui/navegacion/gestor_navegacion.dart';
+import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
