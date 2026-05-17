@@ -1,5 +1,6 @@
 package com.citaria.controller;
 
+import com.citaria.dto.DiasDisponiblesDTO;
 import com.citaria.dto.DisponibilidadDTO;
 import com.citaria.service.DisponibilidadService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,5 +43,22 @@ public class DisponibilidadController {
             @RequestParam(required = false) Integer empleadoId) {
         return ResponseEntity.ok(
                 disponibilidadService.obtenerDisponibilidad(fecha, servicioIds, empleadoId));
+    }
+
+    @Operation(summary = "Obtener días disponibles del mes",
+            description = "Devuelve los días del mes que tienen al menos una franja disponible. " +
+                    "empleadoId es opcional — si no se indica, evalúa todos los empleados válidos.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Días disponibles calculados correctamente"),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado")
+    })
+    @GetMapping("/mes")
+    public ResponseEntity<DiasDisponiblesDTO> obtenerDiasDisponibles(
+            @RequestParam Integer anio,
+            @RequestParam Integer mes,
+            @RequestParam List<Integer> servicioIds,
+            @RequestParam(required = false) Integer empleadoId) {
+        return ResponseEntity.ok(
+                disponibilidadService.obtenerDiasDisponibles(anio, mes, servicioIds, empleadoId));
     }
 }

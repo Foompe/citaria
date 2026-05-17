@@ -1,17 +1,21 @@
 package com.citaria.service;
 
+import com.citaria.dto.DiasDisponiblesDTO;
 import com.citaria.dto.DisponibilidadDTO;
 import com.citaria.dto.FranjaHorariaDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
 import com.citaria.security.ContextoSeguridad;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +35,7 @@ import java.util.Optional;
 @Service
 public class DisponibilidadServiceImpl implements DisponibilidadService {
 
+    private static final Logger logger = LoggerFactory.getLogger(DisponibilidadServiceImpl.class);
     private static final int INTERVALO_MINUTOS = 15;
 
     private final OrganizacionHorarioDAO organizacionHorarioDAO;
@@ -116,6 +121,43 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         }
 
         return new DisponibilidadDTO(fecha, franjas);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DiasDisponiblesDTO obtenerDiasDisponibles(Integer anio,
+                                                     Integer mes,
+                                                     List<Integer> servicioIds,
+                                                     Integer empleadoId) {
+        YearMonth mesConsultado = YearMonth.of(anio, mes);
+        YearMonth mesActual = YearMonth.now();
+
+        if (mesConsultado.isBefore(mesActual)) {
+            return new DiasDisponiblesDTO(new ArrayList<>());
+        }
+
+        LocalDate hoy = LocalDate.now();
+        int primerDia = 1;
+        if (mesConsultado.equals(mesActual)) {
+            primerDia = hoy.getDayOfMonth();
+        }
+
+        List<Integer> diasDisponibles = new ArrayList<>();
+        for (int dia = primerDia; dia <= mesConsultado.lengthOfMonth(); dia++) {
+            LocalDate fecha = mesConsultado.atDay(dia);
+            try {
+                DisponibilidadDTO disponibilidad = obtenerDisponibilidad(fecha, servicioIds, empleadoId);
+                boolean tieneDisponibilidad = disponibilidad.getFranjas().stream()
+                        .anyMatch(FranjaHorariaDTO::isDisponible);
+                if (tieneDisponibilidad) {
+                    diasDisponibles.add(dia);
+                }
+            } catch (Exception ex) {
+                logger.warn("No se pudo calcular la disponibilidad para la fecha {}", fecha, ex);
+            }
+        }
+
+        return new DiasDisponiblesDTO(diasDisponibles);
     }
 
     // MÉTODOS AUXILIARES

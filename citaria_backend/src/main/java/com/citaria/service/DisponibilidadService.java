@@ -1,5 +1,6 @@
 package com.citaria.service;
 
+import com.citaria.dto.DiasDisponiblesDTO;
 import com.citaria.dto.DisponibilidadDTO;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,4 +29,18 @@ public interface DisponibilidadService {
     DisponibilidadDTO obtenerDisponibilidad(LocalDate fecha,
                                             List<Integer> servicioIds,
                                             Integer empleadoId);
+
+    /**
+     * Devuelve los días del mes indicado que tienen al menos una franja disponible.
+     *
+     * @param anio        año a consultar
+     * @param mes         mes a consultar (1-12)
+     * @param servicioIds lista de ids de servicios seleccionados
+     * @param empleadoId  id del empleado (opcional)
+     * @return lista de números de día del mes con disponibilidad
+     */
+    DiasDisponiblesDTO obtenerDiasDisponibles(Integer anio,
+                                              Integer mes,
+                                              List<Integer> servicioIds,
+                                              Integer empleadoId);
 }

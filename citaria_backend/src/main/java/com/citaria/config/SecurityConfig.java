@@ -72,6 +72,7 @@ public class SecurityConfig {
 
 
                         // Disponibilidad — accesible por ADMIN, EMPLEADO y CLIENTE autenticados
+                        .requestMatchers(HttpMethod.GET, "/api/disponibilidad/mes").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/disponibilidad").authenticated()
 
 
