@@ -99,6 +99,16 @@ public class OrganizacionController {
         return ResponseEntity.ok(organizacionService.obtenerConfiguracionPorToken(token));
     }
 
+    @Operation(summary = "Obtener configuración visual pública de una organización")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Configuración encontrada"),
+            @ApiResponse(responseCode = "404", description = "Organización o configuración no encontrada")
+    })
+    @GetMapping("/{id}/configuracion")
+    public ResponseEntity<ConfiguracionVisualDTO> obtenerConfiguracionPublica(@PathVariable Integer id) {
+        return ResponseEntity.ok(organizacionService.obtenerConfiguracionPublicaPorOrganizacionId(id));
+    }
+
     @Operation(summary = "Crear configuración visual de una organización")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Configuración creada correctamente")

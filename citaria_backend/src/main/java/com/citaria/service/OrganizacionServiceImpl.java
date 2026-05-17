@@ -118,6 +118,17 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ConfiguracionVisualDTO obtenerConfiguracionPublicaPorOrganizacionId(Integer organizacionId) {
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
+        Optional<ConfiguracionVisual> configuracionOptional = configuracionVisualDAO.findByOrganizacion(organizacion);
+        if (configuracionOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Configuración visual no encontrada para la organización");
+        }
+        return convertirConfiguracionADTO(configuracionOptional.get());
+    }
+
+    @Override
     @Transactional
     public ConfiguracionVisualDTO crearConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto) {
         verificarPertenencia(organizacionId);
@@ -290,6 +301,7 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         OrganizacionPublicaDTO dto = new OrganizacionPublicaDTO();
         dto.setId(organizacion.getId());
         dto.setNombre(organizacion.getNombre());
+        dto.setTokenRegistro(organizacion.getTokenRegistro());
         if (configuracionOptional.isPresent()) {
             dto.setLogoUrl(configuracionOptional.get().getLogoUrl());
         } else {

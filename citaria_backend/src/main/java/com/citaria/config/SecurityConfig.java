@@ -63,7 +63,8 @@ public class SecurityConfig {
 
                         // Público — configuración visual por token de registro
                         .requestMatchers(HttpMethod.GET, "/api/organizaciones/configuracion",
-                                "/api/organizaciones/publico").permitAll()
+                                "/api/organizaciones/publico",
+                                "/api/organizaciones/*/configuracion").permitAll()
 
 
                         // Chatbot — solo usuarios autenticados
@@ -90,6 +91,7 @@ public class SecurityConfig {
 
 
                         // Solo ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/api/empleados/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/catalogo/**").hasRole("ADMIN")

@@ -21,6 +21,7 @@ public interface OrganizacionService {
 
     // Configuración visual
     ConfiguracionVisualDTO obtenerConfiguracionPorToken(String tokenRegistro);
+    ConfiguracionVisualDTO obtenerConfiguracionPublicaPorOrganizacionId(Integer organizacionId);
     ConfiguracionVisualDTO crearConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto);
     ConfiguracionVisualDTO actualizarConfiguracion(Integer organizacionId, ConfiguracionVisualDTO dto);
 

@@ -23,7 +23,7 @@ import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_fecha.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_hora.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_confirmar.dart';
 
-/// Inventario centralizado de rutas de la aplicación Citaria.
+/// Inventario centralizado de rutas
 ///
 /// Las pantallas protegidas por PIN no tienen ruta nombrada ni entrada
 /// en [mapaDeRutas]. La navegación a ellas ocurre exclusivamente a través
@@ -42,7 +42,7 @@ class Rutas {
   static const String inicioCliente = '/inicio';
   static const String catalogoCliente = '/catalogo';
 
-  /// Solo constante — lleva segmento :id. No incluida en [mapaDeRutas].
+  /// Solo constante — lleva segmento :id.
   static const String detalleServicio = '/servicio/:id';
 
   static const String wizardServicios = '/nueva-reserva/servicios';
@@ -52,13 +52,13 @@ class Rutas {
   static const String wizardConfirmar = '/nueva-reserva/confirmar';
   static const String misReservas = '/mis-reservas';
 
-  /// Solo constante — lleva segmento :id. No incluida en [mapaDeRutas].
+  /// Solo constante — lleva segmento :id.
   static const String detalleReservaCliente = '/reserva/:id';
 
   static const String perfil = '/perfil';
   static const String chatbot = '/chatbot';
 
-  // ── ÁREA ADMIN — COMÚN ────────────────────────────────────────────────────
+  // ── ÁREA ADMIN — COMÚN
   static const String adminInicio = '/admin/inicio';
   static const String adminReservas = '/admin/reservas';
 

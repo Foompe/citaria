@@ -11,6 +11,7 @@ public interface UsuarioService {
 
     List<UsuarioDTO> obtenerTodos();
     List<UsuarioDTO> obtenerPorRol(RolUsuario rol);
+    UsuarioDTO obtenerActual();
     UsuarioDTO obtenerPorId(Integer id);
     UsuarioDTO crear(UsuarioDTO dto);
     UsuarioDTO actualizar(Integer id, UsuarioDTO dto);

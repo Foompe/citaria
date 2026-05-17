@@ -70,6 +70,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional(readOnly = true)
+    public UsuarioDTO obtenerActual() {
+        Usuario usuario = contextoSeguridad.obtenerUsuarioActual();
+        return convertirADTO(usuario);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public UsuarioDTO obtenerPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Usuario> usuarioOptional = usuarioDAO.findById(id);

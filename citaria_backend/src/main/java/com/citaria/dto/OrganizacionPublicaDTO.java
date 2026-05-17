@@ -8,6 +8,7 @@ public class OrganizacionPublicaDTO {
     private Integer id;
     private String nombre;
     private String logoUrl;
+    private String tokenRegistro;
 
     public Integer getId() {
         return id;
@@ -31,5 +32,13 @@ public class OrganizacionPublicaDTO {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
+    }
+
+    public String getTokenRegistro() {
+        return tokenRegistro;
+    }
+
+    public void setTokenRegistro(String tokenRegistro) {
+        this.tokenRegistro = tokenRegistro;
     }
 }

@@ -46,6 +46,15 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.obtenerPorRol(rol));
     }
 
+    @Operation(summary = "Obtener usuario autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuario autenticado obtenido correctamente")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<UsuarioDTO> obtenerActual() {
+        return ResponseEntity.ok(usuarioService.obtenerActual());
+    }
+
     @Operation(summary = "Obtener usuario por ID")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuario encontrado"),
