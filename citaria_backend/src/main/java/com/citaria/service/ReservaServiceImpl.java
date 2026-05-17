@@ -463,6 +463,10 @@ public class ReservaServiceImpl implements ReservaService {
         }
         dto.setEstado(reserva.getEstado());
         dto.setFecha(reserva.getFecha());
+        List<ReservaServicio> detalles = reservaServicioDAO.findByReserva(reserva);
+        if (!detalles.isEmpty()) {
+            dto.setHoraInicio(detalles.get(0).getHoraInicio());
+        }
         dto.setNotas(reserva.getNotas());
         dto.setMotivo(reserva.getMotivo());
         return dto;
