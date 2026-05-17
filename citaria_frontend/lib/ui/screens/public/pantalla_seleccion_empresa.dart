@@ -1,24 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
-
-/// Modelo de datos temporal para la lista hardcodeada.
-///
-/// TODO: sustituir por entidad real del dominio cuando exista.
-class _DatosEmpresa {
-  const _DatosEmpresa({
-    required this.nombre,
-    required this.descripcion,
-    this.logoAsset,
-  });
-
-  final String nombre;
-  final String descripcion;
-  final String? logoAsset;
-}
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
 /// P02 — Selección de empresa.
 ///
@@ -33,40 +21,49 @@ class PantallaSeleccionEmpresa extends StatefulWidget {
 }
 
 class _PantallaSeleccionEmpresaState extends State<PantallaSeleccionEmpresa> {
-  // TODO: cargar de API — GET /empresas
-  static const List<_DatosEmpresa> _empresas = [
-    _DatosEmpresa(
-      nombre: 'DetailCarWash Madrid',
-      descripcion: 'Lavado y detailing premium · Alcobendas',
-      logoAsset: 'assets/images/logo_citaria.png',
-    ),
-    _DatosEmpresa(
-      nombre: 'DetailCarWash Norte',
-      descripcion: 'Lavado y detailing premium · Las Rozas',
-    ),
-    _DatosEmpresa(
-      nombre: 'DetailCarWash Sur',
-      descripcion: 'Lavado y detailing premium · Getafe',
-    ),
-  ];
-
   int? _indiceSeleccionado;
   DateTime? _ultimoIntentoSalir;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ViewModelAutenticacion>().cargarEmpresasPublicas();
+    });
+  }
 
   void _seleccionarEmpresa(int index) {
     setState(() => _indiceSeleccionado = index);
   }
 
-  void _continuar() {
-    if (_indiceSeleccionado == null) return;
+  Future<void> _continuar(List<DtoEmpresaSeleccionable> empresas) async {
+    final int? indiceSeleccionado = _indiceSeleccionado;
+    if (indiceSeleccionado == null) return;
+    final int indice = indiceSeleccionado;
+    if (indice < 0 || indice >= empresas.length) return;
 
-    // TODO: guardar empresa seleccionada y cargar configuración visual.
+    final vmAuth = context.read<ViewModelAutenticacion>();
+    final vmTema = context.read<ViewModelTema>();
+
+    await vmAuth.seleccionarEmpresa(empresas[indice], tema: vmTema);
+    if (!mounted) return;
+
+    final String? mensajeError = vmAuth.error;
+    if (mensajeError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensajeError)));
+      return;
+    }
     GestorNavegacion.irALogin(context);
   }
 
   void _manejarIntentoSalir() {
     final ahora = DateTime.now();
-    final puedeSalir = _ultimoIntentoSalir != null &&
+    final puedeSalir =
+        _ultimoIntentoSalir != null &&
         ahora.difference(_ultimoIntentoSalir!) < const Duration(seconds: 2);
 
     if (puedeSalir) {
@@ -91,6 +88,8 @@ class _PantallaSeleccionEmpresaState extends State<PantallaSeleccionEmpresa> {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final vmAuth = context.watch<ViewModelAutenticacion>();
+    final empresas = vmAuth.empresas;
 
     return PopScope(
       canPop: false,
@@ -134,34 +133,19 @@ class _PantallaSeleccionEmpresaState extends State<PantallaSeleccionEmpresa> {
                 ),
                 const SizedBox(height: 24),
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: espaciado.radioCard,
-                      border: Border.all(
-                        color: colorScheme.outlineVariant,
-                        width: 1.2,
-                      ),
-                    ),
-                    child: ListView.separated(
-                      itemCount: _empresas.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final empresa = _empresas[index];
-
-                        return _TarjetaEmpresa(
-                          empresa: empresa,
-                          seleccionada: _indiceSeleccionado == index,
-                          onTap: () => _seleccionarEmpresa(index),
-                        );
-                      },
-                    ),
+                  child: _ContenidoEmpresas(
+                    cargando: vmAuth.cargando,
+                    error: vmAuth.error,
+                    empresas: empresas,
+                    indiceSeleccionado: _indiceSeleccionado,
+                    onSeleccionar: _seleccionarEmpresa,
                   ),
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
-                  onPressed: _indiceSeleccionado == null ? null : _continuar,
+                  onPressed: _indiceSeleccionado == null || vmAuth.cargando
+                      ? null
+                      : () => _continuar(empresas),
                   child: const Text('Seleccionar'),
                 ),
               ],
@@ -169,6 +153,68 @@ class _PantallaSeleccionEmpresaState extends State<PantallaSeleccionEmpresa> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ContenidoEmpresas extends StatelessWidget {
+  const _ContenidoEmpresas({
+    required this.cargando,
+    required this.error,
+    required this.empresas,
+    required this.indiceSeleccionado,
+    required this.onSeleccionar,
+  });
+
+  final bool cargando;
+  final String? error;
+  final List<DtoEmpresaSeleccionable> empresas;
+  final int? indiceSeleccionado;
+  final ValueChanged<int> onSeleccionar;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: espaciado.radioCard,
+        border: Border.all(color: colorScheme.outlineVariant, width: 1.2),
+      ),
+      child: switch ((cargando, error, empresas.isEmpty)) {
+        (true, _, _) => const Center(child: CircularProgressIndicator()),
+        (false, final String mensaje, _) => Center(
+          child: Text(
+            mensaje,
+            textAlign: TextAlign.center,
+            style: textTheme.bodyLarge?.copyWith(color: colorScheme.error),
+          ),
+        ),
+        (false, null, true) => Center(
+          child: Text(
+            'No hay empresas disponibles.',
+            textAlign: TextAlign.center,
+            style: textTheme.bodyLarge,
+          ),
+        ),
+        (false, null, false) => ListView.separated(
+          itemCount: empresas.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            final empresa = empresas[index];
+
+            return _TarjetaEmpresa(
+              empresa: empresa,
+              seleccionada: indiceSeleccionado == index,
+              onTap: () => onSeleccionar(index),
+            );
+          },
+        ),
+      },
     );
   }
 }
@@ -181,7 +227,7 @@ class _TarjetaEmpresa extends StatelessWidget {
     required this.onTap,
   });
 
-  final _DatosEmpresa empresa;
+  final DtoEmpresaSeleccionable empresa;
   final bool seleccionada;
   final VoidCallback onTap;
 
@@ -213,7 +259,7 @@ class _TarjetaEmpresa extends StatelessWidget {
             children: [
               AvatarFallbackCitaria(
                 texto: empresa.nombre,
-                imagenAsset: empresa.logoAsset,
+                imagenUrl: empresa.logoUrl,
                 tamano: 44,
                 radio: 12,
               ),
@@ -223,15 +269,6 @@ class _TarjetaEmpresa extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(empresa.nombre, style: textTheme.displaySmall),
-                    const SizedBox(height: 4),
-                    Text(
-                      empresa.descripcion,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.outline,
-                      ),
-                    ),
                   ],
                 ),
               ),

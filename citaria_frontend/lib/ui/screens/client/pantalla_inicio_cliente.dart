@@ -1,61 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
+import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 
-/// Pantalla de inicio del área cliente (P07).
-///
-/// Muestra saludo, chips de categoría, servicios destacados en
-/// scroll horizontal y la próxima cita del usuario.
-///
-/// HARDCODING TEMPORAL:
-///   - Nombre de usuario: 'Carlos' → TODO: leer de ViewModelAutenticacion
-///   - Categorías: lista fija → TODO: cargar de API
-///   - Servicios destacados: 3 items fijos → TODO: cargar de API
-///   - Próxima cita: 1 item fijo → TODO: cargar de API
-class PantallaInicioCliente extends StatelessWidget {
+class PantallaInicioCliente extends StatefulWidget {
   const PantallaInicioCliente({super.key});
 
-  // TODO: cargar categorías de API
-  static const List<String> _categorias = [
-    'Todos',
-    'Exterior',
-    'Interior',
-    'Premium',
-    'Detailing',
-  ];
+  @override
+  State<PantallaInicioCliente> createState() => _PantallaInicioClienteState();
+}
 
-  // TODO: cargar servicios de API
-  static const List<Map<String, String>> _serviciosDestacados = [
-    {
-      'id': 's1',
-      'nombre': 'Lavado exterior',
-      'duracion': '30 min',
-      'precio': '15 €',
-    },
-    {
-      'id': 's2',
-      'nombre': 'Pulido completo',
-      'duracion': '90 min',
-      'precio': '80 €',
-    },
-    {
-      'id': 's3',
-      'nombre': 'Interior premium',
-      'duracion': '60 min',
-      'precio': '45 €',
-    },
-  ];
+class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ViewModelCatalogoCliente>().cargarCatalogo();
+      context.read<ViewModelReservasCliente>().cargarReservasCliente();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final usuario = context.watch<ViewModelAutenticacion>().usuarioActual;
+    final catalogo = context.watch<ViewModelCatalogoCliente>();
+    final reservas = context.watch<ViewModelReservasCliente>();
+    final categorias = catalogo.categorias;
+    final serviciosDestacados = catalogo.serviciosDestacados;
+    final proximaReserva = reservas.proximaReserva;
 
     return Scaffold(
       bottomNavigationBar: const BarraNavegacionCliente(
@@ -67,11 +55,9 @@ class PantallaInicioCliente extends StatelessWidget {
         heroTag: 'fab-chatbot',
         onPressed: () => GestorNavegacion.irAChatbot(context),
       ),
-
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Cabecera manual ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -86,8 +72,7 @@ class PantallaInicioCliente extends StatelessWidget {
                       radius: 20,
                       backgroundColor: colorScheme.primary,
                       child: Text(
-                        // TODO: iniciales reales del ViewModelAutenticacion
-                        'CV',
+                        usuario?.iniciales ?? 'C',
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.onPrimary,
                           fontWeight: FontWeight.w700,
@@ -99,9 +84,9 @@ class PantallaInicioCliente extends StatelessWidget {
                     const Spacer(),
                     Semantics(
                       label: 'Notificaciones',
-                      child: IconButton(
+                      child: const IconButton(
                         tooltip: 'Notificaciones',
-                        icon: const Icon(Icons.notifications_none),
+                        icon: Icon(Icons.notifications_none),
                         onPressed: null,
                       ),
                     ),
@@ -109,8 +94,6 @@ class PantallaInicioCliente extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Saludo ─────────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
@@ -118,8 +101,7 @@ class PantallaInicioCliente extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      // TODO: nombre real del ViewModelAutenticacion
-                      'Hola, Carlos',
+                      'Hola, ${usuario?.nombre ?? 'cliente'}',
                       style: textTheme.displayLarge,
                     ),
                     const SizedBox(height: 4),
@@ -131,8 +113,6 @@ class PantallaInicioCliente extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Chips de categoría ─────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(top: 20),
@@ -141,16 +121,24 @@ class PantallaInicioCliente extends StatelessWidget {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-                    itemCount: _categorias.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, i) =>
-                        ChipCategoria(etiqueta: _categorias[i], activo: i == 0),
+                    itemCount: categorias.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final categoria = categorias[i];
+                      return GestureDetector(
+                        onTap: () => context
+                            .read<ViewModelCatalogoCliente>()
+                            .seleccionarCategoria(categoria.id),
+                        child: ChipCategoria(
+                          etiqueta: categoria.nombre,
+                          activo: categoria.activa,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
-
-            // ── Servicios destacados ───────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.only(
@@ -180,29 +168,38 @@ class PantallaInicioCliente extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 12),
                 child: SizedBox(
                   height: 160,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-                    itemCount: _serviciosDestacados.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, i) {
-                      final s = _serviciosDestacados[i];
-                      return _TarjetaServicioDestacado(
-                        nombre: s['nombre']!,
-                        duracion: s['duracion']!,
-                        precio: s['precio']!,
-                        onTap: () => GestorNavegacion.irADetalleServicio(
-                          context,
-                          s['id']!,
+                  child: serviciosDestacados.isEmpty
+                      ? Center(
+                          child: Text(
+                            catalogo.cargando
+                                ? 'Cargando servicios...'
+                                : 'No hay servicios disponibles.',
+                            style: textTheme.bodyLarge,
+                          ),
+                        )
+                      : ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: espaciado.padX,
+                          ),
+                          itemCount: serviciosDestacados.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 12),
+                          itemBuilder: (context, i) {
+                            final servicio = serviciosDestacados[i];
+                            return _TarjetaServicioDestacado(
+                              nombre: servicio.nombre,
+                              duracion: servicio.duracionTexto,
+                              precio: servicio.precioTexto,
+                              onTap: () => GestorNavegacion.irADetalleServicio(
+                                context,
+                                servicio.id.toString(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ),
             ),
-
-            // ── Próximas citas ─────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -225,15 +222,23 @@ class PantallaInicioCliente extends StatelessWidget {
                   espaciado.padX,
                   32,
                 ),
-                // TODO: cargar reservas de API
-                child: _TarjetaProximaCita(
-                  estado: EstadoReserva.confirmada,
-                  nombreServicio: 'Lavado exterior',
-                  meta: 'Lunes 5 may · 10:00 h',
-                  precio: '15 €',
-                  onTap: () =>
-                      GestorNavegacion.irADetalleReservaCliente(context, 'r1'),
-                ),
+                child: proximaReserva == null
+                    ? Text(
+                        reservas.cargando
+                            ? 'Cargando reservas...'
+                            : 'No tienes próximas reservas.',
+                        style: textTheme.bodyLarge,
+                      )
+                    : _TarjetaProximaCita(
+                        estado: _estadoUi(proximaReserva.estado),
+                        nombreServicio: proximaReserva.nombreServicio,
+                        meta: proximaReserva.metaFechaHora,
+                        precio: proximaReserva.precioTexto,
+                        onTap: () => GestorNavegacion.irADetalleReservaCliente(
+                          context,
+                          proximaReserva.id.toString(),
+                        ),
+                      ),
               ),
             ),
           ],
@@ -243,7 +248,14 @@ class PantallaInicioCliente extends StatelessWidget {
   }
 }
 
-// ── Widgets privados ──────────────────────────────────────────────────────────
+estado_ui.EstadoReserva _estadoUi(EstadoReservaPresentacion estado) {
+  return switch (estado) {
+    EstadoReservaPresentacion.confirmada => estado_ui.EstadoReserva.confirmada,
+    EstadoReservaPresentacion.cancelada => estado_ui.EstadoReserva.cancelada,
+    EstadoReservaPresentacion.completada => estado_ui.EstadoReserva.completada,
+    EstadoReservaPresentacion.pendiente => estado_ui.EstadoReserva.pendiente,
+  };
+}
 
 class _TarjetaServicioDestacado extends StatelessWidget {
   const _TarjetaServicioDestacado({
@@ -274,8 +286,8 @@ class _TarjetaServicioDestacado extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              colorScheme.primary.withOpacity(0.85),
-              colorScheme.primary.withOpacity(0.50),
+              colorScheme.primary.withValues(alpha: 0.85),
+              colorScheme.primary.withValues(alpha: 0.50),
             ],
           ),
           borderRadius: espaciado.radioCard,
@@ -296,7 +308,7 @@ class _TarjetaServicioDestacado extends StatelessWidget {
             Text(
               duracion,
               style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onPrimary.withOpacity(0.80),
+                color: colorScheme.onPrimary.withValues(alpha: 0.80),
               ),
             ),
             const SizedBox(height: 2),
@@ -323,7 +335,7 @@ class _TarjetaProximaCita extends StatelessWidget {
     required this.onTap,
   });
 
-  final EstadoReserva estado;
+  final estado_ui.EstadoReserva estado;
   final String nombreServicio;
   final String meta;
   final String precio;
@@ -347,7 +359,7 @@ class _TarjetaProximaCita extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ChipEstado(estado: estado),
+                  estado_ui.ChipEstado(estado: estado),
                   Icon(Icons.chevron_right, color: colorScheme.outline),
                 ],
               ),

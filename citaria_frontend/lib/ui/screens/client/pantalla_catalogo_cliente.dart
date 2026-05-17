@@ -1,71 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/fila_servicio.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
 
-/// Pantalla de catálogo de servicios del área cliente (P08).
-///
-/// Incluye buscador, chips de categoría y lista de servicios.
-///
-/// HARDCODING TEMPORAL:
-///   - Categorías: lista fija → TODO: cargar de API
-///   - Servicios: 4 items fijos → TODO: cargar de API
-class PantallaCatalogoCliente extends StatelessWidget {
+class PantallaCatalogoCliente extends StatefulWidget {
   const PantallaCatalogoCliente({super.key});
 
-  // TODO: cargar categorías de API
-  static const List<String> _categorias = [
-    'Todos',
-    'Exterior',
-    'Interior',
-    'Premium',
-    'Detailing',
-  ];
+  @override
+  State<PantallaCatalogoCliente> createState() =>
+      _PantallaCatalogoClienteState();
+}
 
-  // TODO: cargar servicios de API
-  static const List<Map<String, String>> _servicios = [
-    {
-      'id': 's1',
-      'nombre': 'Lavado exterior',
-      'descripcion':
-          'Limpieza completa de carrocería con productos de alta gama.',
-      'duracion': '30 min',
-      'precio': '15 €',
-    },
-    {
-      'id': 's2',
-      'nombre': 'Pulido completo',
-      'descripcion':
-          'Eliminación de arañazos y oxidación con pulidora orbital.',
-      'duracion': '90 min',
-      'precio': '80 €',
-    },
-    {
-      'id': 's3',
-      'nombre': 'Interior premium',
-      'descripcion':
-          'Aspirado, limpieza de tapicería y tratamiento de plásticos.',
-      'duracion': '60 min',
-      'precio': '45 €',
-    },
-    {
-      'id': 's4',
-      'nombre': 'Detailing completo',
-      'descripcion':
-          'Servicio integral exterior e interior con sellado de pintura.',
-      'duracion': '180 min',
-      'precio': '150 €',
-    },
-  ];
+class _PantallaCatalogoClienteState extends State<PantallaCatalogoCliente> {
+  bool _iniciado = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ViewModelCatalogoCliente>().cargarCatalogo();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final catalogo = context.watch<ViewModelCatalogoCliente>();
+    final categorias = catalogo.categorias;
+    final servicios = catalogo.servicios;
 
     return Scaffold(
       bottomNavigationBar: const BarraNavegacionCliente(
@@ -77,12 +49,10 @@ class PantallaCatalogoCliente extends StatelessWidget {
         heroTag: 'fab-chatbot',
         onPressed: () => GestorNavegacion.irAChatbot(context),
       ),
-
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Cabecera manual ────────────────────────────────────────────
             Padding(
               padding: EdgeInsets.fromLTRB(
                 espaciado.padX,
@@ -96,6 +66,8 @@ class PantallaCatalogoCliente extends StatelessWidget {
                   Text('Servicios', style: textTheme.displayLarge),
                   const SizedBox(height: 14),
                   TextField(
+                    onChanged: (valor) =>
+                        context.read<ViewModelCatalogoCliente>().buscar(valor),
                     decoration: InputDecoration(
                       hintText: 'Buscar servicio…',
                       prefixIcon: Icon(
@@ -107,43 +79,62 @@ class PantallaCatalogoCliente extends StatelessWidget {
                 ],
               ),
             ),
-            // ── Chips de categoría ─────────────────────────────────────────
             const SizedBox(height: 14),
             SizedBox(
               height: 36,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-                itemCount: _categorias.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) =>
-                    ChipCategoria(etiqueta: _categorias[i], activo: i == 0),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // ── Lista de servicios ─────────────────────────────────────────
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.only(bottom: espaciado.safeBottom),
-                itemCount: _servicios.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  indent: espaciado.padX,
-                  endIndent: espaciado.padX,
-                  color: colorScheme.outline.withOpacity(0.2),
-                ),
+                itemCount: categorias.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (context, i) {
-                  final s = _servicios[i];
-                  return FilaServicio(
-                    nombre: s['nombre']!,
-                    descripcion: s['descripcion']!,
-                    duracion: s['duracion']!,
-                    precio: s['precio']!,
-                    onTap: () =>
-                        GestorNavegacion.irADetalleServicio(context, s['id']!),
+                  final categoria = categorias[i];
+                  return GestureDetector(
+                    onTap: () => context
+                        .read<ViewModelCatalogoCliente>()
+                        .seleccionarCategoria(categoria.id),
+                    child: ChipCategoria(
+                      etiqueta: categoria.nombre,
+                      activo: categoria.activa,
+                    ),
                   );
                 },
               ),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: servicios.isEmpty
+                  ? Center(
+                      child: Text(
+                        catalogo.cargando
+                            ? 'Cargando servicios...'
+                            : 'No hay servicios disponibles.',
+                        style: textTheme.bodyLarge,
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.only(bottom: espaciado.safeBottom),
+                      itemCount: servicios.length,
+                      separatorBuilder: (_, _) => Divider(
+                        height: 1,
+                        indent: espaciado.padX,
+                        endIndent: espaciado.padX,
+                        color: colorScheme.outline.withValues(alpha: 0.2),
+                      ),
+                      itemBuilder: (context, i) {
+                        final servicio = servicios[i];
+                        return FilaServicio(
+                          nombre: servicio.nombre,
+                          descripcion: servicio.descripcion,
+                          duracion: servicio.duracionTexto,
+                          precio: servicio.precioTexto,
+                          onTap: () => GestorNavegacion.irADetalleServicio(
+                            context,
+                            servicio.id.toString(),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

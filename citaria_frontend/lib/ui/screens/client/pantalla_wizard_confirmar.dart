@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_wizard.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
 
-/// Paso 5 del wizard de reserva: confirmación.
-///
-/// Muestra el resumen de la reserva y permite añadir observaciones.
-/// Al confirmar muestra el diálogo D02 y navega a inicio cliente.
-///
-/// Ruta: /nueva-reserva/confirmar
 class PantallaWizardConfirmar extends StatefulWidget {
   const PantallaWizardConfirmar({super.key});
 
@@ -27,8 +24,12 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
     super.dispose();
   }
 
-  Future<void> _mostrarDialogoConfirmado() async {
-    final confirmado = await showDialog<bool>(
+  Future<void> _confirmar() async {
+    final ViewModelWizard wizard = context.read<ViewModelWizard>();
+    final sesion = context.read<ViewModelAutenticacion>().obtenerSesion();
+    final bool ok = await wizard.confirmarReserva(sesion);
+    if (!mounted || !ok) return;
+    final bool? confirmado = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reserva confirmada'),
@@ -43,24 +44,26 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
         ],
       ),
     );
-    if (confirmado == true && mounted) {
-      GestorNavegacion.confirmarWizard(context);
+    if (!mounted) return;
+    if (confirmado == true) {
+      GestorNavegacion.confirmarWizard(context, wizard.origen);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final wizard = context.watch<ViewModelWizard>();
+    final resumen = wizard.resumen;
 
     return Scaffold(
-      appBar: CabeceraWizard(
+      appBar: const CabeceraWizard(
         pasoActual: 4,
         totalPasos: 5,
         titulo: 'Confirma tu reserva',
       ),
-
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           espaciado.padX,
@@ -71,14 +74,12 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Card resumen ───────────────────────────────────────────────
             Card(
               color: colorScheme.surfaceContainerHighest,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Servicio
                     _FilaResumen(
                       leading: Container(
                         width: 40,
@@ -94,51 +95,40 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
                         ),
                       ),
                       etiqueta: 'Servicio',
-                      // TODO: mostrar servicios reales del wizard state
-                      valor: 'Lavado Premium + Encerado',
+                      valor: resumen.serviciosTexto,
                     ),
                     const Divider(height: 24),
-
-                    // Profesional
                     _FilaResumen(
                       leading: CircleAvatar(
                         radius: 20,
                         backgroundColor: colorScheme.primaryContainer,
                         child: Text(
-                          // TODO: mostrar profesional real del wizard state
-                          'CM',
+                          resumen.profesionalIniciales,
                           style: textTheme.labelSmall?.copyWith(
                             color: colorScheme.primary,
                           ),
                         ),
                       ),
                       etiqueta: 'Profesional',
-                      // TODO: mostrar profesional real del wizard state
-                      valor: 'Carlos M.',
+                      valor: resumen.profesionalTexto,
                     ),
                     const Divider(height: 24),
-
-                    // Fecha y hora
                     _FilaResumen(
                       leading: Icon(
                         Icons.calendar_month,
                         color: colorScheme.outline,
                       ),
                       etiqueta: 'Fecha y hora',
-                      // TODO: mostrar fecha y hora reales del wizard state
-                      valor: 'Mar 21 abr · 10:30',
+                      valor: resumen.fechaHoraTexto,
                       estiloValor: textTheme.bodyMedium,
                     ),
                     const Divider(height: 24),
-
-                    // Total
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Total', style: textTheme.bodyLarge),
-                        // TODO: mostrar precio total real del wizard state
                         Text(
-                          '110 €',
+                          resumen.precioTotalTexto,
                           style: textTheme.displaySmall?.copyWith(
                             color: colorScheme.primary,
                           ),
@@ -149,15 +139,15 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // ── Observaciones ──────────────────────────────────────────────
             Text('Observaciones (opcional)', style: textTheme.bodyLarge),
             const SizedBox(height: 8),
             TextField(
               controller: _ctrlObservaciones,
               maxLines: 4,
+              onChanged: (valor) => context
+                  .read<ViewModelWizard>()
+                  .actualizarObservaciones(valor),
               decoration: InputDecoration(
                 hintText: 'Indica cualquier detalle que quieras que sepamos…',
                 hintStyle: textTheme.bodyLarge?.copyWith(
@@ -165,23 +155,20 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
                 ),
               ),
             ),
-
-            // Texto informativo — fuera de la barra para evitar overflow
             const SizedBox(height: 16),
             Text(
-              'La reserva quedará pendiente de confirmación',
+              wizard.error ?? 'La reserva quedará pendiente de confirmación',
               textAlign: TextAlign.center,
               style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.outline,
+                color: wizard.error == null
+                    ? colorScheme.outline
+                    : colorScheme.error,
               ),
             ),
-            // Espacio para que el texto no quede tapado por la barra
             const SizedBox(height: 140),
           ],
         ),
       ),
-
-      // ── CTA fija — solo dos botones ───────────────────────────────────────
       bottomNavigationBar: BarraCtaFija(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -189,7 +176,9 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _mostrarDialogoConfirmado,
+                onPressed: wizard.cargando || !resumen.puedeConfirmar
+                    ? null
+                    : _confirmar,
                 child: const Text('Confirmar reserva'),
               ),
             ),
@@ -197,7 +186,8 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: () => GestorNavegacion.cancelarWizard(context),
+                onPressed: () =>
+                    GestorNavegacion.cancelarWizard(context, wizard.origen),
                 child: Text(
                   'Cancelar',
                   style: textTheme.bodyLarge?.copyWith(
@@ -212,8 +202,6 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
     );
   }
 }
-
-// ── Widget auxiliar fila del resumen ─────────────────────────────────────────
 
 class _FilaResumen extends StatelessWidget {
   const _FilaResumen({
@@ -235,13 +223,15 @@ class _FilaResumen extends StatelessWidget {
       children: [
         leading,
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(etiqueta, style: textTheme.bodySmall),
-            const SizedBox(height: 2),
-            Text(valor, style: estiloValor ?? textTheme.bodyLarge),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(etiqueta, style: textTheme.bodySmall),
+              const SizedBox(height: 2),
+              Text(valor, style: estiloValor ?? textTheme.bodyLarge),
+            ],
+          ),
         ),
       ],
     );

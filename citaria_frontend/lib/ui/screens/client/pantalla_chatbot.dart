@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
 
-/// Origen de un mensaje en el chat.
-enum _OrigenMensaje { usuario, bot }
-
-/// Modelo de mensaje local del chatbot.
-class _Mensaje {
-  const _Mensaje({required this.texto, required this.origen});
-  final String        texto;
-  final _OrigenMensaje origen;
-}
-
-/// Pantalla del asistente chatbot (P11).
-///
-/// StatefulWidget: gestiona la lista de mensajes local y el
-/// controlador de texto del campo de entrada.
-///
-/// HARDCODING TEMPORAL:
-///   - Respuesta del bot: fija → TODO: conectar API del chatbot
 class PantallaChatbot extends StatefulWidget {
   const PantallaChatbot({super.key});
 
@@ -29,15 +14,19 @@ class PantallaChatbot extends StatefulWidget {
 
 class _PantallaChatbotState extends State<PantallaChatbot> {
   final TextEditingController _controlador = TextEditingController();
-  final ScrollController      _scroll      = ScrollController();
+  final ScrollController _scroll = ScrollController();
+  bool _iniciado = false;
 
-  // TODO: persistir historial de mensajes si se requiere en Capa 3
-  final List<_Mensaje> _mensajes = [
-    const _Mensaje(
-      texto: '¡Hola! Soy tu asistente Citaria. ¿En qué puedo ayudarte?',
-      origen: _OrigenMensaje.bot,
-    ),
-  ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ViewModelChatbot>().inicializar();
+    });
+  }
 
   @override
   void dispose() {
@@ -46,22 +35,12 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
     super.dispose();
   }
 
-  void _enviarMensaje() {
-    final texto = _controlador.text.trim();
+  Future<void> _enviarMensaje() async {
+    final String texto = _controlador.text.trim();
     if (texto.isEmpty) return;
-
-    setState(() {
-      _mensajes.add(_Mensaje(texto: texto, origen: _OrigenMensaje.usuario));
-      // TODO: conectar API del chatbot — reemplazar respuesta hardcodeada
-      _mensajes.add(
-        const _Mensaje(
-          texto: 'Recibido. En breve te respondo.',
-          origen: _OrigenMensaje.bot,
-        ),
-      );
-    });
-
     _controlador.clear();
+    await context.read<ViewModelChatbot>().enviarMensaje(texto);
+    if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
         _scroll.animateTo(
@@ -75,9 +54,10 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
 
   @override
   Widget build(BuildContext context) {
-    final espaciado  = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme  = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final chatbot = context.watch<ViewModelChatbot>();
 
     return Scaffold(
       appBar: CabeceraPantalla(
@@ -109,7 +89,6 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
       ),
       body: Column(
         children: [
-          // ── Lista de mensajes ──────────────────────────────────────────
           Expanded(
             child: ListView.builder(
               controller: _scroll,
@@ -117,13 +96,11 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
                 horizontal: espaciado.padX,
                 vertical: 16,
               ),
-              itemCount: _mensajes.length,
+              itemCount: chatbot.mensajes.length,
               itemBuilder: (context, i) =>
-                  _BurbujaMensaje(mensaje: _mensajes[i]),
+                  _BurbujaMensaje(mensaje: chatbot.mensajes[i]),
             ),
           ),
-
-          // ── Barra de entrada ───────────────────────────────────────────
           Container(
             color: colorScheme.surface,
             padding: EdgeInsets.fromLTRB(
@@ -150,9 +127,11 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
                     tooltip: 'Enviar',
                     icon: Icon(
                       Icons.send_rounded,
-                      color: colorScheme.primary,
+                      color: chatbot.cargando
+                          ? colorScheme.outline
+                          : colorScheme.primary,
                     ),
-                    onPressed: _enviarMensaje,
+                    onPressed: chatbot.cargando ? null : _enviarMensaje,
                   ),
                 ),
               ],
@@ -164,41 +143,37 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
   }
 }
 
-// ── Widgets privados ──────────────────────────────────────────────────────────
-
 class _BurbujaMensaje extends StatelessWidget {
   const _BurbujaMensaje({required this.mensaje});
 
-  final _Mensaje mensaje;
+  final DtoMensajeChatbot mensaje;
 
   @override
   Widget build(BuildContext context) {
-    final espaciado  = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme  = Theme.of(context).textTheme;
-
-    final esUsuario = mensaje.origen == _OrigenMensaje.usuario;
-
-    // Radio asimétrico según origen del mensaje
-    final radio = esUsuario
+    final textTheme = Theme.of(context).textTheme;
+    final bool esUsuario = mensaje.esUsuario;
+    final BorderRadius radio = esUsuario
         ? BorderRadius.only(
-            topLeft:     Radius.circular(espaciado.radioCard.topLeft.x),
-            topRight:    Radius.circular(espaciado.radioCard.topRight.x),
-            bottomLeft:  Radius.circular(espaciado.radioCard.bottomLeft.x),
+            topLeft: Radius.circular(espaciado.radioCard.topLeft.x),
+            topRight: Radius.circular(espaciado.radioCard.topRight.x),
+            bottomLeft: Radius.circular(espaciado.radioCard.bottomLeft.x),
             bottomRight: const Radius.circular(4),
           )
         : BorderRadius.only(
-            topLeft:     Radius.circular(espaciado.radioCard.topLeft.x),
-            topRight:    Radius.circular(espaciado.radioCard.topRight.x),
-            bottomLeft:  const Radius.circular(4),
+            topLeft: Radius.circular(espaciado.radioCard.topLeft.x),
+            topRight: Radius.circular(espaciado.radioCard.topRight.x),
+            bottomLeft: const Radius.circular(4),
             bottomRight: Radius.circular(espaciado.radioCard.bottomRight.x),
           );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment:
-            esUsuario ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: esUsuario
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!esUsuario) ...[
@@ -207,13 +182,12 @@ class _BurbujaMensaje extends StatelessWidget {
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: esUsuario
                     ? colorScheme.primary
+                    : mensaje.error
+                    ? colorScheme.errorContainer
                     : colorScheme.surfaceContainerHighest,
                 borderRadius: radio,
               ),
@@ -222,6 +196,8 @@ class _BurbujaMensaje extends StatelessWidget {
                 style: textTheme.bodyLarge?.copyWith(
                   color: esUsuario
                       ? colorScheme.onPrimary
+                      : mensaje.error
+                      ? colorScheme.onErrorContainer
                       : colorScheme.onSurface,
                 ),
               ),

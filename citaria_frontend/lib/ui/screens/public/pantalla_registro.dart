@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
 /// P05 — Registro.
 ///
@@ -26,6 +29,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
       TextEditingController();
 
   bool _passwordVisible = false;
+  bool _repeatPasswordVisible = false;
 
   @override
   void dispose() {
@@ -39,40 +43,68 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     super.dispose();
   }
 
-  Future<void> _continuar(BuildContext context) async {
-    // TODO: conectar API — comprobar si el email ya existe:
-    //   POST /auth/verificar-email
-    //   Si ya existe → GestorNavegacion.irAVincularCuenta(context)
-    //   Si es nuevo  → POST /auth/registro → irAHomeCliente
-    // Provisional: navega directamente a home cliente.
-    GestorNavegacion.irAHomeCliente(context);
+  Future<void> _continuar() async {
+    final String nombre = _controladorNombre.text.trim();
+    final String email = _controladorEmail.text.trim();
+
+    if (nombre.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nombre y email son obligatorios.')),
+      );
+      return;
+    }
+
+    if (_controladorPassword.text != _controladorRepeatPassword.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Las contraseñas no coinciden.')),
+      );
+      return;
+    }
+
+    final String apellidos = _controladorApellidos.text.trim();
+    final String telefono = _controladorTelefono.text.trim();
+    final vmAuth = context.read<ViewModelAutenticacion>();
+    final vmTema = context.read<ViewModelTema>();
+    final destino = await vmAuth.registrar(
+      nombre: nombre,
+      apellidos: apellidos.isEmpty ? null : apellidos,
+      email: email,
+      telefono: telefono.isEmpty ? null : telefono,
+      password: _controladorPassword.text,
+      tema: vmTema,
+    );
+
+    if (!mounted) return;
+
+    final String? mensajeError = vmAuth.error;
+    if (destino != null) {
+      GestorNavegacion.irASplashPostAutenticacion(context);
+    } else if (mensajeError != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensajeError)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final textTheme = Theme.of(context).textTheme;
+    final vmAuth = context.watch<ViewModelAutenticacion>();
 
     return Scaffold(
-      // Pasamos el título a la cabecera.
-      // Nota: Si CabeceraPantalla no aplica displayMedium por defecto,
-      // deberás editar ese widget interno para que use textTheme.displayMedium.
       appBar: const CabeceraPantalla(titulo: 'Únete', mostrarAtras: true),
       body: SafeArea(
         bottom: true,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             espaciado.padX,
-            24, // Espacio inicial tras la cabecera
+            24,
             espaciado.padX,
             espaciado.safeBottom + 20,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Se ha eliminado el "Únete" de aquí para evitar duplicidad
-
-              // ── Nombre ─────────────────────────────────────────────────────
               _CampoFormulario(
                 label: 'Nombre',
                 controller: _controladorNombre,
@@ -80,8 +112,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 inputType: TextInputType.name,
               ),
               const SizedBox(height: 14),
-
-              // ── Apellidos ──────────────────────────────────────────────────
               _CampoFormulario(
                 label: 'Apellidos',
                 controller: _controladorApellidos,
@@ -89,8 +119,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 inputType: TextInputType.name,
               ),
               const SizedBox(height: 14),
-
-              // ── DNI (opcional) ─────────────────────────────────────────────
               _CampoFormulario(
                 label: 'DNI (opcional)',
                 controller: _controladorDni,
@@ -98,8 +126,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 inputType: TextInputType.text,
               ),
               const SizedBox(height: 14),
-
-              // ── Email ──────────────────────────────────────────────────────
               _CampoFormulario(
                 label: 'Email',
                 controller: _controladorEmail,
@@ -107,8 +133,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 inputType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 14),
-
-              // ── Teléfono ───────────────────────────────────────────────────
               _CampoFormulario(
                 label: 'Teléfono',
                 controller: _controladorTelefono,
@@ -116,8 +140,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 inputType: TextInputType.phone,
               ),
               const SizedBox(height: 14),
-
-              // ── Contraseña ─────────────────────────────────────────────────
               _CampoPassword(
                 label: 'Contraseña',
                 controller: _controladorPassword,
@@ -127,25 +149,18 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                     setState(() => _passwordVisible = !_passwordVisible),
               ),
               const SizedBox(height: 14),
-
-              // ── Repetir Contraseña ──────────────────────────────────────────
               _CampoPassword(
                 label: 'Repite la contraseña',
                 controller: _controladorRepeatPassword,
                 hint: 'Repite la contraseña',
-                visible: _passwordVisible,
-                onToggleVisible: () =>
-                    setState(() => _passwordVisible = !_passwordVisible),
+                visible: _repeatPasswordVisible,
+                onToggleVisible: () => setState(
+                  () => _repeatPasswordVisible = !_repeatPasswordVisible,
+                ),
               ),
               const SizedBox(height: 32),
-
               ElevatedButton(
-                onPressed: () => _continuar(context),
-                // TODO: conectar API — comprobar si el email ya existe:
-                //   POST /auth/verificar-email
-                //   Si ya existe → _mostrarDialogoVincularCuenta(context)
-                //   Si es nuevo  → POST /auth/registro → irAHomeCliente
-                // Provisional: navega directamente a home cliente.
+                onPressed: vmAuth.cargando ? null : _continuar,
                 child: const Text('Continuar'),
               ),
               const SizedBox(height: 12),
@@ -153,7 +168,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 onPressed: () => _mostrarDialogoVincularCuenta(context),
                 child: const Text('Vincular'),
               ),
-
               const SizedBox(height: 16),
             ],
           ),
@@ -163,7 +177,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
   }
 }
 
-/// Widget especializado para campos de contraseña con lógica de visibilidad.
 class _CampoPassword extends StatelessWidget {
   const _CampoPassword({
     required this.label,
@@ -171,7 +184,6 @@ class _CampoPassword extends StatelessWidget {
     required this.hint,
     required this.visible,
     required this.onToggleVisible,
-    this.errorText,
   });
 
   final String label;
@@ -179,11 +191,10 @@ class _CampoPassword extends StatelessWidget {
   final String hint;
   final bool visible;
   final VoidCallback onToggleVisible;
-  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final TextTheme textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -194,7 +205,6 @@ class _CampoPassword extends StatelessWidget {
           obscureText: !visible,
           decoration: InputDecoration(
             hintText: hint,
-            errorText: errorText,
             suffixIcon: IconButton(
               tooltip: visible ? 'Ocultar contraseña' : 'Mostrar contraseña',
               icon: Icon(
@@ -211,7 +221,6 @@ class _CampoPassword extends StatelessWidget {
   }
 }
 
-/// Campo de formulario con label y TextField reutilizable internamente.
 class _CampoFormulario extends StatelessWidget {
   const _CampoFormulario({
     required this.label,
@@ -227,7 +236,7 @@ class _CampoFormulario extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final TextTheme textTheme = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -244,8 +253,8 @@ class _CampoFormulario extends StatelessWidget {
 }
 
 void _mostrarDialogoVincularCuenta(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
-  final textTheme = Theme.of(context).textTheme;
+  final ColorScheme colorScheme = Theme.of(context).colorScheme;
+  final TextTheme textTheme = Theme.of(context).textTheme;
 
   showDialog<void>(
     context: context,
@@ -277,10 +286,8 @@ void _mostrarDialogoVincularCuenta(BuildContext context) {
               ),
             ),
             const SizedBox(height: 20),
-
             Text('Cuenta encontrada', style: textTheme.displaySmall),
             const SizedBox(height: 8),
-
             Text.rich(
               TextSpan(
                 text: 'Ya existe una cuenta asociada a este email. ',
@@ -304,18 +311,14 @@ void _mostrarDialogoVincularCuenta(BuildContext context) {
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
-
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
                       Navigator.of(dialogContext).pop();
-
-                      // TODO: crear cuenta nueva.
-                      GestorNavegacion.irAHomeCliente(context);
+                      GestorNavegacion.irASplash(context);
                     },
                     child: const Text('Crear nueva'),
                   ),
@@ -325,9 +328,7 @@ void _mostrarDialogoVincularCuenta(BuildContext context) {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(dialogContext).pop();
-
-                      // TODO: vincular cuenta existente.
-                      GestorNavegacion.irAHomeCliente(context);
+                      GestorNavegacion.irASplash(context);
                     },
                     child: const Text('Vincular'),
                   ),

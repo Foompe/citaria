@@ -1,72 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_wizard.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
 
-// TODO: slots de API — franjas de 15 min desde disponibilidad real.
-/// Slots bloqueados hardcodeados de ejemplo.
-const Set<String> _slotsBloqueados = {
-  '09:30', '10:00', '11:15', '12:00', '12:30',
-};
-
-/// Genera slots de 09:00 a 13:30 cada 15 minutos.
-List<String> _generarSlots() {
-  final slots  = <String>[];
-  var hora     = 9;
-  var minuto   = 0;
-  while (hora < 13 || (hora == 13 && minuto <= 30)) {
-    slots.add(
-      '${hora.toString().padLeft(2, '0')}:${minuto.toString().padLeft(2, '0')}',
-    );
-    minuto += 15;
-    if (minuto >= 60) {
-      minuto = 0;
-      hora++;
-    }
-  }
-  return slots;
-}
-
-/// Paso 4 del wizard de reserva: selección de hora.
-///
-/// Ruta: /nueva-reserva/hora
-class PantallaWizardHora extends StatefulWidget {
+class PantallaWizardHora extends StatelessWidget {
   const PantallaWizardHora({super.key});
 
   @override
-  State<PantallaWizardHora> createState() => _PantallaWizardHoraState();
-}
-
-class _PantallaWizardHoraState extends State<PantallaWizardHora> {
-  String? _slotSeleccionado;
-  final List<String> _slots = _generarSlots();
-
-  @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final wizard = context.watch<ViewModelWizard>();
+    final resumen = wizard.resumen;
+    final franjas = wizard.franjas;
 
     return Scaffold(
-      appBar: CabeceraWizard(
+      appBar: const CabeceraWizard(
         pasoActual: 3,
         totalPasos: 5,
         titulo: 'Elige la hora',
       ),
-
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: espaciado.padX,
-          vertical: 16,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Chip fecha seleccionada + duración ─────────────────────────
             Row(
               children: [
-                // TODO: mostrar fecha real seleccionada desde estado wizard
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -77,86 +41,87 @@ class _PantallaWizardHoraState extends State<PantallaWizardHora> {
                     borderRadius: espaciado.radioPill,
                   ),
                   child: Text(
-                    'Mar 21 abr',
+                    resumen.fechaHoraTexto,
                     style: textTheme.labelSmall?.copyWith(
                       color: colorScheme.primary,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                // TODO: mostrar duración total de servicios seleccionados
-                Text('· 90 min', style: textTheme.bodySmall),
+                Text(
+                  '· ${resumen.duracionTotalTexto}',
+                  style: textTheme.bodySmall,
+                ),
               ],
             ),
             const SizedBox(height: 20),
+            if (franjas.isEmpty)
+              Text(
+                wizard.cargando
+                    ? 'Cargando franjas...'
+                    : 'No hay franjas disponibles para esta fecha.',
+                style: textTheme.bodyLarge,
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: franjas.map((franja) {
+                  final Color fondo;
+                  final Color textoColor;
+                  BoxBorder? borde;
 
-            // ── Grid de slots ─────────────────────────────────────────────
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _slots.map((slot) {
-                final bloqueado    = _slotsBloqueados.contains(slot);
-                final seleccionado = _slotSeleccionado == slot;
+                  if (franja.seleccionada) {
+                    fondo = colorScheme.primary;
+                    textoColor = colorScheme.onPrimary;
+                  } else if (!franja.disponible) {
+                    fondo = colorScheme.outline.withValues(alpha: 0.1);
+                    textoColor = colorScheme.outline.withValues(alpha: 0.4);
+                  } else {
+                    fondo = Colors.transparent;
+                    textoColor = colorScheme.onSurface;
+                    borde = Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.4),
+                    );
+                  }
 
-                final Color fondo;
-                final Color textoColor;
-                BoxBorder? borde;
-
-                if (seleccionado) {
-                  fondo      = colorScheme.primary;
-                  textoColor = colorScheme.onPrimary;
-                } else if (bloqueado) {
-                  fondo      = colorScheme.outline.withOpacity(0.1);
-                  textoColor = colorScheme.outline.withOpacity(0.4);
-                } else {
-                  fondo      = Colors.transparent;
-                  textoColor = colorScheme.onSurface;
-                  borde      = Border.all(
-                    color: colorScheme.outline.withOpacity(0.4),
-                  );
-                }
-
-                return GestureDetector(
-                  onTap: bloqueado
-                      ? null
-                      : () => setState(() => _slotSeleccionado = slot),
-                  child: Container(
-                    width: 80,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: fondo,
-                      border: borde,
-                      borderRadius: espaciado.radioBoton,
-                    ),
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          slot,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: textoColor,
+                  return GestureDetector(
+                    onTap: franja.disponible
+                        ? () => context
+                              .read<ViewModelWizard>()
+                              .seleccionarFranja(franja.horaInicio)
+                        : null,
+                    child: Container(
+                      width: 80,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: fondo,
+                        border: borde,
+                        borderRadius: espaciado.radioBoton,
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            franja.horaTexto,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: textoColor,
+                            ),
                           ),
-                        ),
-                        if (bloqueado) ...[
-                          const SizedBox(width: 4),
-                          Icon(Icons.lock, size: 10, color: textoColor),
+                          if (!franja.disponible) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.lock, size: 10, color: textoColor),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ── Nota informativa ───────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
+                  );
+                }).toList(),
               ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
                 borderRadius: espaciado.radioCard,
@@ -181,13 +146,15 @@ class _PantallaWizardHoraState extends State<PantallaWizardHora> {
           ],
         ),
       ),
-
       bottomNavigationBar: BarraCtaFija(
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _slotSeleccionado != null
-                ? () => GestorNavegacion.irAWizardConfirmar(context)
+            onPressed: resumen.puedeConfirmar
+                ? () => GestorNavegacion.irAWizardConfirmar(
+                    context,
+                    context.read<ViewModelWizard>(),
+                  )
                 : null,
             child: const Text('Siguiente'),
           ),

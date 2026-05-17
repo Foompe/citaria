@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
 /// P01 — Splash.
 ///
 /// Muestra logo + barra de progreso animada mientras se verifica
 /// la sesión. Al terminar navega según el resultado del ViewModel.
 class PantallaSplash extends StatefulWidget {
-  const PantallaSplash({super.key});
+  const PantallaSplash({super.key, this.duracionMinima = true});
+
+  final bool duracionMinima;
 
   @override
   State<PantallaSplash> createState() => _PantallaSplashState();
@@ -20,6 +24,7 @@ class _PantallaSplashState extends State<PantallaSplash>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controladorProgreso;
   late final Animation<double> _animacionProgreso;
+  bool _hayEmpresaSeleccionada = false;
 
   @override
   void initState() {
@@ -38,29 +43,18 @@ class _PantallaSplashState extends State<PantallaSplash>
     _controladorProgreso.forward();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final viewModel = context.read<ViewModelAutenticacion>();
+      final vmAuth = context.read<ViewModelAutenticacion>();
+      final vmTema = context.read<ViewModelTema>();
 
-      // TODO: eliminar en producción — delay artificial para simular carga.
-      await Future.wait([
-        viewModel.verificarSesion(),
-        Future.delayed(const Duration(seconds: 3)),
-      ]);
+      _hayEmpresaSeleccionada = vmAuth.hayEmpresaSeleccionada;
+      if (mounted) {
+        setState(() {});
+      }
+
+      final destino = await _cargarArranque(vmAuth: vmAuth, vmTema: vmTema);
 
       if (!mounted) return;
-
-      // TODO: conectar ViewModel — cuando verificarSesion() esté
-      // implementada, leer viewModel.estaAutenticado y viewModel.esAdmin
-      // para decidir la ruta. Además, verificar si existe empresa
-      // guardada en local storage.
-      //
-      // Lógica esperada:
-      //   sin empresa guardada  → irASeleccionEmpresa
-      //   empresa + sin sesión  → irALogin
-      //   autenticado + cliente → irAHomeCliente
-      //   autenticado + admin   → irAHomeAdmin
-      //
-      // Provisional: siempre navega a selección de empresa.
-      GestorNavegacion.irASeleccionEmpresaDesdeSplash(context);
+      _navegarSegunDestino(destino);
     });
   }
 
@@ -70,11 +64,54 @@ class _PantallaSplashState extends State<PantallaSplash>
     super.dispose();
   }
 
+  Future<DestinoAutenticacion> _cargarArranque({
+    required ViewModelAutenticacion vmAuth,
+    required ViewModelTema vmTema,
+  }) async {
+    if (!mounted) return DestinoAutenticacion.seleccionEmpresa;
+    await vmTema.inicializar();
+
+    if (!mounted) return DestinoAutenticacion.seleccionEmpresa;
+    final Future<DestinoAutenticacion> cargaSesion = vmAuth.verificarSesion(
+      tema: vmTema,
+    );
+
+    if (!widget.duracionMinima) {
+      return cargaSesion;
+    }
+
+    final resultados = await Future.wait<Object?>([
+      cargaSesion,
+      Future<Object?>.delayed(const Duration(seconds: 3)),
+    ]);
+
+    return resultados.first as DestinoAutenticacion;
+  }
+
+  void _navegarSegunDestino(DestinoAutenticacion destino) {
+    switch (destino) {
+      case DestinoAutenticacion.seleccionEmpresa:
+        GestorNavegacion.irASeleccionEmpresaDesdeSplash(context);
+        return;
+      case DestinoAutenticacion.login:
+        GestorNavegacion.irALogin(context);
+        return;
+      case DestinoAutenticacion.homeCliente:
+        GestorNavegacion.irAHomeCliente(context);
+        return;
+      case DestinoAutenticacion.homeAdmin:
+        GestorNavegacion.irAHomeAdmin(context);
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final empresaActiva = context.watch<ViewModelAutenticacion>().empresaActiva;
+    final logoTema = context.watch<ViewModelTema>().datos?.logoUrl;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -89,14 +126,11 @@ class _PantallaSplashState extends State<PantallaSplash>
                   children: [
                     Hero(
                       tag: heroLogoCitaria,
-                      child: RotationTransition(
-                        turns: _animacionProgreso,
-                        child: Image.asset(
-                          'assets/images/logo_citaria.png',
-                          width: 160,
-                          height: 160,
-                          fit: BoxFit.contain,
-                        ),
+                      child: _LogoSplash(
+                        hayEmpresaSeleccionada: _hayEmpresaSeleccionada,
+                        nombreEmpresa: empresaActiva?.nombre,
+                        logoUrl: logoTema,
+                        animacionProgreso: _animacionProgreso,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -113,9 +147,12 @@ class _PantallaSplashState extends State<PantallaSplash>
                 child: AnimatedBuilder(
                   animation: _animacionProgreso,
                   builder: (context, _) => LinearProgressIndicator(
-                    value: _animacionProgreso.value,
-                    backgroundColor:
-                        colorScheme.primary.withValues(alpha: 0.12),
+                    value: _hayEmpresaSeleccionada
+                        ? null
+                        : _animacionProgreso.value,
+                    backgroundColor: colorScheme.primary.withValues(
+                      alpha: 0.12,
+                    ),
                     valueColor: AlwaysStoppedAnimation(colorScheme.primary),
                   ),
                 ),
@@ -125,5 +162,54 @@ class _PantallaSplashState extends State<PantallaSplash>
         ),
       ),
     );
+  }
+}
+
+class _LogoSplash extends StatelessWidget {
+  const _LogoSplash({
+    required this.hayEmpresaSeleccionada,
+    required this.nombreEmpresa,
+    required this.logoUrl,
+    required this.animacionProgreso,
+  });
+
+  final bool hayEmpresaSeleccionada;
+  final String? nombreEmpresa;
+  final String? logoUrl;
+  final Animation<double> animacionProgreso;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hayEmpresaSeleccionada) {
+      return RotationTransition(
+        turns: animacionProgreso,
+        child: Image.asset(
+          'assets/images/logo_citaria.png',
+          width: 160,
+          height: 160,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+
+    final String textoEmpresa = nombreEmpresa ?? 'Citaria';
+    final String? logoEmpresa = logoUrl?.trim();
+    if (logoEmpresa != null && logoEmpresa.isNotEmpty) {
+      return SizedBox(
+        width: 160,
+        height: 160,
+        child: Image.network(
+          logoEmpresa,
+          fit: BoxFit.contain,
+          errorBuilder: (_, _, _) => AvatarFallbackCitaria(
+            texto: textoEmpresa,
+            tamano: 160,
+            radio: 32,
+          ),
+        ),
+      );
+    }
+
+    return AvatarFallbackCitaria(texto: textoEmpresa, tamano: 160, radio: 32);
   }
 }

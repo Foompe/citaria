@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
+import 'package:citaria_frontend/data/repositories/repo_disponibilidad.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/rutas.dart';
 import 'package:citaria_frontend/ui/navigation/sesion_pin.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_confirmar.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_empleado.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_fecha.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_hora.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_servicios.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_empleados.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_empleado.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
@@ -9,9 +18,12 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_servicio.
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_horarios.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_estadisticas.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_ajustes.dart';
+import 'package:citaria_frontend/ui/screens/public/pantalla_splash.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.dart';
 import 'package:citaria_frontend/ui/widgets/dialogo_pin.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
 
 /// Punto único de navegación de la aplicación Citaria.
 ///
@@ -29,7 +41,22 @@ class GestorNavegacion {
   // ── ÁREA PÚBLICA ──────────────────────────────────────────────────────────
 
   static void irASplash(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.splash);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        Rutas.splash,
+        (route) => false,
+      );
+
+  static void irASplashPostAutenticacion(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.splash),
+        builder: (_) => const PantallaSplash(duracionMinima: false),
+      ),
+      (route) => false,
+    );
+  }
 
   static void irASeleccionEmpresaDesdeSplash(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
@@ -54,7 +81,7 @@ class GestorNavegacion {
       Navigator.pushNamed(context, Rutas.seleccionEmpresa);
 
   static void irALogin(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.login);
+      Navigator.pushReplacementNamed(context, Rutas.login);
 
   static void irARegistro(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.registro);
@@ -110,23 +137,95 @@ class GestorNavegacion {
   static void irAWizardServicios(
     BuildContext context, {
     String? servicioPreseleccionado,
-  }) => Navigator.pushNamed(
-    context,
-    Rutas.wizardServicios,
-    arguments: {'servicioPreseleccionado': servicioPreseleccionado},
-  );
+    int? clienteId,
+    OrigenWizard origen = OrigenWizard.cliente,
+  }) {
+    final ViewModelAutenticacion autenticacion = context
+        .read<ViewModelAutenticacion>();
+    final sesion = autenticacion.obtenerSesion();
+    if (sesion == null) {
+      irALogin(context);
+      return;
+    }
 
-  static void irAWizardEmpleado(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.wizardEmpleado);
+    final RepoCatalogo repoCatalogo = context.read<RepoCatalogo>();
+    final RepoReservas repoReservas = context.read<RepoReservas>();
+    final RepoDisponibilidad repoDisponibilidad = context
+        .read<RepoDisponibilidad>();
 
-  static void irAWizardFecha(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.wizardFecha);
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.wizardServicios),
+        builder: (_) => ChangeNotifierProvider<ViewModelWizard>(
+          create: (_) => ViewModelWizard(
+            repoCatalogo: repoCatalogo,
+            repoReservas: repoReservas,
+            repoDisponibilidad: repoDisponibilidad,
+            token: sesion.token,
+            organizacionId: sesion.organizacionId,
+            clienteIdExterno: clienteId,
+            origen: origen,
+          ),
+          child: PantallaWizardServicios(
+            servicioPreseleccionado: servicioPreseleccionado,
+          ),
+        ),
+      ),
+    );
+  }
 
-  static void irAWizardHora(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.wizardHora);
+  static void irAWizardEmpleado(BuildContext context, ViewModelWizard wizard) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.wizardEmpleado),
+        builder: (_) => ChangeNotifierProvider<ViewModelWizard>.value(
+          value: wizard,
+          child: const PantallaWizardEmpleado(),
+        ),
+      ),
+    );
+  }
 
-  static void irAWizardConfirmar(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.wizardConfirmar);
+  static void irAWizardFecha(BuildContext context, ViewModelWizard wizard) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.wizardFecha),
+        builder: (_) => ChangeNotifierProvider<ViewModelWizard>.value(
+          value: wizard,
+          child: const PantallaWizardFecha(),
+        ),
+      ),
+    );
+  }
+
+  static void irAWizardHora(BuildContext context, ViewModelWizard wizard) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.wizardHora),
+        builder: (_) => ChangeNotifierProvider<ViewModelWizard>.value(
+          value: wizard,
+          child: const PantallaWizardHora(),
+        ),
+      ),
+    );
+  }
+
+  static void irAWizardConfirmar(BuildContext context, ViewModelWizard wizard) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: Rutas.wizardConfirmar),
+        builder: (_) => ChangeNotifierProvider<ViewModelWizard>.value(
+          value: wizard,
+          child: const PantallaWizardConfirmar(),
+        ),
+      ),
+    );
+  }
 
   static void irAMisReservas(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.misReservas);
@@ -144,19 +243,25 @@ class GestorNavegacion {
   static void irAChatbot(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.chatbot);
 
-  static void confirmarWizard(BuildContext context) =>
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        Rutas.inicioCliente,
-        (route) => false,
+  static void confirmarWizard(BuildContext context, OrigenWizard origen) {
+    if (origen == OrigenWizard.admin) {
+      Navigator.of(context).popUntil(
+        (route) => route.settings.name == Rutas.adminReservas || route.isFirst,
       );
+      return;
+    }
+    irAHomeCliente(context);
+  }
 
-  static void cancelarWizard(BuildContext context) =>
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        Rutas.inicioCliente,
-        (route) => false,
+  static void cancelarWizard(BuildContext context, OrigenWizard origen) {
+    if (origen == OrigenWizard.admin) {
+      Navigator.of(context).popUntil(
+        (route) => route.settings.name == Rutas.adminReservas || route.isFirst,
       );
+      return;
+    }
+    irAHomeCliente(context);
+  }
 
   // ── ÁREA ADMIN — COMÚN ────────────────────────────────────────────────────
 
