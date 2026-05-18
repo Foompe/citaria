@@ -104,6 +104,8 @@ public class SecurityConfig {
 
 
                         // ADMIN y EMPLEADO
+                        .requestMatchers(HttpMethod.GET, "/api/reservas/*/detalles")
+                        .hasAnyRole("ADMIN", "EMPLEADO", "CLIENTE")
                         .requestMatchers("/api/reservas/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/api/clientes/**").hasAnyRole("ADMIN", "EMPLEADO")
                         .requestMatchers("/api/estadisticas/**").hasAnyRole("ADMIN", "EMPLEADO")

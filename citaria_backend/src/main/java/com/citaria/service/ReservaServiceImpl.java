@@ -466,10 +466,34 @@ public class ReservaServiceImpl implements ReservaService {
         List<ReservaServicio> detalles = reservaServicioDAO.findByReserva(reserva);
         if (!detalles.isEmpty()) {
             dto.setHoraInicio(detalles.get(0).getHoraInicio());
+            dto.setEmpleadoId(obtenerEmpleadoComun(detalles));
         }
+        List<Integer> servicioIds = new ArrayList<>();
+        for (ReservaServicio detalle : detalles) {
+            if (detalle.getServicio() != null) {
+                servicioIds.add(detalle.getServicio().getId());
+            }
+        }
+        dto.setServicioIds(servicioIds);
         dto.setNotas(reserva.getNotas());
         dto.setMotivo(reserva.getMotivo());
         return dto;
+    }
+
+    private Integer obtenerEmpleadoComun(List<ReservaServicio> detalles) {
+        Integer empleadoId = null;
+        for (ReservaServicio detalle : detalles) {
+            if (detalle.getEmpleado() == null) {
+                return null;
+            }
+            Integer idActual = detalle.getEmpleado().getId();
+            if (empleadoId == null) {
+                empleadoId = idActual;
+            } else if (!empleadoId.equals(idActual)) {
+                return null;
+            }
+        }
+        return empleadoId;
     }
 
     private ReservaServicioDTO convertirLineaADTO(ReservaServicio linea) {
