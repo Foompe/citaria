@@ -1,7 +1,12 @@
+import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:provider/provider.dart';
 
 /// P24 — Formulario de alta de nuevo cliente en el área admin.
 ///
@@ -23,6 +28,17 @@ class _PantallaAdminNuevoClienteState
   final _ctrlEmail      = TextEditingController();
   final _ctrlTelefono   = TextEditingController();
   final _ctrlNotas      = TextEditingController();
+  late final ViewModelAdminClientes _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ViewModelAdminClientes(
+      repoClientes: context.read<RepoClientes>(),
+      repoReservas: context.read<RepoReservas>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    );
+  }
 
   @override
   void dispose() {
@@ -32,13 +48,41 @@ class _PantallaAdminNuevoClienteState
     _ctrlEmail.dispose();
     _ctrlTelefono.dispose();
     _ctrlNotas.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
-  void _crearCliente() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // TODO: POST /clientes con los datos del formulario
+  Future<void> _crearCliente() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
     }
+
+    final cliente = await _viewModel.crearCliente(
+      nombre: _ctrlNombre.text,
+      apellidos: _ctrlApellidos.text,
+      dni: _ctrlDni.text,
+      email: _ctrlEmail.text,
+      telefono: _ctrlTelefono.text,
+      notas: _ctrlNotas.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (cliente == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_viewModel.error ?? 'No se pudo crear el cliente.'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cliente creado')),
+    );
+    Navigator.maybePop(context);
   }
 
   @override
@@ -47,114 +91,122 @@ class _PantallaAdminNuevoClienteState
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme   = Theme.of(context).textTheme;
 
-    return Scaffold(
-      appBar: const CabeceraPantalla(
-        titulo: 'Nuevo cliente',
-        mostrarAtras: true,
-      ),
-      bottomNavigationBar: BarraCtaFija(
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _crearCliente,
-            child: const Text('Crear cliente'),
+    return ChangeNotifierProvider<ViewModelAdminClientes>.value(
+      value: _viewModel,
+      child: Consumer<ViewModelAdminClientes>(
+        builder: (context, vmClientes, _) => Scaffold(
+          appBar: const CabeceraPantalla(
+            titulo: 'Nuevo cliente',
+            mostrarAtras: true,
           ),
-        ),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            espaciado.padX,
-            16,
-            espaciado.padX,
-            120,
-          ),
-          children: [
-            // Banner informativo
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: espaciado.radioCard,
+          bottomNavigationBar: BarraCtaFija(
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: vmClientes.cargando ? null : _crearCliente,
+                child: vmClientes.cargando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Crear cliente'),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: colorScheme.onPrimaryContainer,
+            ),
+          ),
+          body: Form(
+            key: _formKey,
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                16,
+                espaciado.padX,
+                120,
+              ),
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Este cliente no tendrá cuenta en la app',
-                      style: textTheme.bodySmall?.copyWith(
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: espaciado.radioCard,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
                         color: colorScheme.onPrimaryContainer,
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Este cliente no tendrá cuenta en la app',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                _CampoFormulario(
+                  controller: _ctrlNombre,
+                  etiqueta: 'Nombre *',
+                  espaciado: espaciado,
+                  validador: (v) => (v == null || v.trim().isEmpty)
+                      ? 'El nombre es obligatorio'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+
+                _CampoFormulario(
+                  controller: _ctrlApellidos,
+                  etiqueta: 'Apellidos',
+                  espaciado: espaciado,
+                ),
+                const SizedBox(height: 16),
+
+                _CampoFormulario(
+                  controller: _ctrlDni,
+                  etiqueta: 'DNI',
+                  espaciado: espaciado,
+                ),
+                const SizedBox(height: 16),
+
+                _CampoFormulario(
+                  controller: _ctrlEmail,
+                  etiqueta: 'Email',
+                  teclado: TextInputType.emailAddress,
+                  espaciado: espaciado,
+                ),
+                const SizedBox(height: 16),
+
+                _CampoFormulario(
+                  controller: _ctrlTelefono,
+                  etiqueta: 'Teléfono',
+                  teclado: TextInputType.phone,
+                  espaciado: espaciado,
+                ),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _ctrlNotas,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Notas',
+                    border: OutlineInputBorder(
+                      borderRadius: espaciado.radioInput,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Nombre (required)
-            _CampoFormulario(
-              controller: _ctrlNombre,
-              etiqueta: 'Nombre *',
-              espaciado: espaciado,
-              validador: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'El nombre es obligatorio' : null,
-            ),
-            const SizedBox(height: 16),
-
-            // Apellidos
-            _CampoFormulario(
-              controller: _ctrlApellidos,
-              etiqueta: 'Apellidos',
-              espaciado: espaciado,
-            ),
-            const SizedBox(height: 16),
-
-            // DNI
-            _CampoFormulario(
-              controller: _ctrlDni,
-              etiqueta: 'DNI',
-              espaciado: espaciado,
-            ),
-            const SizedBox(height: 16),
-
-            // Email
-            _CampoFormulario(
-              controller: _ctrlEmail,
-              etiqueta: 'Email',
-              teclado: TextInputType.emailAddress,
-              espaciado: espaciado,
-            ),
-            const SizedBox(height: 16),
-
-            // Teléfono
-            _CampoFormulario(
-              controller: _ctrlTelefono,
-              etiqueta: 'Teléfono',
-              teclado: TextInputType.phone,
-              espaciado: espaciado,
-            ),
-            const SizedBox(height: 16),
-
-            // Notas
-            TextFormField(
-              controller: _ctrlNotas,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Notas',
-                border: OutlineInputBorder(
-                  borderRadius: espaciado.radioInput,
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
@@ -27,6 +28,7 @@ class _PantallaAdminClientesState extends State<PantallaAdminClientes> {
     _busqueda = TextEditingController();
     _viewModel = ViewModelAdminClientes(
       repoClientes: context.read<RepoClientes>(),
+      repoReservas: context.read<RepoReservas>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
     );
     _busqueda.addListener(() => _viewModel.buscar(_busqueda.text));

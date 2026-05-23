@@ -1,90 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:citaria_frontend/data/enums/estado_reserva.dart' as datos;
+import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: GET /clientes/:id
-
-class _ClienteDetalle {
-  const _ClienteDetalle({
-    required this.id,
-    required this.nombre,
-    required this.apellidos,
-    required this.dni,
-    required this.email,
-    required this.telefono,
-    this.notas,
-  });
-
-  final String id;
-  final String nombre;
-  final String apellidos;
-  final String dni;
-  final String email;
-  final String telefono;
-  final String? notas;
-}
-
-const _ClienteDetalle _clienteEjemplo = _ClienteDetalle(
-  id: 'c1',
-  nombre: 'Ana',
-  apellidos: 'García López',
-  dni: '12345678A',
-  email: 'ana.garcia@email.com',
-  telefono: '+34 612 345 678',
-  notas: 'Cliente habitual. Prefiere cita por las mañanas.',
-);
-
-class _ReservaCliente {
-  const _ReservaCliente({
-    required this.id,
-    required this.servicio,
-    required this.empleado,
-    required this.hora,
-    required this.precio,
-    required this.estado,
-  });
-
-  final String id;
-  final String servicio;
-  final String empleado;
-  final String hora;
-  final String precio;
-  final EstadoReserva estado;
-}
-
-// TODO: GET /clientes/:id/reservas
-const List<_ReservaCliente> _reservasCliente = [
-  _ReservaCliente(
-    id: 'r1',
-    servicio: 'Lavado exterior',
-    empleado: 'Carlos M.',
-    hora: '09:00',
-    precio: '25,00 €',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCliente(
-    id: 'r2',
-    servicio: 'Pulido completo',
-    empleado: 'Laura P.',
-    hora: '11:00',
-    precio: '80,00 €',
-    estado: EstadoReserva.completada,
-  ),
-  _ReservaCliente(
-    id: 'r3',
-    servicio: 'Aspirado interior',
-    empleado: 'Carlos M.',
-    hora: '14:30',
-    precio: '20,00 €',
-    estado: EstadoReserva.cancelada,
-  ),
-];
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// P25 — Ficha de cliente en el área admin.
 ///
@@ -101,130 +26,240 @@ class _PantallaAdminDetalleClienteState
     extends State<PantallaAdminDetalleCliente>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final ViewModelAdminClientes _viewModel;
+  int? _clienteId;
+  bool _inicializado = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _viewModel = ViewModelAdminClientes(
+      repoClientes: context.read<RepoClientes>(),
+      repoReservas: context.read<RepoReservas>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_inicializado) {
+      return;
+    }
+    _inicializado = true;
+    final int? id = _leerIdCliente(context);
+    _clienteId = id;
+    if (id != null) {
+      _viewModel.cargarDetalleCliente(id);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _viewModel.dispose();
     super.dispose();
-  }
-
-  String get _nombreCompleto =>
-      '${_clienteEjemplo.nombre} ${_clienteEjemplo.apellidos}';
-
-  String get _iniciales {
-    final n = _clienteEjemplo.nombre;
-    final a = _clienteEjemplo.apellidos;
-    return '${n.isNotEmpty ? n[0] : ''}${a.isNotEmpty ? a[0] : ''}'
-        .toUpperCase();
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    return ChangeNotifierProvider<ViewModelAdminClientes>.value(
+      value: _viewModel,
+      child: _ContenidoDetalleCliente(
+        tabController: _tabController,
+        clienteId: _clienteId,
+      ),
+    );
+  }
+
+  int? _leerIdCliente(BuildContext context) {
+    final Object? argumentos = ModalRoute.of(context)?.settings.arguments;
+    if (argumentos is Map<String, dynamic>) {
+      final Object? id = argumentos['id'];
+      if (id is int) {
+        return id;
+      }
+      if (id is String) {
+        return int.tryParse(id);
+      }
+    }
+    return null;
+  }
+}
+
+class _ContenidoDetalleCliente extends StatelessWidget {
+  const _ContenidoDetalleCliente({
+    required this.tabController,
+    required this.clienteId,
+  });
+
+  final TabController tabController;
+  final int? clienteId;
+
+  @override
+  Widget build(BuildContext context) {
+    final vmClientes = context.watch<ViewModelAdminClientes>();
+    final detalle = vmClientes.detalle;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: CabeceraPantalla(
         titulo: 'Cliente',
         mostrarAtras: true,
         accionDerecha: Tooltip(
-          message: 'Editar',
+          message: 'Actualizar',
           child: IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              // TODO: edición inline del cliente
-            },
+            icon: const Icon(Icons.refresh),
+            onPressed: clienteId == null
+                ? null
+                : () => vmClientes.cargarDetalleCliente(clienteId!),
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // ── Cabecera perfil centrada ───────────────────────────────────────
-          Padding(
-            padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 16),
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: Text(
-                    _iniciales,
-                    style: textTheme.displaySmall?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _nombreCompleto,
-                  style: textTheme.displayMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _clienteEjemplo.email,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ── TabBar ────────────────────────────────────────────────────────
-          TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Datos'),
-              Tab(text: 'Reservas'),
-            ],
-          ),
-
-          // ── TabBarView ────────────────────────────────────────────────────
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Tab Datos
-                _TabDatos(
-                  cliente: _clienteEjemplo,
-                  colorScheme: colorScheme,
-                  textTheme: textTheme,
-                  espaciado: espaciado,
-                ),
-                // Tab Reservas
-                _TabReservas(
-                  reservas: _reservasCliente,
-                  clienteNombre: _nombreCompleto,
-                ),
-              ],
-            ),
-          ),
-        ],
+      body: _CuerpoDetalleCliente(
+        clienteId: clienteId,
+        detalle: detalle,
+        reservas: vmClientes.reservasCliente,
+        vmClientes: vmClientes,
+        tabController: tabController,
+        espaciado: espaciado,
+        colorScheme: colorScheme,
+        textTheme: textTheme,
       ),
     );
   }
 }
 
-// ── Tab Datos ─────────────────────────────────────────────────────────────────
+class _CuerpoDetalleCliente extends StatelessWidget {
+  const _CuerpoDetalleCliente({
+    required this.clienteId,
+    required this.detalle,
+    required this.reservas,
+    required this.vmClientes,
+    required this.tabController,
+    required this.espaciado,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  final int? clienteId;
+  final DtoDetalleClienteAdmin? detalle;
+  final List<DtoReservaClienteAdmin> reservas;
+  final ViewModelAdminClientes vmClientes;
+  final TabController tabController;
+  final EspaciadoCitaria espaciado;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    if (clienteId == null) {
+      return _EstadoCentrado(
+        mensaje: 'No se ha encontrado el cliente.',
+        accionTexto: 'Volver',
+        onAccion: () => Navigator.maybePop(context),
+      );
+    }
+
+    if (vmClientes.cargando && detalle == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final String? error = vmClientes.error;
+    if (error != null && detalle == null) {
+      return _EstadoCentrado(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: () => vmClientes.cargarDetalleCliente(clienteId!),
+      );
+    }
+
+    final DtoDetalleClienteAdmin? cliente = detalle;
+    if (cliente == null) {
+      return _EstadoCentrado(
+        mensaje: 'No se ha encontrado el cliente.',
+        accionTexto: 'Reintentar',
+        onAccion: () => vmClientes.cargarDetalleCliente(clienteId!),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 16),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: colorScheme.primaryContainer,
+                child: Text(
+                  cliente.iniciales,
+                  style: textTheme.displaySmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                cliente.nombreCompleto,
+                style: textTheme.displayMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                cliente.email,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.outline,
+                ),
+              ),
+            ],
+          ),
+        ),
+        TabBar(
+          controller: tabController,
+          tabs: const [
+            Tab(text: 'Datos'),
+            Tab(text: 'Reservas'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: tabController,
+            children: [
+              _TabDatos(
+                cliente: cliente,
+                vmClientes: vmClientes,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+                espaciado: espaciado,
+              ),
+              _TabReservas(
+                reservas: reservas,
+                clienteNombre: cliente.nombreCompleto,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _TabDatos extends StatelessWidget {
   const _TabDatos({
     required this.cliente,
+    required this.vmClientes,
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
   });
 
-  final _ClienteDetalle cliente;
+  final DtoDetalleClienteAdmin cliente;
+  final ViewModelAdminClientes vmClientes;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
@@ -232,21 +267,17 @@ class _TabDatos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final campos = [
-      (Icons.person_outline,       'Nombre',    cliente.nombre),
-      (Icons.badge_outlined,       'DNI',       cliente.dni),
-      (Icons.email_outlined,       'Email',     cliente.email),
-      (Icons.phone_outlined,       'Teléfono',  cliente.telefono),
+      (Icons.person_outline, 'Nombre', cliente.nombre),
+      (Icons.group_outlined, 'Apellidos', cliente.apellidos),
+      (Icons.badge_outlined, 'DNI', cliente.dni),
+      (Icons.email_outlined, 'Email', cliente.email),
+      (Icons.phone_outlined, 'Teléfono', cliente.telefono),
       if (cliente.notas != null)
-        (Icons.notes_outlined,     'Notas',     cliente.notas!),
+        (Icons.notes_outlined, 'Notas', cliente.notas!),
     ];
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        espaciado.padX,
-        16,
-        espaciado.padX,
-        24,
-      ),
+      padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 24),
       children: [
         Card(
           shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
@@ -261,10 +292,7 @@ class _TabDatos extends StatelessWidget {
                       color: colorScheme.outline,
                     ),
                   ),
-                  subtitle: Text(
-                    campos[i].$3,
-                    style: textTheme.bodyLarge,
-                  ),
+                  subtitle: Text(campos[i].$3, style: textTheme.bodyLarge),
                 ),
                 if (i < campos.length - 1)
                   Divider(
@@ -282,17 +310,33 @@ class _TabDatos extends StatelessWidget {
             foregroundColor: colorScheme.error,
             side: BorderSide(color: colorScheme.error),
           ),
-          onPressed: () {
-            // TODO: DELETE /clientes/:id
-          },
+          onPressed: vmClientes.cargando
+              ? null
+              : () => _darDeBaja(context, vmClientes, cliente.id),
           child: const Text('Dar de baja'),
         ),
       ],
     );
   }
-}
 
-// ── Tab Reservas ──────────────────────────────────────────────────────────────
+  Future<void> _darDeBaja(
+    BuildContext context,
+    ViewModelAdminClientes vmClientes,
+    int id,
+  ) async {
+    final bool ok = await vmClientes.darDeBajaCliente(id);
+    if (!context.mounted) {
+      return;
+    }
+    if (ok) {
+      Navigator.maybePop(context);
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(vmClientes.error ?? 'No se pudo dar de baja.')),
+    );
+  }
+}
 
 class _TabReservas extends StatelessWidget {
   const _TabReservas({
@@ -300,7 +344,7 @@ class _TabReservas extends StatelessWidget {
     required this.clienteNombre,
   });
 
-  final List<_ReservaCliente> reservas;
+  final List<DtoReservaClienteAdmin> reservas;
   final String clienteNombre;
 
   @override
@@ -318,18 +362,60 @@ class _TabReservas extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8, bottom: 24),
       itemCount: reservas.length,
       itemBuilder: (context, index) {
-        final r = reservas[index];
+        final DtoReservaClienteAdmin reserva = reservas[index];
         return TarjetaReservaAdmin(
-          estado: r.estado,
+          estado: _estadoVisual(reserva.estado),
           cliente: clienteNombre,
-          servicio: r.servicio,
-          empleado: r.empleado,
-          hora: r.hora,
-          precio: r.precio,
+          servicio: reserva.servicio,
+          empleado: reserva.empleado,
+          hora: reserva.hora,
+          precio: reserva.precio,
           onTap: () =>
-              GestorNavegacion.irAAdminDetalleReserva(context, r.id),
+              GestorNavegacion.irAAdminDetalleReserva(context, reserva.id),
         );
       },
     );
+  }
+}
+
+class _EstadoCentrado extends StatelessWidget {
+  const _EstadoCentrado({
+    required this.mensaje,
+    required this.accionTexto,
+    required this.onAccion,
+  });
+
+  final String mensaje;
+  final String accionTexto;
+  final VoidCallback onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(mensaje, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
+  switch (estado) {
+    case datos.EstadoReserva.pendiente:
+      return chip.EstadoReserva.pendiente;
+    case datos.EstadoReserva.confirmada:
+      return chip.EstadoReserva.confirmada;
+    case datos.EstadoReserva.cancelada:
+      return chip.EstadoReserva.cancelada;
+    case datos.EstadoReserva.completada:
+      return chip.EstadoReserva.completada;
   }
 }
