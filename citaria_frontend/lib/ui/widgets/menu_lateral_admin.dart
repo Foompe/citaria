@@ -28,6 +28,7 @@ class MenuLateralAdmin extends StatelessWidget {
             // ── CABECERA ──────────────────────────────────────────────────
             _Cabecera(
               empresa: autenticacion.empresaActiva,
+              email: autenticacion.usuarioActual?.email,
               colorScheme: colorScheme,
               textTheme: textTheme,
               espaciado: espaciado,
@@ -135,11 +136,7 @@ class MenuLateralAdmin extends StatelessWidget {
             ),
 
             // ── PIE ───────────────────────────────────────────────────────
-            _Pie(
-              usuario: autenticacion.usuarioActual,
-              colorScheme: colorScheme,
-              textTheme: textTheme,
-            ),
+            _Pie(colorScheme: colorScheme),
           ],
         ),
       ),
@@ -152,12 +149,14 @@ class MenuLateralAdmin extends StatelessWidget {
 class _Cabecera extends StatelessWidget {
   const _Cabecera({
     required this.empresa,
+    required this.email,
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
   });
 
   final DtoEmpresaActiva? empresa;
+  final String? email;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
@@ -166,32 +165,43 @@ class _Cabecera extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: colorScheme.primary,
-      padding: EdgeInsets.fromLTRB(
-        espaciado.padX,
-        espaciado.safeTop,
-        espaciado.padX,
-        20,
-      ),
-      child: Row(
-        children: [
-          AvatarFallbackCitaria(
-            texto: empresa?.nombre ?? 'Citaria',
-            imagenUrl: empresa?.logoUrl,
-            tamano: 44,
-            radio: 12,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
+      padding: EdgeInsets.fromLTRB(espaciado.padX, 12, espaciado.padX, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AvatarFallbackCitaria(
+              texto: empresa?.nombre ?? 'Citaria',
+              imagenUrl: empresa?.logoUrl,
+              tamano: 72,
+              radio: 18,
+            ),
+            const SizedBox(height: 12),
+            Text(
               empresa?.nombre ?? 'Citaria',
               style: textTheme.displaySmall?.copyWith(
                 color: colorScheme.onPrimary,
               ),
+              textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            if (email != null && email!.trim().isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                email!,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onPrimary.withValues(alpha: 0.82),
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -248,15 +258,9 @@ class _ItemMenu extends StatelessWidget {
 }
 
 class _Pie extends StatelessWidget {
-  const _Pie({
-    required this.usuario,
-    required this.colorScheme,
-    required this.textTheme,
-  });
+  const _Pie({required this.colorScheme});
 
-  final DtoUsuarioSesion? usuario;
   final ColorScheme colorScheme;
-  final TextTheme textTheme;
 
   @override
   Widget build(BuildContext context) {
@@ -264,26 +268,6 @@ class _Pie extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Divider(),
-        ListTile(
-          leading: AvatarFallbackCitaria(
-            texto: usuario?.nombreCompleto ?? usuario?.email ?? 'Usuario',
-            imagenUrl: usuario?.fotoUrl,
-            tamano: 42,
-            radio: 21,
-          ),
-          title: Text(
-            usuario?.nombreCompleto ?? 'Usuario',
-            style: textTheme.displaySmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            usuario?.email ?? 'Sin sesión',
-            style: textTheme.bodySmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
         ListTile(
           leading: const Icon(Icons.logout),
           title: const Text('Cerrar sesión'),
