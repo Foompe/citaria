@@ -164,7 +164,19 @@ class _CuerpoCatalogo extends StatelessWidget {
       child: TabBarView(
         controller: tabController,
         children: [
-          _TabServicios(servicios: vmCatalogo.servicios),
+          _TabServicios(
+            servicios: vmCatalogo.servicios,
+            onServicioTap: (servicio) async {
+              final bool? actualizado =
+                  await GestorNavegacion.irAAdminDetalleServicio(
+                    context,
+                    servicio.id,
+                  );
+              if (actualizado == true) {
+                await vmCatalogo.refrescar();
+              }
+            },
+          ),
           _TabCategorias(
             categorias: vmCatalogo.categorias,
             onCategoriaTap: (categoria) async {
@@ -198,9 +210,10 @@ class _CuerpoCatalogo extends StatelessWidget {
 }
 
 class _TabServicios extends StatelessWidget {
-  const _TabServicios({required this.servicios});
+  const _TabServicios({required this.servicios, required this.onServicioTap});
 
   final List<DtoServicioCatalogoAdmin> servicios;
+  final ValueChanged<DtoServicioCatalogoAdmin> onServicioTap;
 
   @override
   Widget build(BuildContext context) {
@@ -215,16 +228,20 @@ class _TabServicios extends StatelessWidget {
       itemCount: servicios.length,
       itemBuilder: (context, index) {
         final servicio = servicios[index];
-        return _TarjetaServicio(servicio: servicio);
+        return _TarjetaServicio(
+          servicio: servicio,
+          onTap: () => onServicioTap(servicio),
+        );
       },
     );
   }
 }
 
 class _TarjetaServicio extends StatelessWidget {
-  const _TarjetaServicio({required this.servicio});
+  const _TarjetaServicio({required this.servicio, required this.onTap});
 
   final DtoServicioCatalogoAdmin servicio;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -235,75 +252,80 @@ class _TarjetaServicio extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: espaciado.radioCard,
+      child: InkWell(
+        borderRadius: espaciado.radioCard,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: espaciado.radioCard,
+                ),
+                child: Icon(Icons.car_repair, color: colorScheme.outline),
               ),
-              child: Icon(Icons.car_repair, color: colorScheme.outline),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          servicio.nombre,
-                          style: textTheme.displaySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            servicio.nombre,
+                            style: textTheme.displaySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      Switch(value: servicio.activo, onChanged: null),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    servicio.categoria,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
+                        Switch(value: servicio.activo, onChanged: null),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        servicio.duracion,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.outline,
+                    const SizedBox(height: 4),
+                    Text(
+                      servicio.categoria,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          servicio.duracion,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.outline,
+                          ),
                         ),
-                      ),
-                      Text(
-                        servicio.precio,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.primary,
+                        Text(
+                          servicio.precio,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.primary,
+                          ),
                         ),
-                      ),
-                      ChipEstado(
-                        estado: servicio.activo
-                            ? EstadoReserva.confirmada
-                            : EstadoReserva.completada,
-                      ),
-                    ],
-                  ),
-                ],
+                        ChipEstado(
+                          estado: servicio.activo
+                              ? EstadoReserva.confirmada
+                              : EstadoReserva.completada,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              Icon(Icons.chevron_right, color: colorScheme.outline),
+            ],
+          ),
         ),
       ),
     );

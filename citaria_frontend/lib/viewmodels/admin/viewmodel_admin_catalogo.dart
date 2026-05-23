@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/models/categoria.dart';
 import 'package:citaria_frontend/data/models/servicio.dart';
+import 'package:citaria_frontend/data/models/servicio_skill.dart';
 import 'package:citaria_frontend/data/models/skill.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
@@ -53,6 +54,29 @@ class DtoSkillCatalogoAdmin {
   final bool activo;
 }
 
+@immutable
+class DtoDetalleServicioCatalogoAdmin {
+  const DtoDetalleServicioCatalogoAdmin({
+    required this.id,
+    required this.nombre,
+    required this.descripcion,
+    required this.precio,
+    required this.duracionMinutos,
+    required this.categoriaId,
+    required this.activo,
+    required this.skillIds,
+  });
+
+  final int id;
+  final String nombre;
+  final String descripcion;
+  final double precio;
+  final int duracionMinutos;
+  final int? categoriaId;
+  final bool activo;
+  final Set<int> skillIds;
+}
+
 class ViewModelAdminCatalogo extends ViewModelAdminBase {
   ViewModelAdminCatalogo({
     required RepoCatalogo repoCatalogo,
@@ -68,9 +92,11 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
   List<Servicio> _servicios = const <Servicio>[];
   List<Categoria> _categorias = const <Categoria>[];
   List<Skill> _skills = const <Skill>[];
+  DtoDetalleServicioCatalogoAdmin? _detalleServicio;
   DtoCategoriaCatalogoAdmin? _detalleCategoria;
   DtoSkillCatalogoAdmin? _detalleSkill;
 
+  DtoDetalleServicioCatalogoAdmin? get detalleServicio => _detalleServicio;
   DtoCategoriaCatalogoAdmin? get detalleCategoria => _detalleCategoria;
   DtoSkillCatalogoAdmin? get detalleSkill => _detalleSkill;
 
@@ -339,6 +365,87 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
+  Future<void> cargarDetalleServicio(int id) async {
+    _detalleServicio = null;
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Servicio servicio = await _repoCatalogo.obtenerServicioPorId(
+        id,
+        token,
+      );
+      final List<ServicioSkill> skillsServicio = await _repoCatalogo
+          .obtenerSkillsServicio(id, token);
+      final List<Categoria> categorias = await _repoCatalogo.listarCategorias(
+        token,
+      );
+      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      _categorias = List<Categoria>.from(categorias)..sort(_compararCategorias);
+      _skills = List<Skill>.from(skills)..sort(_compararSkills);
+      _detalleServicio = _crearDetalleServicio(servicio, skillsServicio);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<Servicio?> actualizarServicio({
+    required int id,
+    required String nombre,
+    required String descripcion,
+    required String precio,
+    required String duracion,
+    required int? categoriaId,
+    required bool activo,
+    required Set<int> skillIds,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Servicio actualizado = await _repoCatalogo.actualizarServicio(
+        id,
+        Servicio(
+          categoriaId: categoriaId,
+          nombre: nombre.trim(),
+          descripcion: _valorOpcional(descripcion),
+          precio: _parsearPrecio(precio),
+          duracionMinutos: _parsearEntero(duracion),
+          activo: activo,
+        ),
+        token,
+      );
+      await _sincronizarSkillsServicio(id, skillIds, token);
+      await cargarDetalleServicio(id);
+      return actualizado;
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<bool> desactivarServicio(int id) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoCatalogo.desactivarServicio(id, token);
+      _detalleServicio = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   DtoServicioCatalogoAdmin _crearDtoServicio(Servicio servicio) {
     return DtoServicioCatalogoAdmin(
       id: servicio.id ?? 0,
@@ -367,6 +474,46 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     );
   }
 
+  DtoDetalleServicioCatalogoAdmin _crearDetalleServicio(
+    Servicio servicio,
+    List<ServicioSkill> skillsServicio,
+  ) {
+    final Set<int> skillIds = skillsServicio
+        .map((skill) => skill.skillId)
+        .whereType<int>()
+        .toSet();
+    return DtoDetalleServicioCatalogoAdmin(
+      id: servicio.id ?? 0,
+      nombre: servicio.nombre,
+      descripcion: _textoOpcional(servicio.descripcion) ?? '',
+      precio: servicio.precio,
+      duracionMinutos: servicio.duracionMinutos,
+      categoriaId: servicio.categoriaId,
+      activo: servicio.activo ?? true,
+      skillIds: skillIds,
+    );
+  }
+
+  Future<void> _sincronizarSkillsServicio(
+    int servicioId,
+    Set<int> skillIdsDeseadas,
+    String token,
+  ) async {
+    final List<ServicioSkill> actuales = await _repoCatalogo
+        .obtenerSkillsServicio(servicioId, token);
+    final Set<int> actualesIds = actuales
+        .map((skill) => skill.skillId)
+        .whereType<int>()
+        .toSet();
+
+    for (final int skillId in actualesIds.difference(skillIdsDeseadas)) {
+      await _repoCatalogo.eliminarSkillServicio(servicioId, skillId, token);
+    }
+    for (final int skillId in skillIdsDeseadas.difference(actualesIds)) {
+      await _repoCatalogo.asignarSkillServicio(servicioId, skillId, token);
+    }
+  }
+
   int _compararServicios(Servicio a, Servicio b) {
     return a.nombre.compareTo(b.nombre);
   }
@@ -392,8 +539,12 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
   }
 
   String _textoConFallback(String? texto, String fallback) {
+    return _textoOpcional(texto) ?? fallback;
+  }
+
+  String? _textoOpcional(String? texto) {
     final String? limpio = texto?.trim();
-    return limpio == null || limpio.isEmpty ? fallback : limpio;
+    return limpio == null || limpio.isEmpty ? null : limpio;
   }
 
   String? _valorOpcional(String valor) {
