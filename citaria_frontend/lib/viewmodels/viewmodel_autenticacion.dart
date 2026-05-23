@@ -1,4 +1,5 @@
 import 'package:citaria_frontend/data/enums/rol_usuario.dart';
+import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/cliente.dart';
 import 'package:citaria_frontend/data/models/empleado.dart';
 import 'package:citaria_frontend/data/models/organizacion_publica.dart';
@@ -130,22 +131,32 @@ class ViewModelAutenticacion extends ChangeNotifier {
         return _destinoSinSesion();
       }
 
-      final Usuario usuario = await _repoAuth.obtenerUsuarioActual(token);
+      final Usuario usuario = await _obtenerUsuarioConToken(token);
       await _reconstruirSesion(token: token, usuario: usuario);
 
       final int? organizacionId = usuario.organizacionId;
       if (organizacionId != null) {
-        await _guardarEmpresaDesdeUsuario(organizacionId);
-        await tema?.comprobarActualizacion(organizacionId);
+        await _guardarEmpresaDesdeUsuarioSiEsPosible(organizacionId);
+        await _comprobarTemaSiEsPosible(tema, organizacionId);
       }
 
       return _destinoPorRol(usuario.rol);
-    } catch (_) {
+    } on ExcepcionApi catch (e) {
+      if (!_sesionDebeExpirar(e)) {
+        _setError(e.mensaje);
+        return _destinoConSesionActual();
+      }
       await _almacenamientoSeguro.delete(key: _claveToken);
       _limpiarSesionEnMemoria();
       final int? orgId = _preferencias.getInt(_claveOrganizacionId);
       if (orgId != null) {
-        await tema?.comprobarActualizacion(orgId);
+        await _comprobarTemaSiEsPosible(tema, orgId);
+      }
+      return _destinoSinSesion();
+    } catch (e) {
+      _setError(_mensajeError(e));
+      if (_sesion != null) {
+        return _destinoConSesionActual();
       }
       return _destinoSinSesion();
     } finally {
@@ -298,15 +309,25 @@ class ViewModelAutenticacion extends ChangeNotifier {
     }
   }
 
-  Future<void> cerrarSesion() async {
+  Future<bool> cerrarSesion() async {
     _setCargando(true);
     _limpiarError();
 
     try {
       await _almacenamientoSeguro.delete(key: _claveToken);
+      String? token = await _almacenamientoSeguro.read(key: _claveToken);
+      if (token != null && token.isNotEmpty) {
+        await _almacenamientoSeguro.write(key: _claveToken, value: '');
+        token = await _almacenamientoSeguro.read(key: _claveToken);
+      }
+      if (token != null && token.isNotEmpty) {
+        throw StateError('No se ha podido cerrar la sesión.');
+      }
       _limpiarSesionEnMemoria();
+      return true;
     } catch (e) {
       _setError(_mensajeError(e));
+      return false;
     } finally {
       _setCargando(false);
     }
@@ -317,6 +338,19 @@ class ViewModelAutenticacion extends ChangeNotifier {
   }
 
   Sesion? obtenerSesion() => _sesion;
+
+  Future<Usuario> _obtenerUsuarioConToken(String token) {
+    return _repoAuth.obtenerUsuarioActual(token);
+  }
+
+  bool _sesionDebeExpirar(ExcepcionApi error) {
+    return error.statusCode == 401 || error.statusCode == 403;
+  }
+
+  DestinoAutenticacion _destinoConSesionActual() {
+    final RolUsuario? rol = _sesion?.rol;
+    return rol == null ? _destinoSinSesion() : _destinoPorRol(rol);
+  }
 
   Future<void> _reconstruirSesion({
     required String token,
@@ -359,7 +393,12 @@ class ViewModelAutenticacion extends ChangeNotifier {
       return _crearDtoAdmin(usuario);
     }
 
-    final Cliente cliente = await _repoClientes.obtenerPorId(clienteId, token);
+    late final Cliente cliente;
+    try {
+      cliente = await _repoClientes.obtenerPorId(clienteId, token);
+    } catch (_) {
+      return _crearDtoAdmin(usuario);
+    }
     final String nombreCompleto = _crearNombreCompleto(
       cliente.nombre,
       cliente.apellidos,
@@ -387,10 +426,12 @@ class ViewModelAutenticacion extends ChangeNotifier {
       return _crearDtoAdmin(usuario);
     }
 
-    final Empleado empleado = await _repoEmpleados.obtenerPorId(
-      empleadoId,
-      token,
-    );
+    late final Empleado empleado;
+    try {
+      empleado = await _repoEmpleados.obtenerPorId(empleadoId, token);
+    } catch (_) {
+      return _crearDtoAdmin(usuario);
+    }
     final String nombreCompleto = _crearNombreCompleto(
       empleado.nombre,
       empleado.apellidos,
@@ -453,6 +494,27 @@ class ViewModelAutenticacion extends ChangeNotifier {
     }
 
     await _preferencias.setInt(_claveOrganizacionId, organizacionId);
+  }
+
+  Future<void> _guardarEmpresaDesdeUsuarioSiEsPosible(
+    int organizacionId,
+  ) async {
+    try {
+      await _guardarEmpresaDesdeUsuario(organizacionId);
+    } catch (_) {
+      await _preferencias.setInt(_claveOrganizacionId, organizacionId);
+    }
+  }
+
+  Future<void> _comprobarTemaSiEsPosible(
+    ViewModelTema? tema,
+    int organizacionId,
+  ) async {
+    try {
+      await tema?.comprobarActualizacion(organizacionId);
+    } catch (_) {
+      // La sesión no debe caer por un fallo al refrescar el tema.
+    }
   }
 
   Future<void> _guardarEmpresa({

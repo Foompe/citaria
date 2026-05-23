@@ -3,6 +3,16 @@ import 'dart:convert';
 import 'package:citaria_frontend/data/api/configuracion_api.dart';
 import 'package:http/http.dart' as http;
 
+class ExcepcionApi implements Exception {
+  const ExcepcionApi(this.mensaje, this.statusCode);
+
+  final String mensaje;
+  final int statusCode;
+
+  @override
+  String toString() => mensaje;
+}
+
 class CitariaApi {
   CitariaApi(this._httpClient);
 
@@ -134,7 +144,7 @@ class CitariaApi {
       return cuerpo;
     }
 
-    throw Exception(_mensajeError(respuesta, cuerpo));
+    throw ExcepcionApi(_mensajeError(respuesta, cuerpo), respuesta.statusCode);
   }
 
   String _mensajeError(http.Response respuesta, Object? cuerpo) {

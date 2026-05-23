@@ -36,11 +36,7 @@ class AvatarFallbackCitaria extends StatelessWidget {
       );
     }
 
-    return _AvatarLetra(
-      texto: texto,
-      tamano: tamano,
-      radio: radio,
-    );
+    return _AvatarLetra(texto: texto, tamano: tamano, radio: radio);
   }
 }
 
@@ -73,11 +69,8 @@ class _AvatarImagenAsset extends StatelessWidget {
       child: Image.asset(
         imagenAsset,
         fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => _AvatarLetra(
-          texto: textoFallback,
-          tamano: tamano,
-          radio: radio,
-        ),
+        errorBuilder: (_, _, _) =>
+            _AvatarLetra(texto: textoFallback, tamano: tamano, radio: radio),
       ),
     );
   }
@@ -103,19 +96,18 @@ class _AvatarImagenUrl extends StatelessWidget {
     return Container(
       width: tamano,
       height: tamano,
-      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(radio),
         border: Border.all(color: colorScheme.outlineVariant),
       ),
-      child: Image.network(
-        imagenUrl,
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => _AvatarLetra(
-          texto: textoFallback,
-          tamano: tamano,
-          radio: radio,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radio),
+        child: Image.network(
+          imagenUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              _AvatarLetra(texto: textoFallback, tamano: tamano, radio: radio),
         ),
       ),
     );
@@ -145,9 +137,7 @@ class _AvatarLetra extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(radio),
-        border: Border.all(
-          color: color.withValues(alpha: 0.28),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       alignment: Alignment.center,
       child: Text(

@@ -157,6 +157,10 @@ class _PantallaWizardServiciosState extends State<PantallaWizardServicios> {
             ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48, maxWidth: 160),
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+                  disabledForegroundColor: colorScheme.outline,
+                ),
                 onPressed: resumen.puedeContinuar
                     ? () => GestorNavegacion.irAWizardEmpleado(
                         context,

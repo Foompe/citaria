@@ -29,8 +29,9 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
     final sesion = context.read<ViewModelAutenticacion>().obtenerSesion();
     final bool ok = await wizard.confirmarReserva(sesion);
     if (!mounted || !ok) return;
-    final bool? confirmado = await showDialog<bool>(
+    await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Reserva confirmada'),
         content: const Text(
@@ -38,16 +39,14 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Aceptar'),
           ),
         ],
       ),
     );
     if (!mounted) return;
-    if (confirmado == true) {
-      GestorNavegacion.confirmarWizard(context, wizard.origen);
-    }
+    GestorNavegacion.confirmarWizard(context, wizard.origen);
   }
 
   @override
@@ -65,12 +64,7 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
         titulo: 'Confirma tu reserva',
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          espaciado.padX,
-          16,
-          espaciado.padX,
-          espaciado.safeBottom + 120,
-        ),
+        padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -165,7 +159,6 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
                     : colorScheme.error,
               ),
             ),
-            const SizedBox(height: 140),
           ],
         ),
       ),
@@ -176,7 +169,10 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: wizard.cargando || !resumen.puedeConfirmar
+                onPressed:
+                    wizard.cargando ||
+                        wizard.reservaCreada != null ||
+                        !resumen.puedeConfirmar
                     ? null
                     : _confirmar,
                 child: const Text('Confirmar reserva'),

@@ -54,8 +54,9 @@ class _PantallaDetalleServicioState extends State<PantallaDetalleServicio> {
               child: Text(
                 catalogo.cargando
                     ? 'Cargando servicio...'
-                    : 'No se ha podido cargar el servicio.',
+                    : catalogo.error ?? 'No se ha podido cargar el servicio.',
                 style: textTheme.bodyLarge,
+                textAlign: TextAlign.center,
               ),
             )
           : CustomScrollView(
@@ -72,17 +73,8 @@ class _PantallaDetalleServicioState extends State<PantallaDetalleServicio> {
                     ),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
-                    background: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.primary.withValues(alpha: 0.6),
-                          ],
-                        ),
-                      ),
+                    background: _CabeceraServicio(
+                      imagenUrl: servicio.imagenUrl,
                     ),
                   ),
                 ),
@@ -190,6 +182,56 @@ class _PantallaDetalleServicioState extends State<PantallaDetalleServicio> {
   }
 }
 
+class _CabeceraServicio extends StatelessWidget {
+  const _CabeceraServicio({required this.imagenUrl});
+
+  final String? imagenUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final String? url = imagenUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return _fondoAzul(colorScheme);
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _fondoAzul(colorScheme),
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Color(0x99000000)],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fondoAzul(ColorScheme colorScheme) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.6),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _FilaDetalle extends StatelessWidget {
   const _FilaDetalle({
     required this.icono,
@@ -212,9 +254,17 @@ class _FilaDetalle extends StatelessWidget {
       children: [
         Icon(icono, size: 18, color: colorScheme.outline),
         const SizedBox(width: 10),
-        Text(label, style: textTheme.bodyLarge),
-        const Spacer(),
-        Text(valor, style: estiloValor ?? textTheme.bodyMedium),
+        Expanded(child: Text(label, style: textTheme.bodyLarge)),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            valor,
+            style: estiloValor ?? textTheme.bodyMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+          ),
+        ),
       ],
     );
   }

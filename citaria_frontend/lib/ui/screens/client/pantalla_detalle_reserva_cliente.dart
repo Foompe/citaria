@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 
@@ -40,9 +41,20 @@ class _PantallaDetalleReservaClienteState
   Future<void> _cancelar() async {
     final int? id = _id;
     if (id == null) return;
-    await context.read<ViewModelReservasCliente>().cancelarReserva(id);
+    final bool ok = await context
+        .read<ViewModelReservasCliente>()
+        .cancelarReserva(id);
     if (!mounted) return;
-    Navigator.pop(context);
+    if (ok) {
+      Navigator.pop(context);
+      return;
+    }
+    final String mensaje =
+        context.read<ViewModelReservasCliente>().error ??
+        'No se ha podido cancelar la reserva.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensaje)));
   }
 
   @override
@@ -50,201 +62,68 @@ class _PantallaDetalleReservaClienteState
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final screenHeight = MediaQuery.of(context).size.height;
     final reservas = context.watch<ViewModelReservasCliente>();
     final reserva = reservas.detalle;
 
     return Scaffold(
+      appBar: const CabeceraPantalla(titulo: 'Reserva', mostrarAtras: true),
       body: reserva == null
           ? Center(
-              child: Text(
-                reservas.cargando
-                    ? 'Cargando reserva...'
-                    : 'No se ha podido cargar la reserva.',
-                style: textTheme.bodyLarge,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
+                child: Text(
+                  reservas.cargando
+                      ? 'Cargando reserva...'
+                      : reservas.error ?? 'No se ha podido cargar la reserva.',
+                  style: textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
               ),
             )
-          : Stack(
+          : ListView(
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                16,
+                espaciado.padX,
+                espaciado.safeBottom + 24,
+              ),
               children: [
-                Container(
-                  height: screenHeight * 0.32,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withValues(alpha: 0.6),
-                      ],
-                    ),
-                  ),
+                _CardResumen(
+                  referencia: 'Reserva #${reserva.id}',
+                  estado: _estadoUi(reserva.estado),
                 ),
-                Positioned(
-                  top: espaciado.safeTop,
-                  left: espaciado.padX,
-                  child: Semantics(
-                    label: 'Volver',
-                    child: Tooltip(
-                      message: 'Volver',
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context),
-                        borderRadius: espaciado.radioPill,
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.30),
-                            borderRadius: espaciado.radioPill,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 12),
+                _CardFecha(
+                  fecha: reserva.fechaTexto,
+                  hora: reserva.horaTexto,
+                  duracion: reserva.duracionTexto,
                 ),
-                Positioned(
-                  top: screenHeight * 0.32 - 22,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(espaciado.radioCard.topLeft.x * 2),
-                      ),
-                    ),
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(
-                        espaciado.padX,
-                        16,
-                        espaciado.padX,
-                        espaciado.safeBottom + 80,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: colorScheme.outline.withValues(
-                                  alpha: 0.3,
-                                ),
-                                borderRadius: espaciado.radioPill,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          estado_ui.ChipEstado(
-                            estado: _estadoUi(reserva.estado),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            reserva.servicio,
-                            style: textTheme.displayMedium,
-                          ),
-                          const SizedBox(height: 20),
-                          _CardSeccion(
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: colorScheme.primaryContainer,
-                                  child: Text(
-                                    reserva.profesionalIniciales,
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      reserva.profesionalNombre,
-                                      style: textTheme.displaySmall,
-                                    ),
-                                    Text(
-                                      reserva.profesionalRol,
-                                      style: textTheme.bodySmall,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _CardSeccion(
-                            child: Column(
-                              children: [
-                                _FilaInfo(
-                                  icono: Icons.calendar_today,
-                                  label: 'Fecha',
-                                  valor: reserva.fechaTexto,
-                                ),
-                                Divider(
-                                  color: colorScheme.outline.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  height: 20,
-                                ),
-                                _FilaInfo(
-                                  icono: Icons.access_time,
-                                  label: 'Hora / Duración',
-                                  valor:
-                                      '${reserva.horaTexto} · ${reserva.duracionTexto}',
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _CardSeccion(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Total', style: textTheme.bodyLarge),
-                                Text(
-                                  reserva.precioTotalTexto,
-                                  style: textTheme.displaySmall?.copyWith(
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (reserva.notas != null) ...[
-                            const SizedBox(height: 10),
-                            _CardSeccion(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.notes,
-                                    size: 18,
-                                    color: colorScheme.outline,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      reserva.notas ?? '',
-                                      style: textTheme.bodyLarge,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 12),
+                _CardServicios(
+                  detalles: reserva.detalles,
+                  servicioFallback: reserva.servicio,
+                  profesionalFallback: reserva.profesionalNombre,
                 ),
+                const SizedBox(height: 12),
+                _CardTotal(total: reserva.precioTotalTexto),
+                if (reserva.notas != null &&
+                    reserva.notas!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _CardTexto(
+                    titulo: 'Observaciones',
+                    icono: Icons.notes,
+                    texto: reserva.notas!,
+                  ),
+                ],
+                if (reserva.motivo != null &&
+                    reserva.motivo!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _CardTexto(
+                    titulo: 'Motivo de cancelación',
+                    icono: Icons.info_outline,
+                    texto: reserva.motivo!,
+                  ),
+                ],
               ],
             ),
       bottomNavigationBar: reserva == null || !reserva.puedeCancelar
@@ -275,24 +154,314 @@ estado_ui.EstadoReserva _estadoUi(EstadoReservaPresentacion estado) {
   };
 }
 
-class _CardSeccion extends StatelessWidget {
-  const _CardSeccion({required this.child});
+class _CardResumen extends StatelessWidget {
+  const _CardResumen({required this.referencia, required this.estado});
 
+  final String referencia;
+  final estado_ui.EstadoReserva estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(child: Text(referencia, style: textTheme.displaySmall)),
+            const SizedBox(width: 12),
+            estado_ui.ChipEstado(estado: estado),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardFecha extends StatelessWidget {
+  const _CardFecha({
+    required this.fecha,
+    required this.hora,
+    required this.duracion,
+  });
+
+  final String fecha;
+  final String hora;
+  final String duracion;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return _CardSeccion(
+      titulo: 'Fecha y hora',
+      child: Column(
+        children: [
+          _FilaInfo(
+            icono: Icons.calendar_today_outlined,
+            label: 'Fecha',
+            valor: fecha,
+          ),
+          Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
+          _FilaInfo(icono: Icons.access_time, label: 'Hora', valor: hora),
+          Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
+          _FilaInfo(icono: Icons.timelapse, label: 'Duración', valor: duracion),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardServicios extends StatelessWidget {
+  const _CardServicios({
+    required this.detalles,
+    required this.servicioFallback,
+    required this.profesionalFallback,
+  });
+
+  final List<DtoLineaDetalleReservaCliente> detalles;
+  final String servicioFallback;
+  final String profesionalFallback;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return _CardSeccion(
+      titulo: 'Servicios',
+      child: detalles.isEmpty
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(servicioFallback, style: textTheme.bodyLarge),
+                const SizedBox(height: 4),
+                Text(profesionalFallback, style: textTheme.bodySmall),
+              ],
+            )
+          : Column(
+              children: [
+                for (int i = 0; i < detalles.length; i++) ...[
+                  _FilaDetalleServicio(detalle: detalles[i]),
+                  if (i < detalles.length - 1) const Divider(height: 24),
+                ],
+              ],
+            ),
+    );
+  }
+}
+
+class _CardTotal extends StatelessWidget {
+  const _CardTotal({required this.total});
+
+  final String total;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(child: Text('Total', style: textTheme.bodyLarge)),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                total,
+                style: textTheme.displaySmall?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CardTexto extends StatelessWidget {
+  const _CardTexto({
+    required this.titulo,
+    required this.icono,
+    required this.texto,
+  });
+
+  final String titulo;
+  final IconData icono;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return _CardSeccion(
+      titulo: titulo,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icono, size: 18, color: colorScheme.outline),
+          const SizedBox(width: 10),
+          Expanded(child: Text(texto, style: textTheme.bodyLarge)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardSeccion extends StatelessWidget {
+  const _CardSeccion({required this.titulo, required this.child});
+
+  final String titulo;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              titulo.toUpperCase(),
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.outline,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilaDetalleServicio extends StatelessWidget {
+  const _FilaDetalleServicio({required this.detalle});
+
+  final DtoLineaDetalleReservaCliente detalle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                detalle.servicio,
+                style: textTheme.bodyLarge,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                detalle.precioTexto,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _LineaIcono(icono: Icons.person_outline, texto: detalle.profesional),
+        const SizedBox(height: 6),
+        _LineaIcono(
+          icono: Icons.access_time,
+          texto: '${detalle.horaTexto} · ${detalle.duracionTexto}',
+        ),
+        if (detalle.cantidadTexto != null || detalle.estadoTexto != null) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (detalle.cantidadTexto != null)
+                _EtiquetaDetalle(texto: detalle.cantidadTexto!),
+              if (detalle.estadoTexto != null)
+                _EtiquetaDetalle(texto: detalle.estadoTexto!),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _LineaIcono extends StatelessWidget {
+  const _LineaIcono({required this.icono, required this.texto});
+
+  final IconData icono;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Icon(icono, size: 16, color: colorScheme.outline),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            texto,
+            style: textTheme.bodySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EtiquetaDetalle extends StatelessWidget {
+  const _EtiquetaDetalle({required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: espaciado.radioCard,
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: child,
+      child: Text(
+        texto,
+        style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
+      ),
     );
   }
 }
@@ -317,9 +486,17 @@ class _FilaInfo extends StatelessWidget {
       children: [
         Icon(icono, size: 18, color: colorScheme.outline),
         const SizedBox(width: 10),
-        Text(label, style: textTheme.bodySmall),
-        const Spacer(),
-        Text(valor, style: textTheme.bodyMedium),
+        Expanded(child: Text(label, style: textTheme.bodySmall)),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            valor,
+            style: textTheme.bodyMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+          ),
+        ),
       ],
     );
   }

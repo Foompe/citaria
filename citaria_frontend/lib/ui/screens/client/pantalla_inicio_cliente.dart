@@ -5,11 +5,12 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
-import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
 class PantallaInicioCliente extends StatefulWidget {
   const PantallaInicioCliente({super.key});
@@ -38,7 +39,10 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final usuario = context.watch<ViewModelAutenticacion>().usuarioActual;
+    final autenticacion = context.watch<ViewModelAutenticacion>();
+    final usuario = autenticacion.usuarioActual;
+    final empresa = autenticacion.empresaActiva;
+    final tema = context.watch<ViewModelTema>();
     final catalogo = context.watch<ViewModelCatalogoCliente>();
     final reservas = context.watch<ViewModelReservasCliente>();
     final categorias = catalogo.categorias;
@@ -68,28 +72,13 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: colorScheme.primary,
-                      child: Text(
-                        usuario?.iniciales ?? 'C',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                    AvatarFallbackCitaria(
+                      texto: empresa?.nombre ?? 'Empresa',
+                      imagenUrl: tema.datos?.logoUrl,
+                      tamano: 40,
+                      radio: 12,
                     ),
-                    const SizedBox(width: 12),
-                    const LogoCitaria(tamano: LogoTamano.pequeno),
                     const Spacer(),
-                    Semantics(
-                      label: 'Notificaciones',
-                      child: const IconButton(
-                        tooltip: 'Notificaciones',
-                        icon: Icon(Icons.notifications_none),
-                        onPressed: null,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -173,8 +162,10 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
                           child: Text(
                             catalogo.cargando
                                 ? 'Cargando servicios...'
-                                : 'No hay servicios disponibles.',
+                                : catalogo.error ??
+                                      'No hay servicios disponibles.',
                             style: textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
                           ),
                         )
                       : ListView.separated(
@@ -190,6 +181,7 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
                               nombre: servicio.nombre,
                               duracion: servicio.duracionTexto,
                               precio: servicio.precioTexto,
+                              imagenUrl: servicio.imagenUrl,
                               onTap: () => GestorNavegacion.irADetalleServicio(
                                 context,
                                 servicio.id.toString(),
@@ -209,7 +201,7 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
                   0,
                 ),
                 child: Text(
-                  'Mis próximas citas',
+                  'Próxima cita',
                   style: textTheme.displaySmall,
                 ),
               ),
@@ -226,8 +218,9 @@ class _PantallaInicioClienteState extends State<PantallaInicioCliente> {
                     ? Text(
                         reservas.cargando
                             ? 'Cargando reservas...'
-                            : 'No tienes próximas reservas.',
+                            : reservas.error ?? 'No tienes próximas reservas.',
                         style: textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
                       )
                     : _TarjetaProximaCita(
                         estado: _estadoUi(proximaReserva.estado),
@@ -262,12 +255,14 @@ class _TarjetaServicioDestacado extends StatelessWidget {
     required this.nombre,
     required this.duracion,
     required this.precio,
+    required this.imagenUrl,
     required this.onTap,
   });
 
   final String nombre;
   final String duracion;
   final String precio;
+  final String? imagenUrl;
   final VoidCallback onTap;
 
   @override
@@ -278,50 +273,108 @@ class _TarjetaServicioDestacado extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primary.withValues(alpha: 0.85),
-              colorScheme.primary.withValues(alpha: 0.50),
-            ],
+      child: ClipRRect(
+        borderRadius: espaciado.radioCard,
+        child: SizedBox(
+          width: 200,
+          child: _FondoServicioDestacado(
+            imagenUrl: imagenUrl,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    nombre,
+                    style: textTheme.displaySmall?.copyWith(
+                      color: colorScheme.onPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          duracion,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onPrimary.withValues(
+                              alpha: 0.86,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        precio,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          borderRadius: espaciado.radioCard,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              nombre,
-              style: textTheme.displaySmall?.copyWith(
-                color: colorScheme.onPrimary,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+}
+
+class _FondoServicioDestacado extends StatelessWidget {
+  const _FondoServicioDestacado({required this.imagenUrl, required this.child});
+
+  final String? imagenUrl;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final String? url = imagenUrl?.trim();
+
+    if (url == null || url.isEmpty) {
+      return _fondoAzul(colorScheme, child);
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _fondoAzul(colorScheme, const SizedBox()),
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.transparent, Color(0xB3000000)],
             ),
-            const SizedBox(height: 4),
-            Text(
-              duracion,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onPrimary.withValues(alpha: 0.80),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              precio,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+
+  Widget _fondoAzul(ColorScheme colorScheme, Widget contenido) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary.withValues(alpha: 0.85),
+            colorScheme.primary.withValues(alpha: 0.50),
           ],
         ),
       ),
+      child: contenido,
     );
   }
 }

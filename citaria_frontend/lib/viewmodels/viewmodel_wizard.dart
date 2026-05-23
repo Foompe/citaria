@@ -162,6 +162,7 @@ class ViewModelWizard extends ChangeNotifier {
   int? _empleadoId;
   DateTime _mesVisible = DateTime(DateTime.now().year, DateTime.now().month);
   Set<int> _diasDisponibles = const <int>{};
+  int _versionDiasCalendario = 0;
   DateTime? _fechaSeleccionada;
   List<FranjaHoraria> _franjas = const <FranjaHoraria>[];
   String? _horaSeleccionada;
@@ -175,6 +176,7 @@ class ViewModelWizard extends ChangeNotifier {
   DateTime get mesVisible => _mesVisible;
   DateTime? get fechaSeleccionada => _fechaSeleccionada;
   DtoReservaCreada? get reservaCreada => _reservaCreada;
+  int get versionDiasCalendario => _versionDiasCalendario;
 
   List<DtoServicioWizard> get servicios {
     return _servicios.map(_crearDtoServicio).toList(growable: false);
@@ -244,7 +246,8 @@ class ViewModelWizard extends ChangeNotifier {
       profesionalIniciales: 'A',
       fechaHoraTexto: fecha == null || hora == null
           ? 'Sin fecha y hora'
-          : '${_capitalizar(_formatoFecha.format(fecha))} · $hora',
+          : '${_capitalizar(_formatoFecha.format(fecha))} · '
+                '${_formatearHora(hora)}',
       duracionTotalTexto: '$duracionTotalMinutos min',
       precioTotalTexto: _formatoPrecio.format(precioTotal),
       puedeContinuar: _serviciosSeleccionados.isNotEmpty,
@@ -282,7 +285,6 @@ class ViewModelWizard extends ChangeNotifier {
       );
       if (idPreseleccionado != null) {
         _serviciosSeleccionados = <int>{idPreseleccionado};
-        await _cargarDiasDisponiblesInterno();
       }
       notifyListeners();
     } catch (e) {
@@ -303,13 +305,8 @@ class ViewModelWizard extends ChangeNotifier {
     _fechaSeleccionada = null;
     _horaSeleccionada = null;
     _franjas = const <FranjaHoraria>[];
+    _actualizarDiasDisponibles(const <int>{});
     notifyListeners();
-    if (_serviciosSeleccionados.isNotEmpty) {
-      await cargarDiasDisponibles();
-    } else {
-      _diasDisponibles = const <int>{};
-      notifyListeners();
-    }
   }
 
   void seleccionarEmpleadoAutomatico() {
@@ -318,6 +315,12 @@ class ViewModelWizard extends ChangeNotifier {
   }
 
   Future<void> cargarDiasDisponibles() async {
+    if (_serviciosSeleccionados.isEmpty) {
+      _actualizarDiasDisponibles(const <int>{});
+      notifyListeners();
+      return;
+    }
+
     _setCargando(true);
     _limpiarError();
 
@@ -339,6 +342,7 @@ class ViewModelWizard extends ChangeNotifier {
     _fechaSeleccionada = null;
     _horaSeleccionada = null;
     _franjas = const <FranjaHoraria>[];
+    _actualizarDiasDisponibles(const <int>{});
     notifyListeners();
     if (_serviciosSeleccionados.isNotEmpty) {
       await cargarDiasDisponibles();
@@ -388,6 +392,8 @@ class ViewModelWizard extends ChangeNotifier {
   }
 
   Future<bool> confirmarReserva(Sesion? sesion) async {
+    if (_reservaCreada != null) return true;
+
     _setCargando(true);
     _limpiarError();
 
@@ -427,15 +433,28 @@ class ViewModelWizard extends ChangeNotifier {
   }
 
   Future<void> _cargarDiasDisponiblesInterno() async {
+    if (_serviciosSeleccionados.isEmpty) {
+      _actualizarDiasDisponibles(const <int>{});
+      return;
+    }
+
+    final int anio = _mesVisible.year;
+    final int mes = _mesVisible.month;
     final DiasDisponibles dias = await _repoDisponibilidad
         .obtenerDiasDisponibles(
-          _mesVisible.year,
-          _mesVisible.month,
+          anio,
+          mes,
           _serviciosSeleccionados.toList(growable: false),
           _token,
           empleadoId: _empleadoId,
         );
-    _diasDisponibles = dias.diasDisponibles.toSet();
+    if (_mesVisible.year != anio || _mesVisible.month != mes) return;
+    _actualizarDiasDisponibles(dias.diasDisponibles.toSet());
+  }
+
+  void _actualizarDiasDisponibles(Set<int> dias) {
+    _diasDisponibles = dias;
+    _versionDiasCalendario++;
   }
 
   @override
@@ -457,11 +476,12 @@ class ViewModelWizard extends ChangeNotifier {
   }
 
   DtoFranjaWizard _crearDtoFranja(FranjaHoraria franja) {
+    final bool disponible = franja.disponible && !_franjaYaPaso(franja);
     return DtoFranjaWizard(
       horaInicio: franja.horaInicio,
       horaFin: franja.horaFin,
-      horaTexto: franja.horaInicio,
-      disponible: franja.disponible,
+      horaTexto: _formatearHora(franja.horaInicio),
+      disponible: disponible,
       seleccionada: _horaSeleccionada == franja.horaInicio,
       empleadosDisponibles: franja.empleadosDisponibles,
     );
@@ -471,7 +491,7 @@ class ViewModelWizard extends ChangeNotifier {
     return DtoReservaCreada(
       id: reserva.id ?? 0,
       fechaTexto: _capitalizar(_formatoFecha.format(reserva.fecha)),
-      horaTexto: reserva.horaInicio,
+      horaTexto: _formatearHora(reserva.horaInicio),
     );
   }
 
@@ -489,6 +509,24 @@ class ViewModelWizard extends ChangeNotifier {
     return null;
   }
 
+  bool _franjaYaPaso(FranjaHoraria franja) {
+    final DateTime? fecha = _fechaSeleccionada;
+    if (fecha == null || _soloFecha(fecha) != _soloFecha(DateTime.now())) {
+      return false;
+    }
+    final DateTime inicio = _combinarFechaHora(fecha, franja.horaInicio);
+    return !inicio.isAfter(DateTime.now());
+  }
+
+  DateTime _combinarFechaHora(DateTime fecha, String hora) {
+    final List<String> partes = hora.split(':');
+    final int horaValor = int.tryParse(partes.first) ?? 0;
+    final int minutoValor = partes.length > 1
+        ? int.tryParse(partes[1]) ?? 0
+        : 0;
+    return DateTime(fecha.year, fecha.month, fecha.day, horaValor, minutoValor);
+  }
+
   DateTime _soloFecha(DateTime fecha) {
     return DateTime(fecha.year, fecha.month, fecha.day);
   }
@@ -501,6 +539,12 @@ class ViewModelWizard extends ChangeNotifier {
   String _capitalizar(String texto) {
     if (texto.isEmpty) return texto;
     return '${texto.substring(0, 1).toUpperCase()}${texto.substring(1)}';
+  }
+
+  String _formatearHora(String hora) {
+    final List<String> partes = hora.split(':');
+    if (partes.length < 2) return hora;
+    return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
   String _mensajeError(Object error) {

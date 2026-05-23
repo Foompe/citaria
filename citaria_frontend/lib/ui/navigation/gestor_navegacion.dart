@@ -86,9 +86,6 @@ class GestorNavegacion {
   static void irARegistro(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.registro);
 
-  static void irAVincularCuenta(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.vincularCuenta);
-
   // ── POST-AUTENTICACIÓN (limpian la pila completa) ─────────────────────────
 
   static void irAHomeCliente(BuildContext context) =>

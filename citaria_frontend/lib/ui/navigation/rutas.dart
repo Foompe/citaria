@@ -10,7 +10,6 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_calendario.dart
 import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_login.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_registro.dart';
-import 'package:citaria_frontend/ui/screens/public/pantalla_vincular_cuenta.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_inicio_cliente.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_catalogo_cliente.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_mis_reservas.dart';
@@ -36,7 +35,6 @@ class Rutas {
   static const String seleccionEmpresa = '/seleccion-empresa';
   static const String login = '/login';
   static const String registro = '/registro';
-  static const String vincularCuenta = '/vincular-cuenta';
 
   // ── ÁREA CLIENTE
   static const String inicioCliente = '/inicio';
@@ -85,7 +83,6 @@ class Rutas {
       seleccionEmpresa: (_) => const PantallaSeleccionEmpresa(),
       login: (_) => const PantallaLogin(),
       registro: (_) => const PantallaRegistro(),
-      vincularCuenta: (_) => const PantallaVincularCuenta(),
 
       // ── Área cliente (Bloque 2) ───────────────────────────────────────────
       inicioCliente: (_) => const PantallaInicioCliente(),

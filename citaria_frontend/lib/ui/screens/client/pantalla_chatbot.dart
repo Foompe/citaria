@@ -101,40 +101,38 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
                   _BurbujaMensaje(mensaje: chatbot.mensajes[i]),
             ),
           ),
-          Container(
-            color: colorScheme.surface,
-            padding: EdgeInsets.fromLTRB(
-              espaciado.padX,
-              8,
-              8,
-              MediaQuery.of(context).viewInsets.bottom + 12,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controlador,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _enviarMensaje(),
-                    decoration: const InputDecoration(
-                      hintText: 'Escribe tu mensaje…',
+          SafeArea(
+            top: false,
+            child: Container(
+              color: colorScheme.surface,
+              padding: EdgeInsets.fromLTRB(espaciado.padX, 8, 8, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controlador,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _enviarMensaje(),
+                      decoration: const InputDecoration(
+                        hintText: 'Escribe tu mensaje…',
+                      ),
                     ),
                   ),
-                ),
-                Semantics(
-                  label: 'Enviar mensaje',
-                  child: IconButton(
-                    tooltip: 'Enviar',
-                    icon: Icon(
-                      Icons.send_rounded,
-                      color: chatbot.cargando
-                          ? colorScheme.outline
-                          : colorScheme.primary,
+                  Semantics(
+                    label: 'Enviar mensaje',
+                    child: IconButton(
+                      tooltip: 'Enviar',
+                      icon: Icon(
+                        Icons.send_rounded,
+                        color: chatbot.cargando
+                            ? colorScheme.outline
+                            : colorScheme.primary,
+                      ),
+                      onPressed: chatbot.cargando ? null : _enviarMensaje,
                     ),
-                    onPressed: chatbot.cargando ? null : _enviarMensaje,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

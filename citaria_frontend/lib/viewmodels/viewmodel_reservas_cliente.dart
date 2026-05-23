@@ -29,6 +29,27 @@ class DtoReservaCliente {
 }
 
 @immutable
+class DtoLineaDetalleReservaCliente {
+  const DtoLineaDetalleReservaCliente({
+    required this.servicio,
+    required this.profesional,
+    required this.horaTexto,
+    required this.duracionTexto,
+    required this.precioTexto,
+    required this.cantidadTexto,
+    required this.estadoTexto,
+  });
+
+  final String servicio;
+  final String profesional;
+  final String horaTexto;
+  final String duracionTexto;
+  final String precioTexto;
+  final String? cantidadTexto;
+  final String? estadoTexto;
+}
+
+@immutable
 class DtoDetalleReservaCliente {
   const DtoDetalleReservaCliente({
     required this.id,
@@ -42,7 +63,9 @@ class DtoDetalleReservaCliente {
     required this.duracionTexto,
     required this.precioTotalTexto,
     required this.notas,
+    required this.motivo,
     required this.puedeCancelar,
+    required this.detalles,
   });
 
   final int id;
@@ -56,7 +79,9 @@ class DtoDetalleReservaCliente {
   final String duracionTexto;
   final String precioTotalTexto;
   final String? notas;
+  final String? motivo;
   final bool puedeCancelar;
+  final List<DtoLineaDetalleReservaCliente> detalles;
 }
 
 class ViewModelReservasCliente extends ChangeNotifier {
@@ -111,9 +136,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
         sesion.clienteId ?? 0,
         sesion.token,
       );
-      _reservas = _reservas
-          .where((reserva) => reserva.id != null)
-          .toList(growable: false);
+      _reservas = _reservas.where(_reservaEsValida).toList(growable: false);
       _totalesReservas = await _cargarTotalesReservas(sesion.token);
       notifyListeners();
     } catch (e) {
@@ -124,6 +147,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
   }
 
   Future<void> cargarDetalleReserva(int id) async {
+    _detalle = null;
     _setCargando(true);
     _limpiarError();
 
@@ -144,7 +168,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
     }
   }
 
-  Future<void> cancelarReserva(int id, {String? motivo}) async {
+  Future<bool> cancelarReserva(int id, {String? motivo}) async {
     _setCargando(true);
     _limpiarError();
 
@@ -153,14 +177,20 @@ class ViewModelReservasCliente extends ChangeNotifier {
       await _repoReservas.cancelar(id, sesion.token, motivo: motivo);
       await cargarReservasCliente();
       await cargarDetalleReserva(id);
+      return true;
     } catch (e) {
       _setError(_mensajeError(e));
+      return false;
     } finally {
       _setCargando(false);
     }
   }
 
   Future<void> recargar() => cargarReservasCliente();
+
+  bool _reservaEsValida(Reserva reserva) {
+    return reserva.id != null && reserva.horaInicio.trim().isNotEmpty;
+  }
 
   List<DtoReservaCliente> _crearDtos() {
     final List<Reserva> ordenadas = List<Reserva>.from(_reservas)
@@ -222,9 +252,28 @@ class ViewModelReservasCliente extends ChangeNotifier {
       duracionTexto: '${duracion == 0 ? 0 : duracion} min',
       precioTotalTexto: _formatoPrecio.format(total),
       notas: reserva.notas,
+      motivo: reserva.motivo,
       puedeCancelar:
           reserva.estado == EstadoReserva.pendiente ||
           reserva.estado == EstadoReserva.confirmada,
+      detalles: detalles.map(_crearLineaDetalle).toList(growable: false),
+    );
+  }
+
+  DtoLineaDetalleReservaCliente _crearLineaDetalle(ReservaServicio detalle) {
+    final int duracion = _duracionDetalle(detalle);
+    return DtoLineaDetalleReservaCliente(
+      servicio: detalle.nombreServicio ?? 'Servicio',
+      profesional: detalle.nombreEmpleado ?? 'Asignación automática',
+      horaTexto:
+          '${_formatearHora(detalle.horaInicio)} - '
+          '${_formatearHora(detalle.horaFin)}',
+      duracionTexto: '$duracion min',
+      precioTexto: _formatoPrecio.format(
+        detalle.precioUnitario * (detalle.cantidad ?? 1),
+      ),
+      cantidadTexto: _cantidadTexto(detalle.cantidad),
+      estadoTexto: _estadoDetalleTexto(detalle),
     );
   }
 
@@ -260,6 +309,21 @@ class ViewModelReservasCliente extends ChangeNotifier {
     );
   }
 
+  String? _cantidadTexto(int? cantidad) {
+    if (cantidad == null || cantidad <= 1) return null;
+    return 'Cantidad: $cantidad';
+  }
+
+  String? _estadoDetalleTexto(ReservaServicio detalle) {
+    final estado = detalle.estado;
+    if (estado == null) return null;
+    return switch (estado.name) {
+      'activo' => 'Activo',
+      'cancelado' => 'Cancelado',
+      _ => estado.name,
+    };
+  }
+
   DateTime _combinarFechaHora(DateTime fecha, String hora) {
     final List<String> partes = hora.split(':');
     final int horaValor = int.tryParse(partes.first) ?? 0;
@@ -284,6 +348,12 @@ class ViewModelReservasCliente extends ChangeNotifier {
     return '${_capitalizar(_formatoFecha.format(fecha))} · '
         '${fecha.hour.toString().padLeft(2, '0')}:'
         '${fecha.minute.toString().padLeft(2, '0')} h';
+  }
+
+  String _formatearHora(String hora) {
+    final List<String> partes = hora.split(':');
+    if (partes.length < 2) return hora;
+    return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
   String _formatoFechaCompleta(DateTime fecha) {

@@ -91,13 +91,13 @@ class _PantallaMisReservasState extends State<PantallaMisReservas> {
                       reservas: reservas.proximas,
                       mensajeVacio: reservas.cargando
                           ? 'Cargando reservas...'
-                          : 'No tienes próximas reservas.',
+                          : reservas.error ?? 'No tienes próximas reservas.',
                     ),
                     _ListaReservas(
                       reservas: reservas.pasadas,
                       mensajeVacio: reservas.cargando
                           ? 'Cargando reservas...'
-                          : 'No tienes reservas pasadas.',
+                          : reservas.error ?? 'No tienes reservas pasadas.',
                     ),
                   ],
                 ),
@@ -122,7 +122,11 @@ class _ListaReservas extends StatelessWidget {
 
     if (reservas.isEmpty) {
       return Center(
-        child: Text(mensajeVacio, style: Theme.of(context).textTheme.bodyLarge),
+        child: Text(
+          mensajeVacio,
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
       );
     }
 

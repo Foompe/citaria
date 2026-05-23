@@ -32,44 +32,23 @@ class _PantallaLoginState extends State<PantallaLogin> {
     super.dispose();
   }
 
-  void _mostrarDialogoRecuperacion(BuildContext context) {
-    final TextEditingController controladorEmailRecup = TextEditingController();
-
-    showDialog<void>(
+  Future<void> _mostrarDialogoRecuperacion() async {
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Recuperar contraseña'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Introduce tu email y te enviaremos las instrucciones.',
-              style: Theme.of(dialogContext).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controladorEmailRecup,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                hintText: 'tu@email.com',
-                labelText: 'Email',
-              ),
-            ),
-          ],
+        content: Text(
+          'La recuperación de contraseña todavía no está disponible. Contacta con el centro.',
+          style: Theme.of(dialogContext).textTheme.bodyLarge,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Enviar'),
+            child: const Text('Entendido'),
           ),
         ],
       ),
-    ).then((_) => controladorEmailRecup.dispose());
+    );
   }
 
   Future<void> _iniciarSesion() async {
@@ -181,7 +160,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () => _mostrarDialogoRecuperacion(context),
+                  onPressed: _mostrarDialogoRecuperacion,
                   child: Text(
                     '¿Olvidaste tu contraseña?',
                     style: textTheme.bodySmall?.copyWith(
@@ -227,25 +206,6 @@ class _PantallaLoginState extends State<PantallaLogin> {
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // ── BOTONES TESTING ───────────────────────────────────────────
-              // TODO: eliminar antes de producción
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ElevatedButton(
-                    onPressed: _entrarComoAdmin,
-                    child: const Text('Entrar como Admin'),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _entrarComoCliente,
-                    child: const Text('Entrar como Cliente'),
-                  ),
-                ],
               ),
             ],
           ),

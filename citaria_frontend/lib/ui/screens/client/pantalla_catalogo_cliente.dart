@@ -108,8 +108,9 @@ class _PantallaCatalogoClienteState extends State<PantallaCatalogoCliente> {
                       child: Text(
                         catalogo.cargando
                             ? 'Cargando servicios...'
-                            : 'No hay servicios disponibles.',
+                            : catalogo.error ?? 'No hay servicios disponibles.',
                         style: textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
                       ),
                     )
                   : ListView.separated(
@@ -128,6 +129,7 @@ class _PantallaCatalogoClienteState extends State<PantallaCatalogoCliente> {
                           descripcion: servicio.descripcion,
                           duracion: servicio.duracionTexto,
                           precio: servicio.precioTexto,
+                          imagenUrl: servicio.imagenUrl,
                           onTap: () => GestorNavegacion.irADetalleServicio(
                             context,
                             servicio.id.toString(),

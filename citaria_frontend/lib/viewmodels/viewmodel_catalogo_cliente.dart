@@ -168,6 +168,7 @@ class ViewModelCatalogoCliente extends ChangeNotifier {
   }
 
   Future<void> cargarDetalleServicio(int id) async {
+    _detalle = null;
     _setCargando(true);
     _limpiarError();
 

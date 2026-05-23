@@ -78,10 +78,10 @@ class PantallaWizardHora extends StatelessWidget {
                     fondo = colorScheme.outline.withValues(alpha: 0.1);
                     textoColor = colorScheme.outline.withValues(alpha: 0.4);
                   } else {
-                    fondo = Colors.transparent;
-                    textoColor = colorScheme.onSurface;
+                    fondo = colorScheme.primaryContainer;
+                    textoColor = colorScheme.onPrimaryContainer;
                     borde = Border.all(
-                      color: colorScheme.outline.withValues(alpha: 0.4),
+                      color: colorScheme.primary.withValues(alpha: 0.35),
                     );
                   }
 

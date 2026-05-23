@@ -12,6 +12,7 @@ class FilaServicio extends StatelessWidget {
     required this.descripcion,
     required this.duracion,
     required this.precio,
+    this.imagenUrl,
     required this.onTap,
   });
 
@@ -19,32 +20,26 @@ class FilaServicio extends StatelessWidget {
   final String descripcion;
   final String duracion;
   final String precio;
+  final String? imagenUrl;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final espaciado  = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme  = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return InkWell(
       onTap: onTap,
       borderRadius: espaciado.radioCard,
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: espaciado.padX,
-          vertical: 12,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
         child: Row(
           children: [
-            // Miniatura placeholder
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: espaciado.radioCard,
-              ),
+            _MiniaturaServicio(
+              imagenUrl: imagenUrl,
+              radio: espaciado.radioCard,
+              colorPlaceholder: colorScheme.surfaceContainerHighest,
             ),
             const SizedBox(width: 16),
             // Información del servicio
@@ -82,13 +77,49 @@ class FilaServicio extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: colorScheme.outline,
-            ),
+            Icon(Icons.chevron_right, color: colorScheme.outline),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MiniaturaServicio extends StatelessWidget {
+  const _MiniaturaServicio({
+    required this.imagenUrl,
+    required this.radio,
+    required this.colorPlaceholder,
+  });
+
+  final String? imagenUrl;
+  final BorderRadius radio;
+  final Color colorPlaceholder;
+
+  @override
+  Widget build(BuildContext context) {
+    final String? url = imagenUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return _placeholder();
+    }
+
+    return ClipRRect(
+      borderRadius: radio,
+      child: Image.network(
+        url,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _placeholder(),
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(color: colorPlaceholder, borderRadius: radio),
     );
   }
 }

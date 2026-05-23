@@ -163,11 +163,6 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 onPressed: vmAuth.cargando ? null : _continuar,
                 child: const Text('Continuar'),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => _mostrarDialogoVincularCuenta(context),
-                child: const Text('Vincular'),
-              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -250,94 +245,4 @@ class _CampoFormulario extends StatelessWidget {
       ],
     );
   }
-}
-
-void _mostrarDialogoVincularCuenta(BuildContext context) {
-  final ColorScheme colorScheme = Theme.of(context).colorScheme;
-  final TextTheme textTheme = Theme.of(context).textTheme;
-
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.black.withValues(alpha: 0.58),
-    builder: (dialogContext) => Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(26, 22, 26, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  Icons.lock_outline_rounded,
-                  color: colorScheme.primary,
-                  size: 26,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text('Cuenta encontrada', style: textTheme.displaySmall),
-            const SizedBox(height: 8),
-            Text.rich(
-              TextSpan(
-                text: 'Ya existe una cuenta asociada a este email. ',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.outline,
-                ),
-                children: [
-                  TextSpan(
-                    text: 'Puedes vincularla',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' para conservar tus datos o crear una cuenta nueva.',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      GestorNavegacion.irASplash(context);
-                    },
-                    child: const Text('Crear nueva'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      GestorNavegacion.irASplash(context);
-                    },
-                    child: const Text('Vincular'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }

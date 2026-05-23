@@ -6,8 +6,15 @@ import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_wizard.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
 
-class PantallaWizardFecha extends StatelessWidget {
+class PantallaWizardFecha extends StatefulWidget {
   const PantallaWizardFecha({super.key});
+
+  @override
+  State<PantallaWizardFecha> createState() => _PantallaWizardFechaState();
+}
+
+class _PantallaWizardFechaState extends State<PantallaWizardFecha> {
+  bool _iniciado = false;
 
   static const List<String> _cabeceras = <String>[
     'L',
@@ -34,6 +41,17 @@ class PantallaWizardFecha extends StatelessWidget {
     'Noviembre',
     'Diciembre',
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_iniciado) return;
+    _iniciado = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ViewModelWizard>().cargarDiasDisponibles();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +126,11 @@ class PantallaWizardFecha extends StatelessWidget {
             const SizedBox(height: 8),
             Expanded(
               child: GridView.builder(
+                key: ValueKey(
+                  '${wizard.mesVisible.year}-'
+                  '${wizard.mesVisible.month}-'
+                  '${wizard.versionDiasCalendario}',
+                ),
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
@@ -127,15 +150,21 @@ class PantallaWizardFecha extends StatelessWidget {
                   if (dia.seleccionado) {
                     fondo = colorScheme.primary;
                     textoColor = colorScheme.onPrimary;
-                  } else if (!dia.disponible) {
-                    fondo = Colors.transparent;
-                    textoColor = colorScheme.outline.withValues(alpha: 0.4);
+                  } else if (dia.disponible) {
+                    fondo = colorScheme.primaryContainer;
+                    textoColor = colorScheme.onPrimaryContainer;
+                    borde = Border.all(
+                      color: dia.esHoy
+                          ? colorScheme.primary
+                          : colorScheme.primary.withValues(alpha: 0.35),
+                      width: dia.esHoy ? 1.5 : 1,
+                    );
                   } else {
                     fondo = Colors.transparent;
-                    textoColor = colorScheme.onSurface;
+                    textoColor = colorScheme.outline.withValues(alpha: 0.4);
                     if (dia.esHoy) {
                       borde = Border.all(
-                        color: colorScheme.primary,
+                        color: colorScheme.outline.withValues(alpha: 0.35),
                         width: 1.5,
                       );
                     }
@@ -178,11 +207,15 @@ class PantallaWizardFecha extends StatelessWidget {
                     color: colorScheme.outline,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    wizard.cargando
-                        ? 'Cargando disponibilidad'
-                        : 'Selecciona un día disponible',
-                    style: textTheme.bodySmall,
+                  Expanded(
+                    child: Text(
+                      wizard.cargando
+                          ? 'Cargando disponibilidad'
+                          : wizard.error ?? 'Selecciona un día disponible',
+                      style: textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

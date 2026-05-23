@@ -7,7 +7,7 @@ class Reserva {
   final String? nombreCliente;
   final EstadoReserva? estado;
   final DateTime fecha;
-  final String horaInicio;
+  final String? _horaInicio;
   final int? empleadoId;
   final List<int> servicioIds;
   final String? notas;
@@ -20,12 +20,14 @@ class Reserva {
     this.nombreCliente,
     this.estado,
     required this.fecha,
-    required this.horaInicio,
+    required String? horaInicio,
     this.empleadoId,
     required this.servicioIds,
     this.notas,
     this.motivo,
-  });
+  }) : _horaInicio = horaInicio;
+
+  String get horaInicio => _horaInicio ?? '';
 
   factory Reserva.fromJson(Map<String, dynamic> json) {
     final List<dynamic> servicioIdsJson =
@@ -43,7 +45,7 @@ class Reserva {
           ? null
           : EstadoReserva.fromJson(json['estado'] as String),
       fecha: DateTime.parse(json['fecha'] as String),
-      horaInicio: json['horaInicio'] as String,
+      horaInicio: json['horaInicio'] as String?,
       empleadoId: json['empleadoId'] == null
           ? null
           : (json['empleadoId'] as num).toInt(),
