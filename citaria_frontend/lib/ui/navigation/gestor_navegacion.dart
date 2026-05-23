@@ -321,14 +321,13 @@ class GestorNavegacion {
   /// Si [SesionPin.estaActiva], navega directamente.
   /// Si no, muestra [DialogoPin]. Al validar, activa la sesión y navega.
   /// Si el usuario cancela, no ocurre nada.
-  static Future<void> _irAPinConDestino(
+  static Future<T?> _irAPinConDestino<T>(
     BuildContext context,
     WidgetBuilder builder,
     String nombreSeccion,
   ) async {
     if (SesionPin.estaActiva) {
-      Navigator.push(context, MaterialPageRoute(builder: builder));
-      return;
+      return Navigator.push<T>(context, MaterialPageRoute(builder: builder));
     }
 
     final ok = await showDialog<bool>(
@@ -340,9 +339,10 @@ class GestorNavegacion {
     if (ok == true) {
       SesionPin.activar();
       if (context.mounted) {
-        Navigator.push(context, MaterialPageRoute(builder: builder));
+        return Navigator.push<T>(context, MaterialPageRoute(builder: builder));
       }
     }
+    return null;
   }
 
   static Future<void> irAAdminEmpleados(BuildContext context) =>
@@ -352,8 +352,8 @@ class GestorNavegacion {
         'Empleados',
       );
 
-  static Future<void> irAAdminNuevoEmpleado(BuildContext context) =>
-      _irAPinConDestino(
+  static Future<bool?> irAAdminNuevoEmpleado(BuildContext context) =>
+      _irAPinConDestino<bool>(
         context,
         (_) => const PantallaAdminNuevoEmpleado(),
         'Empleados',

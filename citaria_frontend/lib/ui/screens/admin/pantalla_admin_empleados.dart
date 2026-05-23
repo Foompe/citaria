@@ -62,7 +62,14 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
           message: 'Nuevo empleado',
           child: IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => GestorNavegacion.irAAdminNuevoEmpleado(context),
+            onPressed: () async {
+              final bool? creado = await GestorNavegacion.irAAdminNuevoEmpleado(
+                context,
+              );
+              if (creado == true && mounted) {
+                _viewModel.refrescar();
+              }
+            },
           ),
         ),
       ),

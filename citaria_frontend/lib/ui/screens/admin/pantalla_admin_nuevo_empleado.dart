@@ -80,7 +80,7 @@ class _PantallaAdminNuevoEmpleadoState
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Empleado creado')));
-    Navigator.maybePop(context);
+    Navigator.pop(context, true);
   }
 
   @override
