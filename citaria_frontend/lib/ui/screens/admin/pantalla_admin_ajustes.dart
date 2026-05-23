@@ -107,6 +107,51 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
     });
   }
 
+  Future<void> _mostrarDialogoEditarEmpresa(
+    BuildContext context,
+    ViewModelAdminAjustes vmAjustes,
+  ) async {
+    final DtoAjustesEmpresaAdmin? empresa = vmAjustes.empresa;
+    if (empresa == null) {
+      return;
+    }
+
+    final bool? guardado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => _DialogoEditarEmpresa(
+        empresa: empresa,
+        onGuardar:
+            ({
+              required email,
+              required telefono,
+              required cif,
+              required calle,
+              required codigoPostal,
+              required ciudad,
+              required pais,
+            }) {
+              return vmAjustes.actualizarEmpresa(
+                email: email,
+                telefono: telefono,
+                cif: cif,
+                calle: calle,
+                codigoPostal: codigoPostal,
+                ciudad: ciudad,
+                pais: pais,
+              );
+            },
+      ),
+    );
+
+    if (!context.mounted || guardado != true) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Empresa actualizada')));
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ViewModelAdminAjustes>.value(
@@ -124,6 +169,8 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
           body: _CuerpoAjustes(
             vmAjustes: vmAjustes,
             onCambiarPin: () => _mostrarDialogoCambiarPin(context),
+            onEditarEmpresa: () =>
+                _mostrarDialogoEditarEmpresa(context, vmAjustes),
           ),
         ),
       ),
@@ -132,10 +179,15 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
 }
 
 class _CuerpoAjustes extends StatelessWidget {
-  const _CuerpoAjustes({required this.vmAjustes, required this.onCambiarPin});
+  const _CuerpoAjustes({
+    required this.vmAjustes,
+    required this.onCambiarPin,
+    required this.onEditarEmpresa,
+  });
 
   final ViewModelAdminAjustes vmAjustes;
   final VoidCallback onCambiarPin;
+  final VoidCallback onEditarEmpresa;
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +219,13 @@ class _CuerpoAjustes extends StatelessWidget {
         children: [
           _Seccion(
             titulo: 'EMPRESA',
+            accion: IconButton(
+              tooltip: 'Editar empresa',
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: vmAjustes.cargando || vmAjustes.empresa == null
+                  ? null
+                  : onEditarEmpresa,
+            ),
             children: _filasEmpresa(vmAjustes.empresa),
           ),
           const SizedBox(height: 28),
@@ -274,17 +333,17 @@ class _CuerpoAjustes extends StatelessWidget {
       ];
     }
     return <Widget>[
-      _FilaInfo(
+      _FilaLogo(
         icono: Icons.image_outlined,
         etiqueta: 'Logo',
-        valor: visual.logoUrl,
+        logoUrl: visual.logoUrl,
       ),
-      _FilaInfo(
+      _FilaColor(
         icono: Icons.format_color_fill_outlined,
         etiqueta: 'Color primario',
         valor: visual.colorPrimario,
       ),
-      _FilaInfo(
+      _FilaColor(
         icono: Icons.color_lens_outlined,
         etiqueta: 'Color secundario',
         valor: visual.colorSecundario,
@@ -334,10 +393,11 @@ class _CuerpoAjustes extends StatelessWidget {
 }
 
 class _Seccion extends StatelessWidget {
-  const _Seccion({required this.titulo, required this.children});
+  const _Seccion({required this.titulo, required this.children, this.accion});
 
   final String titulo;
   final List<Widget> children;
+  final Widget? accion;
 
   @override
   Widget build(BuildContext context) {
@@ -348,14 +408,21 @@ class _Seccion extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          titulo,
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.outline,
-            letterSpacing: 1.2,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                titulo,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.outline,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            ?accion,
+          ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: accion == null ? 8 : 4),
         Card(
           shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
           child: Column(
@@ -369,6 +436,226 @@ class _Seccion extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+typedef _GuardarEmpresa =
+    Future<bool> Function({
+      required String email,
+      required String telefono,
+      required String cif,
+      required String calle,
+      required String codigoPostal,
+      required String ciudad,
+      required String pais,
+    });
+
+class _DialogoEditarEmpresa extends StatefulWidget {
+  const _DialogoEditarEmpresa({required this.empresa, required this.onGuardar});
+
+  final DtoAjustesEmpresaAdmin empresa;
+  final _GuardarEmpresa onGuardar;
+
+  @override
+  State<_DialogoEditarEmpresa> createState() => _DialogoEditarEmpresaState();
+}
+
+class _DialogoEditarEmpresaState extends State<_DialogoEditarEmpresa> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _ctrlEmail;
+  late final TextEditingController _ctrlTelefono;
+  late final TextEditingController _ctrlCif;
+  late final TextEditingController _ctrlCalle;
+  late final TextEditingController _ctrlCodigoPostal;
+  late final TextEditingController _ctrlCiudad;
+  late final TextEditingController _ctrlPais;
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final DtoAjustesEmpresaAdmin empresa = widget.empresa;
+    _ctrlEmail = TextEditingController(text: empresa.email);
+    _ctrlTelefono = TextEditingController(
+      text: _limpiarFallback(empresa.telefono, 'Sin teléfono'),
+    );
+    _ctrlCif = TextEditingController(
+      text: _limpiarFallback(empresa.cif, 'Sin CIF'),
+    );
+    _ctrlCalle = TextEditingController(text: empresa.calle);
+    _ctrlCodigoPostal = TextEditingController(text: empresa.codigoPostal);
+    _ctrlCiudad = TextEditingController(text: empresa.ciudad);
+    _ctrlPais = TextEditingController(text: empresa.pais);
+  }
+
+  @override
+  void dispose() {
+    _ctrlEmail.dispose();
+    _ctrlTelefono.dispose();
+    _ctrlCif.dispose();
+    _ctrlCalle.dispose();
+    _ctrlCodigoPostal.dispose();
+    _ctrlCiudad.dispose();
+    _ctrlPais.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    setState(() => _guardando = true);
+    final bool ok = await widget.onGuardar(
+      email: _ctrlEmail.text,
+      telefono: _ctrlTelefono.text,
+      cif: _ctrlCif.text,
+      calle: _ctrlCalle.text,
+      codigoPostal: _ctrlCodigoPostal.text,
+      ciudad: _ctrlCiudad.text,
+      pais: _ctrlPais.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+    setState(() => _guardando = false);
+    if (ok) {
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo actualizar la empresa.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return AlertDialog(
+      title: const Text('Editar empresa'),
+      content: SizedBox(
+        width: 420,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  initialValue: widget.empresa.nombre,
+                  enabled: false,
+                  decoration: InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(
+                      borderRadius: espaciado.radioInput,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _CampoTexto(
+                  controller: _ctrlEmail,
+                  label: 'Email *',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (valor) {
+                    final String limpio = valor?.trim() ?? '';
+                    if (limpio.isEmpty) {
+                      return 'El email es obligatorio';
+                    }
+                    if (!limpio.contains('@')) {
+                      return 'El email no parece válido';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                _CampoTexto(controller: _ctrlTelefono, label: 'Teléfono'),
+                const SizedBox(height: 12),
+                _CampoTexto(controller: _ctrlCif, label: 'CIF'),
+                const SizedBox(height: 12),
+                _CampoTexto(controller: _ctrlCalle, label: 'Calle'),
+                const SizedBox(height: 12),
+                _CampoTexto(
+                  controller: _ctrlCodigoPostal,
+                  label: 'Código postal',
+                ),
+                const SizedBox(height: 12),
+                _CampoTexto(controller: _ctrlCiudad, label: 'Ciudad'),
+                const SizedBox(height: 12),
+                _CampoTexto(
+                  controller: _ctrlPais,
+                  label: 'País *',
+                  textCapitalization: TextCapitalization.characters,
+                  validator: (valor) {
+                    final String limpio = valor?.trim() ?? '';
+                    if (limpio.isEmpty) {
+                      return 'El país es obligatorio';
+                    }
+                    if (limpio.length != 2) {
+                      return 'Usa el código de 2 letras';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _guardando ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _guardando ? null : _guardar,
+          child: _guardando
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  String _limpiarFallback(String valor, String fallback) {
+    return valor == fallback ? '' : valor;
+  }
+}
+
+class _CampoTexto extends StatelessWidget {
+  const _CampoTexto({
+    required this.controller,
+    required this.label,
+    this.keyboardType,
+    this.validator,
+    this.textCapitalization = TextCapitalization.none,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final TextCapitalization textCapitalization;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: espaciado.radioInput),
+      ),
     );
   }
 }
@@ -397,6 +684,115 @@ class _FilaInfo extends StatelessWidget {
       ),
       subtitle: Text(valor, style: textTheme.bodyLarge),
     );
+  }
+}
+
+class _FilaLogo extends StatelessWidget {
+  const _FilaLogo({
+    required this.icono,
+    required this.etiqueta,
+    required this.logoUrl,
+  });
+
+  final IconData icono;
+  final String etiqueta;
+  final String logoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool tieneLogo = logoUrl.startsWith('http');
+
+    return ListTile(
+      leading: Icon(icono, color: colorScheme.outline),
+      title: Text(
+        etiqueta,
+        style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+      ),
+      subtitle: tieneLogo
+          ? Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    logoUrl,
+                    width: 96,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Text(
+                      'No se pudo cargar el logo',
+                      style: textTheme.bodyLarge,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : Text('Sin logo', style: textTheme.bodyLarge),
+    );
+  }
+}
+
+class _FilaColor extends StatelessWidget {
+  const _FilaColor({
+    required this.icono,
+    required this.etiqueta,
+    required this.valor,
+  });
+
+  final IconData icono;
+  final String etiqueta;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final Color? color = _parseColor(valor);
+
+    return ListTile(
+      leading: Icon(icono, color: colorScheme.outline),
+      title: Text(
+        etiqueta,
+        style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+      ),
+      subtitle: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: Text(valor, style: textTheme.bodyLarge)),
+          if (color != null) ...[
+            const SizedBox(width: 10),
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color? _parseColor(String valor) {
+    final String normalizado = valor.trim();
+    if (normalizado.isEmpty || normalizado.startsWith('Color ')) {
+      return null;
+    }
+    final String hex = normalizado.startsWith('#')
+        ? normalizado.substring(1)
+        : normalizado.replaceFirst('0x', '').replaceFirst('0X', '');
+    final String conAlpha = hex.length == 6 ? 'FF$hex' : hex;
+    if (conAlpha.length != 8) {
+      return null;
+    }
+    final int? parsed = int.tryParse(conAlpha, radix: 16);
+    return parsed == null ? null : Color(parsed);
   }
 }
 

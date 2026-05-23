@@ -15,6 +15,9 @@ class DtoAjustesEmpresaAdmin {
     required this.telefono,
     required this.email,
     required this.cif,
+    required this.calle,
+    required this.codigoPostal,
+    required this.ciudad,
     required this.pais,
   });
 
@@ -23,6 +26,9 @@ class DtoAjustesEmpresaAdmin {
   final String telefono;
   final String email;
   final String cif;
+  final String calle;
+  final String codigoPostal;
+  final String ciudad;
   final String pais;
 }
 
@@ -72,6 +78,7 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
   DtoAjustesEmpresaAdmin? _empresa;
   DtoAjustesCuentaAdmin? _cuenta;
   DtoAjustesVisualAdmin? _visual;
+  Organizacion? _organizacionOriginal;
 
   DtoAjustesEmpresaAdmin? get empresa => _empresa;
   DtoAjustesCuentaAdmin? get cuenta => _cuenta;
@@ -90,7 +97,8 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
         _repoUsuarios.obtenerActual(token),
       ]);
 
-      _empresa = _crearEmpresa(resultados[0] as Organizacion);
+      _organizacionOriginal = resultados[0] as Organizacion;
+      _empresa = _crearEmpresa(_organizacionOriginal!);
       _visual = _crearVisual(resultados[1] as ConfiguracionVisual);
       _cuenta = _crearCuenta(resultados[2] as Usuario);
       notifyListeners();
@@ -105,6 +113,54 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
     return cargarAjustes();
   }
 
+  Future<bool> actualizarEmpresa({
+    required String email,
+    required String telefono,
+    required String cif,
+    required String calle,
+    required String codigoPostal,
+    required String ciudad,
+    required String pais,
+  }) async {
+    final Organizacion? original = _organizacionOriginal;
+    final int? id = original?.id;
+    if (original == null || id == null) {
+      registrarError('No hay datos de empresa disponibles.');
+      return false;
+    }
+
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Organizacion actualizada = await _repoOrganizaciones.actualizar(
+        id,
+        Organizacion(
+          id: id,
+          nombre: original.nombre,
+          email: email.trim(),
+          telefono: _valorOpcional(telefono),
+          cif: _valorOpcional(cif),
+          calle: _valorOpcional(calle),
+          codigoPostal: _valorOpcional(codigoPostal),
+          ciudad: _valorOpcional(ciudad),
+          pais: pais.trim().toUpperCase(),
+          tokenRegistro: original.tokenRegistro,
+        ),
+        token,
+      );
+      _organizacionOriginal = actualizada;
+      _empresa = _crearEmpresa(actualizada);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   DtoAjustesEmpresaAdmin _crearEmpresa(Organizacion organizacion) {
     return DtoAjustesEmpresaAdmin(
       nombre: _textoConFallback(organizacion.nombre, 'Sin nombre'),
@@ -112,6 +168,9 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
       telefono: _textoConFallback(organizacion.telefono, 'Sin teléfono'),
       email: _textoConFallback(organizacion.email, 'Sin email'),
       cif: _textoConFallback(organizacion.cif, 'Sin CIF'),
+      calle: organizacion.calle ?? '',
+      codigoPostal: organizacion.codigoPostal ?? '',
+      ciudad: organizacion.ciudad ?? '',
       pais: _textoConFallback(organizacion.pais, 'Sin país'),
     );
   }
@@ -168,5 +227,10 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
   String? _textoOpcional(String? texto) {
     final String? limpio = texto?.trim();
     return limpio == null || limpio.isEmpty ? null : limpio;
+  }
+
+  String? _valorOpcional(String valor) {
+    final String limpio = valor.trim();
+    return limpio.isEmpty ? null : limpio;
   }
 }
