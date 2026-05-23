@@ -69,8 +69,10 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
   List<Categoria> _categorias = const <Categoria>[];
   List<Skill> _skills = const <Skill>[];
   DtoCategoriaCatalogoAdmin? _detalleCategoria;
+  DtoSkillCatalogoAdmin? _detalleSkill;
 
   DtoCategoriaCatalogoAdmin? get detalleCategoria => _detalleCategoria;
+  DtoSkillCatalogoAdmin? get detalleSkill => _detalleSkill;
 
   List<DtoServicioCatalogoAdmin> get servicios => _servicios
       .where((servicio) => servicio.id != null)
@@ -264,6 +266,69 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       final String token = leerTokenObligatorio();
       await _repoCatalogo.desactivarCategoria(id, token);
       _detalleCategoria = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<void> cargarDetalleSkill(int id) async {
+    _detalleSkill = null;
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Skill skill = await _repoCatalogo.obtenerSkillPorId(id, token);
+      _detalleSkill = _crearDtoSkill(skill);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<Skill?> actualizarSkill({
+    required int id,
+    required String nombre,
+    required String descripcion,
+    required bool activo,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Skill actualizada = await _repoCatalogo.actualizarSkill(
+        id,
+        Skill(
+          nombre: nombre.trim(),
+          descripcion: _valorOpcional(descripcion),
+          activo: activo,
+        ),
+        token,
+      );
+      _detalleSkill = _crearDtoSkill(actualizada);
+      notifyListeners();
+      return actualizada;
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<bool> desactivarSkill(int id) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoCatalogo.desactivarSkill(id, token);
+      _detalleSkill = null;
       notifyListeners();
       return true;
     } catch (e) {

@@ -178,7 +178,19 @@ class _CuerpoCatalogo extends StatelessWidget {
               }
             },
           ),
-          _TabSkills(skills: vmCatalogo.skills),
+          _TabSkills(
+            skills: vmCatalogo.skills,
+            onSkillTap: (skill) async {
+              final bool? actualizado =
+                  await GestorNavegacion.irAAdminDetalleSkill(
+                    context,
+                    skill.id,
+                  );
+              if (actualizado == true) {
+                await vmCatalogo.refrescar();
+              }
+            },
+          ),
         ],
       ),
     );
@@ -327,9 +339,10 @@ class _TabCategorias extends StatelessWidget {
 }
 
 class _TabSkills extends StatelessWidget {
-  const _TabSkills({required this.skills});
+  const _TabSkills({required this.skills, required this.onSkillTap});
 
   final List<DtoSkillCatalogoAdmin> skills;
+  final ValueChanged<DtoSkillCatalogoAdmin> onSkillTap;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +358,7 @@ class _TabSkills extends StatelessWidget {
       itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
         nombre: skills[index].nombre,
         subtitulo: skills[index].descripcion,
+        onTap: () => onSkillTap(skills[index]),
       ),
     );
   }
