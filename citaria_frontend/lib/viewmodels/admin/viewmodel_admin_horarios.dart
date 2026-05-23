@@ -9,15 +9,21 @@ import 'package:intl/intl.dart';
 class DtoHorarioOrganizacionAdmin {
   const DtoHorarioOrganizacionAdmin({
     required this.id,
+    required this.diaSemana,
     required this.dia,
     required this.activo,
     required this.horario,
+    required this.horaApertura,
+    required this.horaCierre,
   });
 
   final int? id;
+  final int diaSemana;
   final String dia;
   final bool activo;
   final String horario;
+  final String horaApertura;
+  final String horaCierre;
 }
 
 @immutable
@@ -124,6 +130,54 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
     }
   }
 
+  Future<bool> guardarHorario({
+    required int? id,
+    required int diaSemana,
+    required String horaApertura,
+    required String horaCierre,
+    required bool activo,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final int organizacionId = leerOrganizacionIdObligatoria();
+      final HorarioOrganizacion horario = HorarioOrganizacion(
+        diaSemana: diaSemana,
+        horaApertura: horaApertura,
+        horaCierre: horaCierre,
+        activo: activo,
+      );
+      final HorarioOrganizacion guardado = id == null
+          ? await _repoOrganizaciones.crearHorario(
+              organizacionId,
+              horario,
+              token,
+            )
+          : await _repoOrganizaciones.actualizarHorario(
+              organizacionId,
+              id,
+              horario,
+              token,
+            );
+
+      _horarios = <HorarioOrganizacion>[
+        ..._horarios.where(
+          (item) =>
+              _indiceDiaSemana(item.diaSemana) != _indiceDiaSemana(diaSemana),
+        ),
+        guardado,
+      ];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   List<DtoHorarioOrganizacionAdmin> _crearHorarios() {
     final Map<int, HorarioOrganizacion> porDia = <int, HorarioOrganizacion>{};
     for (final HorarioOrganizacion horario in _horarios) {
@@ -140,18 +194,24 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
       if (horario == null) {
         return DtoHorarioOrganizacionAdmin(
           id: null,
+          diaSemana: index + 1,
           dia: _diasSemana[index],
           activo: false,
-          horario: 'Cerrado',
+          horario: '09:00 - 18:00',
+          horaApertura: '09:00',
+          horaCierre: '18:00',
         );
       }
       return DtoHorarioOrganizacionAdmin(
         id: horario.id,
+        diaSemana: horario.diaSemana,
         dia: _diasSemana[index],
         activo: horario.activo,
         horario:
             '${_formatearHora(horario.horaApertura)} - '
             '${_formatearHora(horario.horaCierre)}',
+        horaApertura: _formatearHora(horario.horaApertura),
+        horaCierre: _formatearHora(horario.horaCierre),
       );
     }, growable: false);
   }

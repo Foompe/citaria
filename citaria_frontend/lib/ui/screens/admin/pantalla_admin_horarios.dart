@@ -4,7 +4,6 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
-import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_horarios.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -116,21 +115,28 @@ class _CuerpoHorarios extends StatelessWidget {
           const SizedBox(height: 8),
           Card(
             shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-            child: AbsorbPointer(
-              child: Column(
-                children: [
-                  for (int i = 0; i < vmHorarios.horarios.length; i++) ...[
-                    FilaDiaHorario(
-                      dia: vmHorarios.horarios[i].dia,
-                      activo: vmHorarios.horarios[i].activo,
-                      horario: vmHorarios.horarios[i].horario,
-                      onChanged: (_) {},
+            child: Column(
+              children: [
+                for (int i = 0; i < vmHorarios.horarios.length; i++) ...[
+                  _FilaHorarioEditable(
+                    horario: vmHorarios.horarios[i],
+                    deshabilitado: vmHorarios.cargando,
+                    onActivoChanged: (activo) => _guardarHorario(
+                      context,
+                      vmHorarios,
+                      vmHorarios.horarios[i],
+                      activo: activo,
                     ),
-                    if (i < vmHorarios.horarios.length - 1)
-                      Divider(height: 1, color: colorScheme.outlineVariant),
-                  ],
+                    onEditar: () => _editarHorario(
+                      context,
+                      vmHorarios,
+                      vmHorarios.horarios[i],
+                    ),
+                  ),
+                  if (i < vmHorarios.horarios.length - 1)
+                    Divider(height: 1, color: colorScheme.outlineVariant),
                 ],
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 28),
@@ -236,6 +242,246 @@ class _CuerpoHorarios extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _guardarHorario(
+    BuildContext context,
+    ViewModelAdminHorarios vmHorarios,
+    DtoHorarioOrganizacionAdmin horario, {
+    required bool activo,
+  }) async {
+    final bool guardado = await vmHorarios.guardarHorario(
+      id: horario.id,
+      diaSemana: horario.diaSemana,
+      horaApertura: horario.horaApertura,
+      horaCierre: horario.horaCierre,
+      activo: activo,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (!guardado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            vmHorarios.error ?? 'No se pudo actualizar el horario.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _editarHorario(
+    BuildContext context,
+    ViewModelAdminHorarios vmHorarios,
+    DtoHorarioOrganizacionAdmin horario,
+  ) async {
+    final _HorarioEditado? editado = await showDialog<_HorarioEditado>(
+      context: context,
+      builder: (dialogContext) => _DialogoEditarHorario(horario: horario),
+    );
+
+    if (editado == null || !context.mounted) {
+      return;
+    }
+
+    final bool guardado = await vmHorarios.guardarHorario(
+      id: horario.id,
+      diaSemana: horario.diaSemana,
+      horaApertura: editado.horaApertura,
+      horaCierre: editado.horaCierre,
+      activo: editado.activo,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          guardado
+              ? 'Horario actualizado'
+              : vmHorarios.error ?? 'No se pudo actualizar el horario.',
+        ),
+      ),
+    );
+  }
+}
+
+class _FilaHorarioEditable extends StatelessWidget {
+  const _FilaHorarioEditable({
+    required this.horario,
+    required this.deshabilitado,
+    required this.onActivoChanged,
+    required this.onEditar,
+  });
+
+  final DtoHorarioOrganizacionAdmin horario;
+  final bool deshabilitado;
+  final ValueChanged<bool> onActivoChanged;
+  final VoidCallback onEditar;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 12, right: 4),
+      leading: Switch(
+        value: horario.activo,
+        onChanged: deshabilitado ? null : onActivoChanged,
+      ),
+      title: Text(horario.dia, style: textTheme.bodyLarge),
+      subtitle: Text(
+        horario.activo ? horario.horario : 'Cerrado',
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
+      ),
+      trailing: Tooltip(
+        message: 'Editar horario',
+        child: IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: deshabilitado ? null : onEditar,
+        ),
+      ),
+      onTap: deshabilitado ? null : onEditar,
+    );
+  }
+}
+
+class _HorarioEditado {
+  const _HorarioEditado({
+    required this.horaApertura,
+    required this.horaCierre,
+    required this.activo,
+  });
+
+  final String horaApertura;
+  final String horaCierre;
+  final bool activo;
+}
+
+class _DialogoEditarHorario extends StatefulWidget {
+  const _DialogoEditarHorario({required this.horario});
+
+  final DtoHorarioOrganizacionAdmin horario;
+
+  @override
+  State<_DialogoEditarHorario> createState() => _DialogoEditarHorarioState();
+}
+
+class _DialogoEditarHorarioState extends State<_DialogoEditarHorario> {
+  late TimeOfDay _apertura;
+  late TimeOfDay _cierre;
+  late bool _activo;
+
+  @override
+  void initState() {
+    super.initState();
+    _apertura = _parsearHora(widget.horario.horaApertura);
+    _cierre = _parsearHora(widget.horario.horaCierre);
+    _activo = widget.horario.activo;
+  }
+
+  Future<void> _seleccionarApertura() async {
+    final TimeOfDay? hora = await showTimePicker(
+      context: context,
+      initialTime: _apertura,
+    );
+    if (hora != null) {
+      setState(() => _apertura = hora);
+    }
+  }
+
+  Future<void> _seleccionarCierre() async {
+    final TimeOfDay? hora = await showTimePicker(
+      context: context,
+      initialTime: _cierre,
+    );
+    if (hora != null) {
+      setState(() => _cierre = hora);
+    }
+  }
+
+  void _guardar() {
+    if (_activo && _minutos(_cierre) <= _minutos(_apertura)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La hora de cierre debe ser posterior a la apertura.'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pop(
+      context,
+      _HorarioEditado(
+        horaApertura: _formatearHora(_apertura),
+        horaCierre: _formatearHora(_cierre),
+        activo: _activo,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.horario.dia),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Día activo'),
+            value: _activo,
+            onChanged: (valor) => setState(() => _activo = valor),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.schedule),
+            title: const Text('Apertura'),
+            subtitle: Text(_formatearHora(_apertura)),
+            onTap: _seleccionarApertura,
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.schedule),
+            title: const Text('Cierre'),
+            subtitle: Text(_formatearHora(_cierre)),
+            onTap: _seleccionarCierre,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(onPressed: _guardar, child: const Text('Guardar')),
+      ],
+    );
+  }
+
+  TimeOfDay _parsearHora(String hora) {
+    final List<String> partes = hora.split(':');
+    if (partes.length < 2) {
+      return const TimeOfDay(hour: 9, minute: 0);
+    }
+    return TimeOfDay(
+      hour: int.tryParse(partes[0]) ?? 9,
+      minute: int.tryParse(partes[1]) ?? 0,
+    );
+  }
+
+  int _minutos(TimeOfDay hora) => hora.hour * 60 + hora.minute;
+
+  String _formatearHora(TimeOfDay hora) {
+    final String horas = hora.hour.toString().padLeft(2, '0');
+    final String minutos = hora.minute.toString().padLeft(2, '0');
+    return '$horas:$minutos';
   }
 }
 
