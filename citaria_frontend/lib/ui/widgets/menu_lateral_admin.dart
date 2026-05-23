@@ -1,19 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// Menú lateral (Drawer) del área de administración.
 ///
 /// Se usa como [Scaffold.drawer] en todas las pantallas admin.
 /// Las secciones protegidas por PIN tienen un icono candado como
 /// trailing — la protección real ocurre en [GuardianPin].
-///
-/// Hardcoding temporal:
-///   "DetailCarWash" — nombre empresa
-///     TODO: leer de shared_preferences
-///   "María R." / "admin@citaria.com" — datos del admin
-///     TODO: datos reales de ViewModelAutenticacion
 class MenuLateralAdmin extends StatelessWidget {
   const MenuLateralAdmin({super.key});
 
@@ -22,6 +18,7 @@ class MenuLateralAdmin extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final autenticacion = context.watch<ViewModelAutenticacion>();
 
     return Drawer(
       child: SafeArea(
@@ -30,6 +27,7 @@ class MenuLateralAdmin extends StatelessWidget {
           children: [
             // ── CABECERA ──────────────────────────────────────────────────
             _Cabecera(
+              empresa: autenticacion.empresaActiva,
               colorScheme: colorScheme,
               textTheme: textTheme,
               espaciado: espaciado,
@@ -137,7 +135,11 @@ class MenuLateralAdmin extends StatelessWidget {
             ),
 
             // ── PIE ───────────────────────────────────────────────────────
-            _Pie(colorScheme: colorScheme, textTheme: textTheme),
+            _Pie(
+              usuario: autenticacion.usuarioActual,
+              colorScheme: colorScheme,
+              textTheme: textTheme,
+            ),
           ],
         ),
       ),
@@ -149,11 +151,13 @@ class MenuLateralAdmin extends StatelessWidget {
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({
+    required this.empresa,
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
   });
 
+  final DtoEmpresaActiva? empresa;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
@@ -170,14 +174,21 @@ class _Cabecera extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const LogoCitaria(tamano: LogoTamano.pequeno),
+          AvatarFallbackCitaria(
+            texto: empresa?.nombre ?? 'Citaria',
+            imagenUrl: empresa?.logoUrl,
+            tamano: 44,
+            radio: 12,
+          ),
           const SizedBox(width: 12),
-          // TODO: nombre real de empresa de shared_preferences
-          // Hardcodeado: "DetailCarWash"
-          Text(
-            'DetailCarWash',
-            style: textTheme.displaySmall?.copyWith(
-              color: colorScheme.onPrimary,
+          Expanded(
+            child: Text(
+              empresa?.nombre ?? 'Citaria',
+              style: textTheme.displaySmall?.copyWith(
+                color: colorScheme.onPrimary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -237,8 +248,13 @@ class _ItemMenu extends StatelessWidget {
 }
 
 class _Pie extends StatelessWidget {
-  const _Pie({required this.colorScheme, required this.textTheme});
+  const _Pie({
+    required this.usuario,
+    required this.colorScheme,
+    required this.textTheme,
+  });
 
+  final DtoUsuarioSesion? usuario;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
 
@@ -248,21 +264,25 @@ class _Pie extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Divider(),
-        // TODO: datos reales de ViewModelAutenticacion
-        // Hardcodeado: "María R." / "admin@citaria.com"
         ListTile(
-          leading: CircleAvatar(
-            backgroundColor: colorScheme.primaryContainer,
-            child: Text(
-              'MR',
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          leading: AvatarFallbackCitaria(
+            texto: usuario?.nombreCompleto ?? usuario?.email ?? 'Usuario',
+            imagenUrl: usuario?.fotoUrl,
+            tamano: 42,
+            radio: 21,
           ),
-          title: Text('María R.', style: textTheme.displaySmall),
-          subtitle: Text('admin@citaria.com', style: textTheme.bodySmall),
+          title: Text(
+            usuario?.nombreCompleto ?? 'Usuario',
+            style: textTheme.displaySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            usuario?.email ?? 'Sin sesión',
+            style: textTheme.bodySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         ListTile(
           leading: const Icon(Icons.logout),
