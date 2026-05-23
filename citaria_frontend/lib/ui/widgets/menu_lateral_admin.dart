@@ -20,8 +20,8 @@ class MenuLateralAdmin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
     return Drawer(
       child: SafeArea(
@@ -123,15 +123,21 @@ class MenuLateralAdmin extends StatelessWidget {
                       GestorNavegacion.irAAdminEstadisticas(ctx);
                     },
                   ),
+                  _ItemMenu(
+                    icono: Icons.settings_outlined,
+                    titulo: 'Ajustes',
+                    protegida: true,
+                    onTap: (ctx) {
+                      Navigator.pop(ctx);
+                      GestorNavegacion.irAAdminAjustes(ctx);
+                    },
+                  ),
                 ],
               ),
             ),
 
             // ── PIE ───────────────────────────────────────────────────────
-            _Pie(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
-            ),
+            _Pie(colorScheme: colorScheme, textTheme: textTheme),
           ],
         ),
       ),
@@ -224,19 +230,14 @@ class _ItemMenu extends StatelessWidget {
     return ListTile(
       leading: Icon(icono),
       title: Text(titulo),
-      trailing: protegida
-          ? const Icon(Icons.lock_outline, size: 14)
-          : null,
+      trailing: protegida ? const Icon(Icons.lock_outline, size: 14) : null,
       onTap: () => onTap(context),
     );
   }
 }
 
 class _Pie extends StatelessWidget {
-  const _Pie({
-    required this.colorScheme,
-    required this.textTheme,
-  });
+  const _Pie({required this.colorScheme, required this.textTheme});
 
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -260,14 +261,8 @@ class _Pie extends StatelessWidget {
               ),
             ),
           ),
-          title: Text(
-            'María R.',
-            style: textTheme.displaySmall,
-          ),
-          subtitle: Text(
-            'admin@citaria.com',
-            style: textTheme.bodySmall,
-          ),
+          title: Text('María R.', style: textTheme.displaySmall),
+          subtitle: Text('admin@citaria.com', style: textTheme.bodySmall),
         ),
         ListTile(
           leading: const Icon(Icons.logout),
