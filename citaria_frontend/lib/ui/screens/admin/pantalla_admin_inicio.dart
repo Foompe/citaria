@@ -1,3 +1,6 @@
+import 'package:citaria_frontend/data/enums/estado_reserva.dart';
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
@@ -6,211 +9,9 @@ import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
-
-// ── Modelos de datos hardcodeados ─────────────────────────────────────────────
-// TODO: cargar empleados y reservas del día desde API
-
-class _Empleado {
-  const _Empleado({required this.id, required this.nombre});
-
-  final String id;
-  final String nombre;
-}
-
-class _ReservaCalendario {
-  const _ReservaCalendario({
-    required this.id,
-    required this.cliente,
-    required this.servicio,
-    required this.horaInicioH,
-    required this.horaInicioM,
-    required this.duracionMin,
-    required this.empleadoId,
-    required this.estado,
-  });
-
-  final String id;
-  final String cliente;
-  final String servicio;
-  final int horaInicioH;
-  final int horaInicioM;
-  final int duracionMin;
-  final String empleadoId;
-  final EstadoReserva estado;
-}
-
-const List<_Empleado> _empleados = [
-  _Empleado(id: 'emp-1', nombre: 'Carlos M.'),
-  _Empleado(id: 'emp-2', nombre: 'Laura P.'),
-  _Empleado(id: 'emp-3', nombre: 'Sergio R.'),
-  _Empleado(id: 'emp-4', nombre: 'Nuria V.'), // TODO: cargar de API
-  _Empleado(id: 'emp-5', nombre: 'Diego F.'), // TODO: cargar de API
-  _Empleado(id: 'emp-6', nombre: 'Isabel C.'), // TODO: cargar de API
-];
-
-const List<_ReservaCalendario> _reservas = [
-  _ReservaCalendario(
-    id: 'r1',
-    cliente: 'Ana García',
-    servicio: 'Lavado exterior',
-    horaInicioH: 9,
-    horaInicioM: 0,
-    duracionMin: 45,
-    empleadoId: 'emp-1',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r2',
-    cliente: 'Luis Martín',
-    servicio: 'Pulido completo',
-    horaInicioH: 11,
-    horaInicioM: 0,
-    duracionMin: 90,
-    empleadoId: 'emp-1',
-    estado: EstadoReserva.pendiente,
-  ),
-  _ReservaCalendario(
-    id: 'r3',
-    cliente: 'Eva Torres',
-    servicio: 'Aspirado interior',
-    horaInicioH: 14,
-    horaInicioM: 30,
-    duracionMin: 60,
-    empleadoId: 'emp-1',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r4',
-    cliente: 'Pedro Ruiz',
-    servicio: 'Lavado completo',
-    horaInicioH: 10,
-    horaInicioM: 0,
-    duracionMin: 60,
-    empleadoId: 'emp-2',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r5',
-    cliente: 'Marta López',
-    servicio: 'Encerado',
-    horaInicioH: 12,
-    horaInicioM: 0,
-    duracionMin: 45,
-    empleadoId: 'emp-2',
-    estado: EstadoReserva.pendiente,
-  ),
-  _ReservaCalendario(
-    id: 'r6',
-    cliente: 'Jorge Díaz',
-    servicio: 'Pulido faros',
-    horaInicioH: 9,
-    horaInicioM: 30,
-    duracionMin: 30,
-    empleadoId: 'emp-3',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r7',
-    cliente: 'Sara Gómez',
-    servicio: 'Lavado motor',
-    horaInicioH: 13,
-    horaInicioM: 0,
-    duracionMin: 75,
-    empleadoId: 'emp-3',
-    estado: EstadoReserva.pendiente,
-  ),
-  _ReservaCalendario(
-    id: 'r8',
-    cliente: 'Raúl Sanz',
-    servicio: 'Interior completo',
-    horaInicioH: 15,
-    horaInicioM: 0,
-    duracionMin: 90,
-    empleadoId: 'emp-3',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r9',
-    cliente: 'Carmen Vidal',
-    servicio: 'Lavado exterior',
-    horaInicioH: 9,
-    horaInicioM: 0,
-    duracionMin: 45,
-    empleadoId: 'emp-4',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r10',
-    cliente: 'Tomás Herrera',
-    servicio: 'Pulido completo',
-    horaInicioH: 11,
-    horaInicioM: 30,
-    duracionMin: 90,
-    empleadoId: 'emp-4',
-    estado: EstadoReserva.pendiente,
-  ),
-  _ReservaCalendario(
-    id: 'r11',
-    cliente: 'Elena Moreno',
-    servicio: 'Encerado',
-    horaInicioH: 15,
-    horaInicioM: 0,
-    duracionMin: 20,
-    empleadoId: 'emp-4',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r12',
-    cliente: 'Álvaro Pons',
-    servicio: 'Aspirado interior',
-    horaInicioH: 10,
-    horaInicioM: 0,
-    duracionMin: 30,
-    empleadoId: 'emp-5',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r13',
-    cliente: 'Rosa Cano',
-    servicio: 'Lavado completo',
-    horaInicioH: 12,
-    horaInicioM: 30,
-    duracionMin: 60,
-    empleadoId: 'emp-5',
-    estado: EstadoReserva.pendiente,
-  ),
-  _ReservaCalendario(
-    id: 'r14',
-    cliente: 'Iván Blanco',
-    servicio: 'Pulido faros',
-    horaInicioH: 16,
-    horaInicioM: 0,
-    duracionMin: 45,
-    empleadoId: 'emp-5',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r15',
-    cliente: 'Lucía Prieto',
-    servicio: 'Lavado motor',
-    horaInicioH: 9,
-    horaInicioM: 30,
-    duracionMin: 75,
-    empleadoId: 'emp-6',
-    estado: EstadoReserva.confirmada,
-  ),
-  _ReservaCalendario(
-    id: 'r16',
-    cliente: 'Mario Fuentes',
-    servicio: 'Interior completo',
-    horaInicioH: 13,
-    horaInicioM: 0,
-    duracionMin: 90,
-    empleadoId: 'emp-6',
-    estado: EstadoReserva.pendiente,
-  ),
-];
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_inicio.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:provider/provider.dart';
 
 // ── Constantes de layout ───────────────────────────────────────────────────────
 const double _anchoCeldaEmpleado = 120.0;
@@ -241,6 +42,7 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
   late final ScrollController _scrollHoras;
   late final ScrollController _scrollGrid;
   late final ScrollController _scrollHorizontal;
+  late final ViewModelAdminInicio _viewModel;
   bool _sincronizando = false;
 
   @override
@@ -251,6 +53,11 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
     _scrollHorizontal = ScrollController();
     _scrollHoras.addListener(_sincronizarDesdeHoras);
     _scrollGrid.addListener(_sincronizarDesdeGrid);
+    _viewModel = ViewModelAdminInicio(
+      repoEmpleados: context.read<RepoEmpleados>(),
+      repoReservas: context.read<RepoReservas>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    )..cargarInicio();
   }
 
   void _sincronizarDesdeHoras() {
@@ -278,6 +85,7 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
     _scrollHoras.dispose();
     _scrollGrid.dispose();
     _scrollHorizontal.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
@@ -308,85 +116,201 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final double anchoGrid = _empleados.length * _anchoCeldaEmpleado;
-    const double alturaGrid = _nFranjas * _alturaFranja;
+    return ChangeNotifierProvider<ViewModelAdminInicio>.value(
+      value: _viewModel,
+      child: Consumer<ViewModelAdminInicio>(
+        builder: (context, vmInicio, _) {
+          final List<DtoEmpleadoInicioAdmin> empleados = vmInicio.empleados;
+          final List<DtoReservaInicioAdmin> reservas = vmInicio.reservas;
+          final int totalColumnas = empleados.isEmpty ? 1 : empleados.length;
+          final double anchoGrid = totalColumnas * _anchoCeldaEmpleado;
+          const double alturaGrid = _nFranjas * _alturaFranja;
 
-    return Scaffold(
-      drawer: const MenuLateralAdmin(),
-      bottomNavigationBar: const BarraNavegacionAdmin(
-        seccionActiva: SeccionAdmin.inicio,
-      ),
-      floatingActionButton: FabCitaria(
-        icono: Icons.add,
-        tooltip: 'Nueva reserva',
-        heroTag: 'fab-admin-nueva-reserva',
-        onPressed: () => GestorNavegacion.irAAdminSeleccionCliente(context),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _CabeceraInicio(
-              fecha: _fechaHoy(),
-              espaciado: espaciado,
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+          return Scaffold(
+            drawer: const MenuLateralAdmin(),
+            bottomNavigationBar: const BarraNavegacionAdmin(
+              seccionActiva: SeccionAdmin.inicio,
             ),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            floatingActionButton: FabCitaria(
+              icono: Icons.add,
+              tooltip: 'Nueva reserva',
+              heroTag: 'fab-admin-nueva-reserva',
+              onPressed: () =>
+                  GestorNavegacion.irAAdminSeleccionCliente(context),
+            ),
+            body: SafeArea(
+              child: Column(
                 children: [
-                  SizedBox(
-                    width: _anchoHoras,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: _alturaFilaEmpleado),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            controller: _scrollHoras,
-                            child: _ColumnaHoras(
-                              colorScheme: colorScheme,
-                              textTheme: textTheme,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  _CabeceraInicio(
+                    fecha: _fechaHoy(),
+                    pendientes: vmInicio.reservasPendientes,
+                    espaciado: espaciado,
+                    colorScheme: colorScheme,
+                    textTheme: textTheme,
                   ),
                   Expanded(
-                    child: SingleChildScrollView(
-                      controller: _scrollHorizontal,
-                      scrollDirection: Axis.horizontal,
-                      child: SizedBox(
-                        width: anchoGrid,
-                        child: Column(
-                          children: [
-                            _FilaEmpleados(
-                              colorScheme: colorScheme,
-                              textTheme: textTheme,
-                            ),
-                            Expanded(
-                              child: SingleChildScrollView(
-                                controller: _scrollGrid,
-                                child: SizedBox(
-                                  width: anchoGrid,
-                                  height: alturaGrid,
-                                  child: _GridReservas(
-                                    colorScheme: colorScheme,
-                                    textTheme: textTheme,
-                                    anchoGrid: anchoGrid,
-                                    alturaGrid: alturaGrid,
+                    child: _ContenidoInicio(
+                      vmInicio: vmInicio,
+                      empleados: empleados,
+                      agenda: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: _anchoHoras,
+                            child: Column(
+                              children: [
+                                const SizedBox(height: _alturaFilaEmpleado),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    controller: _scrollHoras,
+                                    child: _ColumnaHoras(
+                                      colorScheme: colorScheme,
+                                      textTheme: textTheme,
+                                    ),
                                   ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              controller: _scrollHorizontal,
+                              scrollDirection: Axis.horizontal,
+                              child: SizedBox(
+                                width: anchoGrid,
+                                child: Column(
+                                  children: [
+                                    _FilaEmpleados(
+                                      empleados: empleados,
+                                      colorScheme: colorScheme,
+                                      textTheme: textTheme,
+                                    ),
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        controller: _scrollGrid,
+                                        child: SizedBox(
+                                          width: anchoGrid,
+                                          height: alturaGrid,
+                                          child: _GridReservas(
+                                            empleados: empleados,
+                                            reservas: reservas,
+                                            colorScheme: colorScheme,
+                                            textTheme: textTheme,
+                                            anchoGrid: anchoGrid,
+                                            alturaGrid: alturaGrid,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ContenidoInicio extends StatelessWidget {
+  const _ContenidoInicio({
+    required this.vmInicio,
+    required this.empleados,
+    required this.agenda,
+  });
+
+  final ViewModelAdminInicio vmInicio;
+  final List<DtoEmpleadoInicioAdmin> empleados;
+  final Widget agenda;
+
+  @override
+  Widget build(BuildContext context) {
+    if (vmInicio.cargando && empleados.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final String? error = vmInicio.error;
+    if (error != null && empleados.isEmpty) {
+      return _EstadoCentrado(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: vmInicio.refrescar,
+      );
+    }
+
+    if (empleados.isEmpty) {
+      return _EstadoCentrado(
+        mensaje: 'No hay empleados activos para mostrar la agenda.',
+        accionTexto: 'Refrescar',
+        onAccion: vmInicio.refrescar,
+      );
+    }
+
+    return Stack(
+      children: [
+        agenda,
+        if (vmInicio.cargando)
+          const Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (error != null)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
+            child: Material(
+              borderRadius: BorderRadius.circular(12),
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  error,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _EstadoCentrado extends StatelessWidget {
+  const _EstadoCentrado({
+    required this.mensaje,
+    required this.accionTexto,
+    required this.onAccion,
+  });
+
+  final String mensaje;
+  final String accionTexto;
+  final VoidCallback onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(mensaje, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
           ],
         ),
       ),
@@ -399,12 +323,14 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
 class _CabeceraInicio extends StatelessWidget {
   const _CabeceraInicio({
     required this.fecha,
+    required this.pendientes,
     required this.espaciado,
     required this.colorScheme,
     required this.textTheme,
   });
 
   final String fecha;
+  final int pendientes;
   final EspaciadoCitaria espaciado;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -429,7 +355,7 @@ class _CabeceraInicio extends StatelessWidget {
             child: Center(child: Text(fecha, style: textTheme.displaySmall)),
           ),
           _BotonNotificacionesPendientes(
-            pendientes: 3,
+            pendientes: pendientes,
             onPressed: () =>
                 GestorNavegacion.irAAdminReservasPendientes(context),
           ),
@@ -540,8 +466,13 @@ class _ColumnaHoras extends StatelessWidget {
 // ── Fila de empleados ──────────────────────────────────────────────────────────
 
 class _FilaEmpleados extends StatelessWidget {
-  const _FilaEmpleados({required this.colorScheme, required this.textTheme});
+  const _FilaEmpleados({
+    required this.empleados,
+    required this.colorScheme,
+    required this.textTheme,
+  });
 
+  final List<DtoEmpleadoInicioAdmin> empleados;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
 
@@ -550,7 +481,7 @@ class _FilaEmpleados extends StatelessWidget {
     return SizedBox(
       height: _alturaFilaEmpleado,
       child: Row(
-        children: _empleados.map((empleado) {
+        children: empleados.map((empleado) {
           return SizedBox(
             width: _anchoCeldaEmpleado,
             child: Column(
@@ -558,6 +489,7 @@ class _FilaEmpleados extends StatelessWidget {
               children: [
                 AvatarFallbackCitaria(
                   texto: empleado.nombre,
+                  imagenUrl: empleado.fotoUrl,
                   tamano: 38,
                   radio: 19,
                 ),
@@ -582,19 +514,23 @@ class _FilaEmpleados extends StatelessWidget {
 
 class _GridReservas extends StatelessWidget {
   const _GridReservas({
+    required this.empleados,
+    required this.reservas,
     required this.colorScheme,
     required this.textTheme,
     required this.anchoGrid,
     required this.alturaGrid,
   });
 
+  final List<DtoEmpleadoInicioAdmin> empleados;
+  final List<DtoReservaInicioAdmin> reservas;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final double anchoGrid;
   final double alturaGrid;
 
-  int _indiceEmpleado(String empleadoId) {
-    return _empleados.indexWhere((empleado) => empleado.id == empleadoId);
+  int _indiceEmpleado(int empleadoId) {
+    return empleados.indexWhere((empleado) => empleado.id == empleadoId);
   }
 
   @override
@@ -602,7 +538,7 @@ class _GridReservas extends StatelessWidget {
     final estados = Theme.of(context).extension<EstadosReservaCitaria>()!;
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
-    final reservasVisibles = _reservas.where((reserva) {
+    final reservasVisibles = reservas.where((reserva) {
       final estadoVisible =
           reserva.estado == EstadoReserva.pendiente ||
           reserva.estado == EstadoReserva.confirmada;
@@ -627,7 +563,7 @@ class _GridReservas extends StatelessWidget {
             ),
           );
         }),
-        ...List.generate(_empleados.length - 1, (i) {
+        ...List.generate(empleados.length - 1, (i) {
           return Positioned(
             top: 0,
             bottom: 0,
@@ -758,7 +694,7 @@ class _GridReservas extends StatelessWidget {
                 borderRadius: espaciado.radioInput,
                 onTap: () => GestorNavegacion.irAAdminDetalleReserva(
                   context,
-                  reserva.id,
+                  reserva.id.toString(),
                 ),
                 child: Ink(
                   decoration: BoxDecoration(
