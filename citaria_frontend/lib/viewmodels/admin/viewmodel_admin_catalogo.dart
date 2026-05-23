@@ -68,6 +68,9 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
   List<Servicio> _servicios = const <Servicio>[];
   List<Categoria> _categorias = const <Categoria>[];
   List<Skill> _skills = const <Skill>[];
+  DtoCategoriaCatalogoAdmin? _detalleCategoria;
+
+  DtoCategoriaCatalogoAdmin? get detalleCategoria => _detalleCategoria;
 
   List<DtoServicioCatalogoAdmin> get servicios => _servicios
       .where((servicio) => servicio.id != null)
@@ -205,6 +208,67 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     } catch (e) {
       registrarError(e);
       return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<void> cargarDetalleCategoria(int id) async {
+    _detalleCategoria = null;
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Categoria categoria = await _repoCatalogo.obtenerCategoriaPorId(
+        id,
+        token,
+      );
+      _detalleCategoria = _crearDtoCategoria(categoria);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<Categoria?> actualizarCategoria({
+    required int id,
+    required String nombre,
+    required bool activo,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Categoria actualizada = await _repoCatalogo.actualizarCategoria(
+        id,
+        Categoria(nombre: nombre.trim(), activo: activo),
+        token,
+      );
+      _detalleCategoria = _crearDtoCategoria(actualizada);
+      notifyListeners();
+      return actualizada;
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<bool> desactivarCategoria(int id) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoCatalogo.desactivarCategoria(id, token);
+      _detalleCategoria = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
     } finally {
       finalizarCarga();
     }

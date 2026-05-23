@@ -165,7 +165,19 @@ class _CuerpoCatalogo extends StatelessWidget {
         controller: tabController,
         children: [
           _TabServicios(servicios: vmCatalogo.servicios),
-          _TabCategorias(categorias: vmCatalogo.categorias),
+          _TabCategorias(
+            categorias: vmCatalogo.categorias,
+            onCategoriaTap: (categoria) async {
+              final bool? actualizado =
+                  await GestorNavegacion.irAAdminDetalleCategoria(
+                    context,
+                    categoria.id,
+                  );
+              if (actualizado == true) {
+                await vmCatalogo.refrescar();
+              }
+            },
+          ),
           _TabSkills(skills: vmCatalogo.skills),
         ],
       ),
@@ -287,9 +299,13 @@ class _TarjetaServicio extends StatelessWidget {
 }
 
 class _TabCategorias extends StatelessWidget {
-  const _TabCategorias({required this.categorias});
+  const _TabCategorias({
+    required this.categorias,
+    required this.onCategoriaTap,
+  });
 
   final List<DtoCategoriaCatalogoAdmin> categorias;
+  final ValueChanged<DtoCategoriaCatalogoAdmin> onCategoriaTap;
 
   @override
   Widget build(BuildContext context) {
@@ -302,8 +318,10 @@ class _TabCategorias extends StatelessWidget {
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
       itemCount: categorias.length,
-      itemBuilder: (context, index) =>
-          _TarjetaSimpleCatalogo(nombre: categorias[index].nombre),
+      itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
+        nombre: categorias[index].nombre,
+        onTap: () => onCategoriaTap(categorias[index]),
+      ),
     );
   }
 }
@@ -333,10 +351,15 @@ class _TabSkills extends StatelessWidget {
 }
 
 class _TarjetaSimpleCatalogo extends StatelessWidget {
-  const _TarjetaSimpleCatalogo({required this.nombre, this.subtitulo});
+  const _TarjetaSimpleCatalogo({
+    required this.nombre,
+    this.subtitulo,
+    this.onTap,
+  });
 
   final String nombre;
   final String? subtitulo;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -347,10 +370,17 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      child: ListTile(
-        leading: Icon(Icons.label_outline, color: colorScheme.outline),
-        title: Text(nombre, style: textTheme.displaySmall),
-        subtitle: subtitulo == null ? null : Text(subtitulo!),
+      child: InkWell(
+        borderRadius: espaciado.radioCard,
+        onTap: onTap,
+        child: ListTile(
+          leading: Icon(Icons.label_outline, color: colorScheme.outline),
+          title: Text(nombre, style: textTheme.displaySmall),
+          subtitle: subtitulo == null ? null : Text(subtitulo!),
+          trailing: onTap == null
+              ? null
+              : Icon(Icons.chevron_right, color: colorScheme.outline),
+        ),
       ),
     );
   }
