@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 
 /// Fila de día con Switch de activación y texto de horario.
 ///
@@ -42,28 +41,18 @@ class FilaDiaHorario extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
-          Switch(
-            value: activo,
-            onChanged: onChanged,
-          ),
+          Switch(value: activo, onChanged: onChanged),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              dia,
-              style: textTheme.bodyLarge,
-            ),
-          ),
+          Expanded(child: Text(dia, style: textTheme.bodyLarge)),
           Text(
             activo ? horario : 'Cerrado',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.outline,
-            ),
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
           ),
         ],
       ),

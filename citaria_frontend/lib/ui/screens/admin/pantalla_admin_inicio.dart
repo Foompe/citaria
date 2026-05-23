@@ -12,17 +12,10 @@ import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
 // TODO: cargar empleados y reservas del día desde API
 
 class _Empleado {
-  const _Empleado({
-    required this.id,
-    required this.nombre,
-    this.avatarAsset,
-    this.avatarUrl,
-  });
+  const _Empleado({required this.id, required this.nombre});
 
   final String id;
   final String nombre;
-  final String? avatarAsset;
-  final String? avatarUrl;
 }
 
 class _ReservaCalendario {
@@ -316,7 +309,7 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
     final textTheme = Theme.of(context).textTheme;
 
     final double anchoGrid = _empleados.length * _anchoCeldaEmpleado;
-    final double alturaGrid = _nFranjas * _alturaFranja;
+    const double alturaGrid = _nFranjas * _alturaFranja;
 
     return Scaffold(
       drawer: const MenuLateralAdmin(),
@@ -565,8 +558,6 @@ class _FilaEmpleados extends StatelessWidget {
               children: [
                 AvatarFallbackCitaria(
                   texto: empleado.nombre,
-                  imagenAsset: empleado.avatarAsset,
-                  imagenUrl: empleado.avatarUrl,
                   tamano: 38,
                   radio: 19,
                 ),

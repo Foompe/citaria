@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
@@ -9,41 +8,39 @@ import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Superficies
-const Color _bgBase     = Color(0xFFFFFFFF);
-const Color _bgSurface  = Color(0xFFF5F6FA);
+const Color _bgBase = Color(0xFFFFFFFF);
+const Color _bgSurface = Color(0xFFF5F6FA);
 const Color _bgElevated = Color(0xFFEDEEF4);
 // ignore: unused_element
-const Color _bgOverlay  = Color(0xD9FFFFFF); // rgba(255,255,255,0.85)
+const Color _bgOverlay = Color(0xD9FFFFFF); // rgba(255,255,255,0.85)
 
 // Bordes
-const Color _border       = Color(0xFFDDE0EA);
+const Color _border = Color(0xFFDDE0EA);
 // ignore: unused_element
 const Color _borderStrong = Color(0xFFC8CCDA);
 const Color _borderSubtle = Color(0xFFEDEEF4);
 
 // Texto
 const Color _textPrimary = Color(0xFF0D1117);
-const Color _textBody    = Color(0xFF3D4460);
-const Color _textMuted   = Color(0xFF7A8194);
-const Color _textFaint   = Color(0xFFB0B6C8);
+const Color _textBody = Color(0xFF3D4460);
+const Color _textMuted = Color(0xFF7A8194);
+const Color _textFaint = Color(0xFFB0B6C8);
 
 // Acento — identidad de marca (igual en claro y oscuro)
-const Color _accent       = Color(0xFF2E6BFF);
+const Color _accent = Color(0xFF2E6BFF);
 const Color _accentStrong = Color(0xFF1B57F0);
-const Color _accentSoft   = Color(0x1F2E6BFF); // rgba(46,107,255,0.12)
+const Color _accentSoft = Color(0x1F2E6BFF); // rgba(46,107,255,0.12)
 // ignore: unused_element
-const Color _accentTint   = Color(0x0F2E6BFF); // rgba(46,107,255,0.06)
+const Color _accentTint = Color(0x0F2E6BFF); // rgba(46,107,255,0.06)
 
 // Semánticos
-const Color _success = Color(0xFF1E9E6A);
-const Color _warning = Color(0xFFB07A10);
-const Color _danger  = Color(0xFFA82828);
+const Color _danger = Color(0xFFA82828);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ESCALA TIPOGRÁFICA
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Construye la tipografía inyectando colores directamente para evitar 
+/// Construye la tipografía inyectando colores directamente para evitar
 /// problemas de herencia con GoogleFonts y Material 3.
 TextTheme _buildTextTheme(Color displayColor, Color bodyColor) => TextTheme(
   displayLarge: GoogleFonts.syne(
@@ -102,8 +99,8 @@ TextTheme _buildTextTheme(Color displayColor, Color bodyColor) => TextTheme(
 
 final ThemeData temaCitaria = () {
   const espaciado = EspaciadoCitaria.base;
-  const estados   = EstadosReservaCitaria.base;
-  
+  const estados = EstadosReservaCitaria.base;
+
   // Generamos el TextTheme con los colores de la paleta ya aplicados
   final textTheme = _buildTextTheme(_textPrimary, _textBody);
 
@@ -113,19 +110,19 @@ final ThemeData temaCitaria = () {
 
     // ── ColorScheme ───────────────────────────────────────────────────────
     colorScheme: const ColorScheme.light(
-      primary:                _accent,
-      onPrimary:              Colors.white,
-      primaryContainer:       _accentSoft,
-      onPrimaryContainer:     _accentStrong,
-      secondary:              _textBody,
-      onSecondary:            Colors.white,
-      surface:                _bgBase,
-      onSurface:              _textPrimary,
+      primary: _accent,
+      onPrimary: Colors.white,
+      primaryContainer: _accentSoft,
+      onPrimaryContainer: _accentStrong,
+      secondary: _textBody,
+      onSecondary: Colors.white,
+      surface: _bgBase,
+      onSurface: _textPrimary,
       surfaceContainerHighest: _bgElevated,
-      outline:                _textMuted,    // texto secundario (captions, horas, labels)
-      outlineVariant:         _border,       // bordes sutiles
-      error:                  _danger,
-      onError:                Colors.white,
+      outline: _textMuted, // texto secundario (captions, horas, labels)
+      outlineVariant: _border, // bordes sutiles
+      error: _danger,
+      onError: Colors.white,
     ),
 
     // ── Tipografía ────────────────────────────────────────────────────────
@@ -135,27 +132,24 @@ final ThemeData temaCitaria = () {
     scaffoldBackgroundColor: _bgBase,
 
     // ── Extensiones propias ───────────────────────────────────────────────
-    extensions: const <ThemeExtension<dynamic>>[
-      espaciado,
-      estados,
-    ],
+    extensions: const <ThemeExtension<dynamic>>[espaciado, estados],
 
     // ── AppBar ────────────────────────────────────────────────────────────
     appBarTheme: AppBarTheme(
-      backgroundColor:    _bgSurface,
-      elevation:          0,
-      shadowColor:        Colors.transparent,
-      surfaceTintColor:   Colors.transparent,
-      iconTheme:          const IconThemeData(color: _textPrimary),
-      actionsIconTheme:   const IconThemeData(color: _textPrimary),
+      backgroundColor: _bgSurface,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      iconTheme: const IconThemeData(color: _textPrimary),
+      actionsIconTheme: const IconThemeData(color: _textPrimary),
       // Al usar el estilo ya inyectado con color, se verá correctamente en negro
-      titleTextStyle:     textTheme.displaySmall,
-      centerTitle:        true,
+      titleTextStyle: textTheme.displaySmall,
+      centerTitle: true,
     ),
 
     // ── Card ──────────────────────────────────────────────────────────────
     cardTheme: CardThemeData(
-      color:     _bgSurface,
+      color: _bgSurface,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: espaciado.radioCard,
@@ -166,12 +160,12 @@ final ThemeData temaCitaria = () {
     // ── ElevatedButton ────────────────────────────────────────────────────
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor:         _accent,
-        foregroundColor:         Colors.white,
+        backgroundColor: _accent,
+        foregroundColor: Colors.white,
         disabledBackgroundColor: _accentSoft,
         disabledForegroundColor: Colors.white60,
-        elevation:               0,
-        minimumSize:             const Size.fromHeight(52),
+        elevation: 0,
+        minimumSize: const Size.fromHeight(52),
         shape: RoundedRectangleBorder(borderRadius: espaciado.radioBoton),
         textStyle: textTheme.labelLarge?.copyWith(color: Colors.white),
       ),
@@ -181,8 +175,8 @@ final ThemeData temaCitaria = () {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: _textPrimary,
-        side:            const BorderSide(color: _border),
-        minimumSize:     const Size.fromHeight(52),
+        side: const BorderSide(color: _border),
+        minimumSize: const Size.fromHeight(52),
         shape: RoundedRectangleBorder(borderRadius: espaciado.radioBoton),
         textStyle: textTheme.labelLarge,
       ),
@@ -190,70 +184,63 @@ final ThemeData temaCitaria = () {
 
     // ── InputDecoration ───────────────────────────────────────────────────
     inputDecorationTheme: InputDecorationTheme(
-      filled:      true,
-      fillColor:   _bgElevated,
+      filled: true,
+      fillColor: _bgElevated,
       constraints: const BoxConstraints(minHeight: 48),
       border: OutlineInputBorder(
         borderRadius: espaciado.radioInput,
-        borderSide:   const BorderSide(color: _border),
+        borderSide: const BorderSide(color: _border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: espaciado.radioInput,
-        borderSide:   const BorderSide(color: _border),
+        borderSide: const BorderSide(color: _border),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: espaciado.radioInput,
-        borderSide:   const BorderSide(color: _accent, width: 1.5),
+        borderSide: const BorderSide(color: _accent, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: espaciado.radioInput,
-        borderSide:   const BorderSide(color: _danger),
+        borderSide: const BorderSide(color: _danger),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: espaciado.radioInput,
-        borderSide:   const BorderSide(color: _danger, width: 1.5),
+        borderSide: const BorderSide(color: _danger, width: 1.5),
       ),
-      hintStyle:  textTheme.bodyLarge?.copyWith(color: _textFaint),
+      hintStyle: textTheme.bodyLarge?.copyWith(color: _textFaint),
       labelStyle: textTheme.bodyLarge?.copyWith(color: _textMuted),
     ),
 
     // ── BottomNavigationBar ───────────────────────────────────────────────
-bottomNavigationBarTheme: BottomNavigationBarThemeData(
-  backgroundColor: _bgSurface,
-  selectedItemColor: _accent,
-  unselectedItemColor: _textMuted,
-  type: BottomNavigationBarType.fixed,
-  showSelectedLabels: false,
-  showUnselectedLabels: true,
-  selectedIconTheme: const IconThemeData(
-    color: _accent,
-    size: 24,
-  ),
-  unselectedIconTheme: const IconThemeData(
-    color: _textMuted,
-    size: 24,
-  ),
-  selectedLabelStyle: textTheme.bodySmall?.copyWith(
-    fontWeight: FontWeight.w500,
-  ),
-  unselectedLabelStyle: textTheme.bodySmall?.copyWith(
-    fontWeight: FontWeight.w500,
-  ),
-  elevation: 0,
-),
-
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: _bgSurface,
+      selectedItemColor: _accent,
+      unselectedItemColor: _textMuted,
+      type: BottomNavigationBarType.fixed,
+      showSelectedLabels: false,
+      showUnselectedLabels: true,
+      selectedIconTheme: const IconThemeData(color: _accent, size: 24),
+      unselectedIconTheme: const IconThemeData(color: _textMuted, size: 24),
+      selectedLabelStyle: textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w500,
+      ),
+      unselectedLabelStyle: textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w500,
+      ),
+      elevation: 0,
+    ),
 
     // ── Divider ───────────────────────────────────────────────────────────
     dividerTheme: const DividerThemeData(
-      color:     _borderSubtle,
+      color: _borderSubtle,
       thickness: 1,
-      space:     1,
+      space: 1,
     ),
 
     // ── Chip ──────────────────────────────────────────────────────────────
     chipTheme: ChipThemeData(
       backgroundColor: _bgElevated,
-      side:            const BorderSide(color: _border),
+      side: const BorderSide(color: _border),
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioPill),
       labelStyle: textTheme.bodySmall,
     ),

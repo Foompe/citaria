@@ -26,7 +26,7 @@ class BarraCtaFija extends StatelessWidget {
           Divider(
             height: 1,
             thickness: 1,
-            color: colorScheme.outline.withOpacity(0.15),
+            color: colorScheme.outline.withValues(alpha: 0.15),
           ),
           SafeArea(
             top: false,

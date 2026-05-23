@@ -34,49 +34,94 @@ class _ReservaDia {
 // Reservas del mes de ejemplo (mayo 2026)
 const List<_ReservaDia> _reservasMes = [
   _ReservaDia(
-    id: 'r1', cliente: 'Ana García',  servicio: 'Lavado exterior',
-    empleado: 'Carlos M.', hora: '09:00', precio: '25,00 €',
-    estado: EstadoReserva.confirmada, dia: 3,
+    id: 'r1',
+    cliente: 'Ana García',
+    servicio: 'Lavado exterior',
+    empleado: 'Carlos M.',
+    hora: '09:00',
+    precio: '25,00 €',
+    estado: EstadoReserva.confirmada,
+    dia: 3,
   ),
   _ReservaDia(
-    id: 'r2', cliente: 'Luis Martín', servicio: 'Pulido completo',
-    empleado: 'Carlos M.', hora: '11:00', precio: '80,00 €',
-    estado: EstadoReserva.pendiente, dia: 3,
+    id: 'r2',
+    cliente: 'Luis Martín',
+    servicio: 'Pulido completo',
+    empleado: 'Carlos M.',
+    hora: '11:00',
+    precio: '80,00 €',
+    estado: EstadoReserva.pendiente,
+    dia: 3,
   ),
   _ReservaDia(
-    id: 'r3', cliente: 'Marta López', servicio: 'Encerado',
-    empleado: 'Laura P.', hora: '12:00', precio: '45,00 €',
-    estado: EstadoReserva.pendiente, dia: 5,
+    id: 'r3',
+    cliente: 'Marta López',
+    servicio: 'Encerado',
+    empleado: 'Laura P.',
+    hora: '12:00',
+    precio: '45,00 €',
+    estado: EstadoReserva.pendiente,
+    dia: 5,
   ),
   _ReservaDia(
-    id: 'r4', cliente: 'Pedro Ruiz',  servicio: 'Lavado completo',
-    empleado: 'Laura P.', hora: '10:00', precio: '55,00 €',
-    estado: EstadoReserva.confirmada, dia: 5,
+    id: 'r4',
+    cliente: 'Pedro Ruiz',
+    servicio: 'Lavado completo',
+    empleado: 'Laura P.',
+    hora: '10:00',
+    precio: '55,00 €',
+    estado: EstadoReserva.confirmada,
+    dia: 5,
   ),
   _ReservaDia(
-    id: 'r5', cliente: 'Sara Gómez',  servicio: 'Lavado motor',
-    empleado: 'Sergio R.', hora: '13:00', precio: '60,00 €',
-    estado: EstadoReserva.confirmada, dia: 7,
+    id: 'r5',
+    cliente: 'Sara Gómez',
+    servicio: 'Lavado motor',
+    empleado: 'Sergio R.',
+    hora: '13:00',
+    precio: '60,00 €',
+    estado: EstadoReserva.confirmada,
+    dia: 7,
   ),
   _ReservaDia(
-    id: 'r6', cliente: 'Jorge Díaz',  servicio: 'Pulido faros',
-    empleado: 'Sergio R.', hora: '09:30', precio: '30,00 €',
-    estado: EstadoReserva.pendiente, dia: 12,
+    id: 'r6',
+    cliente: 'Jorge Díaz',
+    servicio: 'Pulido faros',
+    empleado: 'Sergio R.',
+    hora: '09:30',
+    precio: '30,00 €',
+    estado: EstadoReserva.pendiente,
+    dia: 12,
   ),
   _ReservaDia(
-    id: 'r7', cliente: 'Eva Torres',  servicio: 'Aspirado interior',
-    empleado: 'Carlos M.', hora: '14:30', precio: '20,00 €',
-    estado: EstadoReserva.confirmada, dia: 14,
+    id: 'r7',
+    cliente: 'Eva Torres',
+    servicio: 'Aspirado interior',
+    empleado: 'Carlos M.',
+    hora: '14:30',
+    precio: '20,00 €',
+    estado: EstadoReserva.confirmada,
+    dia: 14,
   ),
   _ReservaDia(
-    id: 'r8', cliente: 'Raúl Sanz',   servicio: 'Interior completo',
-    empleado: 'Sergio R.', hora: '15:00', precio: '70,00 €',
-    estado: EstadoReserva.pendiente, dia: 14,
+    id: 'r8',
+    cliente: 'Raúl Sanz',
+    servicio: 'Interior completo',
+    empleado: 'Sergio R.',
+    hora: '15:00',
+    precio: '70,00 €',
+    estado: EstadoReserva.pendiente,
+    dia: 14,
   ),
   _ReservaDia(
-    id: 'r9', cliente: 'Ana García',  servicio: 'Encerado',
-    empleado: 'Laura P.', hora: '10:00', precio: '45,00 €',
-    estado: EstadoReserva.confirmada, dia: 20,
+    id: 'r9',
+    cliente: 'Ana García',
+    servicio: 'Encerado',
+    empleado: 'Laura P.',
+    hora: '10:00',
+    precio: '45,00 €',
+    estado: EstadoReserva.confirmada,
+    dia: 20,
   ),
 ];
 
@@ -97,19 +142,30 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
 
   static const List<String> _cabeceras = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
   static const List<String> _nombresMes = [
-    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    '',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   void _mesAnterior() => setState(() {
-        _mesActual = DateTime(_mesActual.year, _mesActual.month - 1);
-        _diaSeleccionado = null;
-      });
+    _mesActual = DateTime(_mesActual.year, _mesActual.month - 1);
+    _diaSeleccionado = null;
+  });
 
   void _mesSiguiente() => setState(() {
-        _mesActual = DateTime(_mesActual.year, _mesActual.month + 1);
-        _diaSeleccionado = null;
-      });
+    _mesActual = DateTime(_mesActual.year, _mesActual.month + 1);
+    _diaSeleccionado = null;
+  });
 
   int _reservasPorDia(int dia) =>
       _reservasMes.where((r) => r.dia == dia).length;
@@ -118,21 +174,21 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
       _reservasMes.where((r) => r.dia == dia).toList();
 
   (int, int) _infoMes() {
-    final primerDia  = DateTime(_mesActual.year, _mesActual.month, 1);
-    final diasEnMes  = DateTime(_mesActual.year, _mesActual.month + 1, 0).day;
+    final primerDia = DateTime(_mesActual.year, _mesActual.month, 1);
+    final diasEnMes = DateTime(_mesActual.year, _mesActual.month + 1, 0).day;
     return (diasEnMes, primerDia.weekday);
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     final (diasEnMes, weekdayPrimerDia) = _infoMes();
-    final offsetInicio  = weekdayPrimerDia - 1;
-    final totalCeldas   = offsetInicio + diasEnMes;
-    final filas         = (totalCeldas / 7).ceil();
+    final offsetInicio = weekdayPrimerDia - 1;
+    final totalCeldas = offsetInicio + diasEnMes;
+    final filas = (totalCeldas / 7).ceil();
     final celdasTotales = filas * 7;
 
     return Scaffold(
@@ -146,7 +202,12 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
           children: [
             // ── Cabecera ─────────────────────────────────────────────────────
             Padding(
-              padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 0),
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                16,
+                espaciado.padX,
+                0,
+              ),
               child: Text('Agenda', style: textTheme.displayLarge),
             ),
 
@@ -222,18 +283,20 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                     return const SizedBox.shrink();
                   }
 
-                  final nReservas  = _reservasPorDia(diaNum);
-                  final tieneRes   = nReservas > 0;
+                  final nReservas = _reservasPorDia(diaNum);
+                  final tieneRes = nReservas > 0;
                   final seleccionado = _diaSeleccionado == diaNum;
-                  final hoy        = DateTime.now();
-                  final esHoy      = hoy.year == _mesActual.year &&
+                  final hoy = DateTime.now();
+                  final esHoy =
+                      hoy.year == _mesActual.year &&
                       hoy.month == _mesActual.month &&
                       hoy.day == diaNum;
 
                   return GestureDetector(
                     onTap: () => setState(
-                      () => _diaSeleccionado =
-                          _diaSeleccionado == diaNum ? null : diaNum,
+                      () => _diaSeleccionado = _diaSeleccionado == diaNum
+                          ? null
+                          : diaNum,
                     ),
                     child: Container(
                       decoration: BoxDecoration(
@@ -241,15 +304,19 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                         borderRadius: espaciado.radioCard,
                         border: tieneRes && !seleccionado
                             ? Border.all(
-                                color: colorScheme.primary.withOpacity(0.4),
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.4,
+                                ),
                                 width: 1,
                               )
                             : esHoy && !seleccionado
-                                ? Border.all(
-                                    color: colorScheme.outline.withOpacity(0.5),
-                                    width: 1,
-                                  )
-                                : null,
+                            ? Border.all(
+                                color: colorScheme.outline.withValues(
+                                  alpha: 0.5,
+                                ),
+                                width: 1,
+                              )
+                            : null,
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -270,7 +337,9 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                               height: 14,
                               decoration: BoxDecoration(
                                 color: seleccionado
-                                    ? colorScheme.onPrimary.withOpacity(0.25)
+                                    ? colorScheme.onPrimary.withValues(
+                                        alpha: 0.25,
+                                      )
                                     : colorScheme.primaryContainer,
                                 borderRadius: BorderRadius.circular(4),
                               ),
