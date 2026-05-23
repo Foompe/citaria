@@ -1,38 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
+import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
-
-// ── Constantes de dominio ─────────────────────────────────────────────────────
-
-const List<String> _diasSemana = [
-  'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo',
-];
-
-// Estado inicial: L-V activo 9:00-19:00, Sáb activo 9:00-14:00, Dom inactivo
-// TODO: horario editable con TimePicker
-const List<bool> _activoInicial = [
-  true, true, true, true, true, true, false,
-];
-
-const List<String> _horarioTexto = [
-  '9:00 – 19:00',
-  '9:00 – 19:00',
-  '9:00 – 19:00',
-  '9:00 – 19:00',
-  '9:00 – 19:00',
-  '9:00 – 14:00',
-  'Cerrado',
-];
-
-const List<String> _skillsDisponibles = [
-  'Exterior', 'Interior', 'Premium', 'Detallado',
-  'Cera', 'Pulido', 'Tapicería', 'Aspirado',
-];
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// P29 — Formulario de alta de nuevo empleado.
 class PantallaAdminNuevoEmpleado extends StatefulWidget {
@@ -45,18 +22,23 @@ class PantallaAdminNuevoEmpleado extends StatefulWidget {
 
 class _PantallaAdminNuevoEmpleadoState
     extends State<PantallaAdminNuevoEmpleado> {
-  final _ctrlNombre    = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _ctrlNombre = TextEditingController();
   final _ctrlApellidos = TextEditingController();
-  final _ctrlEmail     = TextEditingController();
-  final _ctrlTelefono  = TextEditingController();
-
-  late final List<bool> _diasActivos;
-  final Set<String> _skillsSeleccionadas = {};
+  final _ctrlEmail = TextEditingController();
+  final _ctrlTelefono = TextEditingController();
+  final Set<int> _skillsSeleccionadas = <int>{};
+  late final ViewModelAdminEmpleados _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _diasActivos = List<bool>.from(_activoInicial);
+    _viewModel = ViewModelAdminEmpleados(
+      repoEmpleados: context.read<RepoEmpleados>(),
+      repoCatalogo: context.read<RepoCatalogo>(),
+      repoOrganizaciones: context.read<RepoOrganizaciones>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    )..cargarFormularioNuevoEmpleado();
   }
 
   @override
@@ -65,14 +47,106 @@ class _PantallaAdminNuevoEmpleadoState
     _ctrlApellidos.dispose();
     _ctrlEmail.dispose();
     _ctrlTelefono.dispose();
+    _viewModel.dispose();
     super.dispose();
+  }
+
+  Future<void> _crearEmpleado() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    final empleado = await _viewModel.crearEmpleado(
+      nombre: _ctrlNombre.text,
+      apellidos: _ctrlApellidos.text,
+      email: _ctrlEmail.text,
+      telefono: _ctrlTelefono.text,
+      skillIds: _skillsSeleccionadas,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (empleado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_viewModel.error ?? 'No se pudo crear el empleado.'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Empleado creado')));
+    Navigator.maybePop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    return ChangeNotifierProvider<ViewModelAdminEmpleados>.value(
+      value: _viewModel,
+      child: Consumer<ViewModelAdminEmpleados>(
+        builder: (context, vmEmpleados, _) => _ContenidoNuevoEmpleado(
+          formKey: _formKey,
+          ctrlNombre: _ctrlNombre,
+          ctrlApellidos: _ctrlApellidos,
+          ctrlEmail: _ctrlEmail,
+          ctrlTelefono: _ctrlTelefono,
+          skillsSeleccionadas: _skillsSeleccionadas,
+          vmEmpleados: vmEmpleados,
+          onCrear: _crearEmpleado,
+          onSkillTap: _alternarSkill,
+        ),
+      ),
+    );
+  }
+
+  void _alternarSkill(int id) {
+    setState(() {
+      if (_skillsSeleccionadas.contains(id)) {
+        _skillsSeleccionadas.remove(id);
+      } else {
+        _skillsSeleccionadas.add(id);
+      }
+    });
+  }
+}
+
+class _ContenidoNuevoEmpleado extends StatelessWidget {
+  const _ContenidoNuevoEmpleado({
+    required this.formKey,
+    required this.ctrlNombre,
+    required this.ctrlApellidos,
+    required this.ctrlEmail,
+    required this.ctrlTelefono,
+    required this.skillsSeleccionadas,
+    required this.vmEmpleados,
+    required this.onCrear,
+    required this.onSkillTap,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController ctrlNombre;
+  final TextEditingController ctrlApellidos;
+  final TextEditingController ctrlEmail;
+  final TextEditingController ctrlTelefono;
+  final Set<int> skillsSeleccionadas;
+  final ViewModelAdminEmpleados vmEmpleados;
+  final VoidCallback onCrear;
+  final ValueChanged<int> onSkillTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool cargandoInicial =
+        vmEmpleados.cargando &&
+        vmEmpleados.skillsDisponibles.isEmpty &&
+        vmEmpleados.horariosNuevo.isEmpty;
+    final bool formularioListo = vmEmpleados.horariosNuevo.isNotEmpty;
 
     return Scaffold(
       appBar: const CabeceraPantalla(
@@ -83,104 +157,209 @@ class _PantallaAdminNuevoEmpleadoState
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: POST /empleados
-            },
-            child: const Text('Crear empleado'),
+            onPressed: vmEmpleados.cargando || !formularioListo
+                ? null
+                : onCrear,
+            child: vmEmpleados.cargando && !cargandoInicial
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Crear empleado'),
           ),
         ),
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 32),
-        children: [
-          // ── Placeholder foto ───────────────────────────────────────────────
-          Center(
-            child: _PlaceholderFoto(colorScheme: colorScheme),
-          ),
-          const SizedBox(height: 28),
+      body: cargandoInicial
+          ? const Center(child: CircularProgressIndicator())
+          : Form(
+              key: formKey,
+              child: ListView(
+                padding: EdgeInsets.fromLTRB(
+                  espaciado.padX,
+                  24,
+                  espaciado.padX,
+                  120,
+                ),
+                children: [
+                  if (vmEmpleados.error != null) ...[
+                    _AvisoError(
+                      mensaje: vmEmpleados.error!,
+                      onReintentar: vmEmpleados.cargarFormularioNuevoEmpleado,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Center(child: _PlaceholderFoto(colorScheme: colorScheme)),
+                  const SizedBox(height: 28),
+                  _CampoFormulario(
+                    controller: ctrlNombre,
+                    etiqueta: 'Nombre *',
+                    espaciado: espaciado,
+                    validador: (v) => (v == null || v.trim().isEmpty)
+                        ? 'El nombre es obligatorio'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _CampoFormulario(
+                    controller: ctrlApellidos,
+                    etiqueta: 'Apellidos *',
+                    espaciado: espaciado,
+                    validador: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Los apellidos son obligatorios'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _CampoFormulario(
+                    controller: ctrlEmail,
+                    etiqueta: 'Email',
+                    teclado: TextInputType.emailAddress,
+                    espaciado: espaciado,
+                  ),
+                  const SizedBox(height: 16),
+                  _CampoFormulario(
+                    controller: ctrlTelefono,
+                    etiqueta: 'Teléfono',
+                    teclado: TextInputType.phone,
+                    espaciado: espaciado,
+                  ),
+                  const SizedBox(height: 28),
+                  _HorariosNuevoEmpleado(
+                    horarios: vmEmpleados.horariosNuevo,
+                    vmEmpleados: vmEmpleados,
+                    colorScheme: colorScheme,
+                    textTheme: textTheme,
+                    espaciado: espaciado,
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'SKILLS',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.outline,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (vmEmpleados.skillsDisponibles.isEmpty)
+                    Text(
+                      'Sin skills disponibles',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                    )
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final skill in vmEmpleados.skillsDisponibles)
+                          ChipSkill(
+                            etiqueta: skill.nombre,
+                            seleccionado: skillsSeleccionadas.contains(
+                              skill.id,
+                            ),
+                            onTap: () => onSkillTap(skill.id),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+}
 
-          // ── Formulario ─────────────────────────────────────────────────────
-          _CampoTexto(controlador: _ctrlNombre,    etiqueta: 'Nombre *'),
-          const SizedBox(height: 12),
-          _CampoTexto(controlador: _ctrlApellidos, etiqueta: 'Apellidos *'),
-          const SizedBox(height: 12),
-          _CampoTexto(
-            controlador: _ctrlEmail,
-            etiqueta: 'Email',
-            teclado: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 12),
-          _CampoTexto(
-            controlador: _ctrlTelefono,
-            etiqueta: 'Teléfono',
-            teclado: TextInputType.phone,
-          ),
-          const SizedBox(height: 28),
+class _HorariosNuevoEmpleado extends StatelessWidget {
+  const _HorariosNuevoEmpleado({
+    required this.horarios,
+    required this.vmEmpleados,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.espaciado,
+  });
 
-          // ── Horario semanal ────────────────────────────────────────────────
+  final List<DtoHorarioNuevoEmpleadoAdmin> horarios;
+  final ViewModelAdminEmpleados vmEmpleados;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final EspaciadoCitaria espaciado;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'HORARIO SEMANAL',
+          style: textTheme.labelSmall?.copyWith(
+            color: colorScheme.outline,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (horarios.isEmpty)
           Text(
-            'HORARIO SEMANAL',
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.outline,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
+            'Sin horario configurado',
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
+          )
+        else
           Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: espaciado.radioCard,
-            ),
+            shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
             child: Column(
               children: [
-                for (int i = 0; i < _diasSemana.length; i++) ...[
+                for (int i = 0; i < horarios.length; i++) ...[
                   FilaDiaHorario(
-                    dia: _diasSemana[i],
-                    activo: _diasActivos[i],
-                    horario: _horarioTexto[i],
-                    onChanged: (v) => setState(() => _diasActivos[i] = v),
+                    dia: horarios[i].dia,
+                    activo: horarios[i].activo,
+                    horario: horarios[i].horario,
+                    onChanged: (v) => vmEmpleados.alternarHorarioNuevo(i, v),
                   ),
-                  if (i < _diasSemana.length - 1)
+                  if (i < horarios.length - 1)
                     Divider(height: 1, color: colorScheme.outlineVariant),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: 28),
+      ],
+    );
+  }
+}
 
-          // ── Skills ─────────────────────────────────────────────────────────
-          Text(
-            'SKILLS',
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.outline,
-              letterSpacing: 1.2,
+class _AvisoError extends StatelessWidget {
+  const _AvisoError({required this.mensaje, required this.onReintentar});
+
+  final String mensaje;
+  final VoidCallback onReintentar;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: espaciado.radioCard,
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: colorScheme.onErrorContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              mensaje,
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onErrorContainer,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final skill in _skillsDisponibles)
-                ChipSkill(
-                  etiqueta: skill,
-                  seleccionado: _skillsSeleccionadas.contains(skill),
-                  onTap: () => setState(() {
-                    if (_skillsSeleccionadas.contains(skill)) {
-                      _skillsSeleccionadas.remove(skill);
-                    } else {
-                      _skillsSeleccionadas.add(skill);
-                    }
-                  }),
-                ),
-            ],
-          ),
+          TextButton(onPressed: onReintentar, child: const Text('Reintentar')),
         ],
       ),
     );
   }
 }
-
-// ── Subwidgets privados ───────────────────────────────────────────────────────
 
 class _PlaceholderFoto extends StatelessWidget {
   const _PlaceholderFoto({required this.colorScheme});
@@ -189,7 +368,6 @@ class _PlaceholderFoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: image_picker cuando se implemente
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -221,11 +399,7 @@ class _PlaceholderFoto extends StatelessWidget {
               color: colorScheme.primary,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.add,
-              color: colorScheme.onPrimary,
-              size: 16,
-            ),
+            child: Icon(Icons.add, color: colorScheme.onPrimary, size: 16),
           ),
         ),
       ],
@@ -233,23 +407,27 @@ class _PlaceholderFoto extends StatelessWidget {
   }
 }
 
-class _CampoTexto extends StatelessWidget {
-  const _CampoTexto({
-    required this.controlador,
+class _CampoFormulario extends StatelessWidget {
+  const _CampoFormulario({
+    required this.controller,
     required this.etiqueta,
-    this.teclado = TextInputType.text,
+    required this.espaciado,
+    this.teclado,
+    this.validador,
   });
 
-  final TextEditingController controlador;
+  final TextEditingController controller;
   final String etiqueta;
-  final TextInputType teclado;
+  final EspaciadoCitaria espaciado;
+  final TextInputType? teclado;
+  final String? Function(String?)? validador;
 
   @override
   Widget build(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    return TextField(
-      controller: controlador,
+    return TextFormField(
+      controller: controller,
       keyboardType: teclado,
+      validator: validador,
       decoration: InputDecoration(
         labelText: etiqueta,
         border: OutlineInputBorder(borderRadius: espaciado.radioInput),

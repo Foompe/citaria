@@ -1,4 +1,6 @@
+import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
+import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
@@ -35,6 +37,8 @@ class _PantallaAdminDetalleEmpleadoState
     _tabController = TabController(length: 3, vsync: this);
     _viewModel = ViewModelAdminEmpleados(
       repoEmpleados: context.read<RepoEmpleados>(),
+      repoCatalogo: context.read<RepoCatalogo>(),
+      repoOrganizaciones: context.read<RepoOrganizaciones>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
     );
   }

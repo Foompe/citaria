@@ -1,4 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
+import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
+import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
@@ -29,6 +31,8 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
     super.initState();
     _viewModel = ViewModelAdminEmpleados(
       repoEmpleados: context.read<RepoEmpleados>(),
+      repoCatalogo: context.read<RepoCatalogo>(),
+      repoOrganizaciones: context.read<RepoOrganizaciones>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
     )..cargarEmpleados();
   }
