@@ -1,68 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: GET /servicios
-
-class _Servicio {
-  const _Servicio({
-    required this.id,
-    required this.nombre,
-    required this.duracion,
-    required this.precio,
-    required this.activo,
-  });
-
-  final String id;
-  final String nombre;
-  final String duracion;
-  final String precio;
-  final bool activo;
-}
-
-const List<_Servicio> _servicios = [
-  _Servicio(
-    id: 's1',
-    nombre: 'Lavado Premium',
-    duracion: '90 min',
-    precio: '60,00 €',
-    activo: true,
-  ),
-  _Servicio(
-    id: 's2',
-    nombre: 'Lavado Exterior',
-    duracion: '45 min',
-    precio: '15,00 €',
-    activo: true,
-  ),
-  _Servicio(
-    id: 's3',
-    nombre: 'Limpieza Interior',
-    duracion: '60 min',
-    precio: '25,00 €',
-    activo: true,
-  ),
-  _Servicio(
-    id: 's4',
-    nombre: 'Encerado',
-    duracion: '50 min',
-    precio: '50,00 €',
-    activo: true,
-  ),
-  _Servicio(
-    id: 's5',
-    nombre: 'Pulido Completo',
-    duracion: '180 min',
-    precio: '120,00 €',
-    activo: false,
-  ),
-];
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// P31 — Catálogo de servicios del área admin protegida por PIN.
 class PantallaAdminCatalogo extends StatefulWidget {
@@ -75,84 +20,231 @@ class PantallaAdminCatalogo extends StatefulWidget {
 class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-
-  // Estado local de activación por servicio (id → activo)
-  // TODO: PATCH /servicios/:id activo
-  late final Map<String, bool> _activoMap;
+  late final ViewModelAdminCatalogo _viewModel;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _activoMap = {for (final s in _servicios) s.id: s.activo};
+    _viewModel = ViewModelAdminCatalogo(
+      repoCatalogo: context.read<RepoCatalogo>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    )..cargarCatalogo();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      drawer: const MenuLateralAdmin(),
-      bottomNavigationBar: const BarraNavegacionAdmin(
-        seccionActiva: SeccionAdmin.mas,
-      ),
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Nuevo servicio',
-        onPressed: () => GestorNavegacion.irAAdminNuevoServicio(context),
-        child: const Icon(Icons.add),
-      ),
-      body: NestedScrollView(
-        headerSliverBuilder: (context, _) => [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                espaciado.padX, 16, espaciado.padX, 0,
+    return ChangeNotifierProvider<ViewModelAdminCatalogo>.value(
+      value: _viewModel,
+      child: Consumer<ViewModelAdminCatalogo>(
+        builder: (context, vmCatalogo, _) => Scaffold(
+          drawer: const MenuLateralAdmin(),
+          bottomNavigationBar: const BarraNavegacionAdmin(
+            seccionActiva: SeccionAdmin.mas,
+          ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Nuevo servicio',
+            onPressed: () => GestorNavegacion.irAAdminNuevoServicio(context),
+            child: const Icon(Icons.add),
+          ),
+          body: NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    espaciado.padX,
+                    16,
+                    espaciado.padX,
+                    0,
+                  ),
+                  child: Text('Catálogo', style: textTheme.displayLarge),
+                ),
               ),
-              child: Text(
-                'Catálogo',
-                style: textTheme.displayLarge,
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _TabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    tabs: const [
+                      Tab(text: 'Servicios'),
+                      Tab(text: 'Categorías'),
+                      Tab(text: 'Skills'),
+                    ],
+                  ),
+                ),
               ),
+            ],
+            body: _CuerpoCatalogo(
+              vmCatalogo: vmCatalogo,
+              tabController: _tabController,
             ),
           ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Servicios'),
-                  Tab(text: 'Categorías'),
-                  Tab(text: 'Skills'),
+        ),
+      ),
+    );
+  }
+}
+
+class _CuerpoCatalogo extends StatelessWidget {
+  const _CuerpoCatalogo({
+    required this.vmCatalogo,
+    required this.tabController,
+  });
+
+  final ViewModelAdminCatalogo vmCatalogo;
+  final TabController tabController;
+
+  @override
+  Widget build(BuildContext context) {
+    if (vmCatalogo.cargando &&
+        vmCatalogo.servicios.isEmpty &&
+        vmCatalogo.categorias.isEmpty &&
+        vmCatalogo.skills.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final String? error = vmCatalogo.error;
+    if (error != null &&
+        vmCatalogo.servicios.isEmpty &&
+        vmCatalogo.categorias.isEmpty &&
+        vmCatalogo.skills.isEmpty) {
+      return _EstadoCentrado(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: vmCatalogo.refrescar,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: vmCatalogo.refrescar,
+      child: TabBarView(
+        controller: tabController,
+        children: [
+          _TabServicios(servicios: vmCatalogo.servicios),
+          _TabCategorias(categorias: vmCatalogo.categorias),
+          _TabSkills(skills: vmCatalogo.skills),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabServicios extends StatelessWidget {
+  const _TabServicios({required this.servicios});
+
+  final List<DtoServicioCatalogoAdmin> servicios;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    if (servicios.isEmpty) {
+      return const _ListaVacia(mensaje: 'Sin servicios');
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
+      itemCount: servicios.length,
+      itemBuilder: (context, index) {
+        final servicio = servicios[index];
+        return _TarjetaServicio(servicio: servicio);
+      },
+    );
+  }
+}
+
+class _TarjetaServicio extends StatelessWidget {
+  const _TarjetaServicio({required this.servicio});
+
+  final DtoServicioCatalogoAdmin servicio;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: espaciado.radioCard,
+              ),
+              child: Icon(Icons.car_repair, color: colorScheme.outline),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          servicio.nombre,
+                          style: textTheme.displaySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Switch(value: servicio.activo, onChanged: null),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    servicio.categoria,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        servicio.duracion,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                      Text(
+                        servicio.precio,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      ChipEstado(
+                        estado: servicio.activo
+                            ? EstadoReserva.confirmada
+                            : EstadoReserva.completada,
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            // Tab Servicios
-            _TabServicios(
-              servicios: _servicios,
-              activoMap: _activoMap,
-              onActivoChanged: (id, valor) =>
-                  setState(() => _activoMap[id] = valor),
-              colorScheme: colorScheme,
-              textTheme: textTheme,
-              espaciado: espaciado,
-            ),
-            // Tab Categorías
-            const Center(child: Text('Próximamente')),
-            // Tab Skills
-            const Center(child: Text('Próximamente')),
           ],
         ),
       ),
@@ -160,157 +252,122 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
   }
 }
 
-// ── Tab Servicios ─────────────────────────────────────────────────────────────
+class _TabCategorias extends StatelessWidget {
+  const _TabCategorias({required this.categorias});
 
-class _TabServicios extends StatelessWidget {
-  const _TabServicios({
-    required this.servicios,
-    required this.activoMap,
-    required this.onActivoChanged,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
-
-  final List<_Servicio> servicios;
-  final Map<String, bool> activoMap;
-  final void Function(String id, bool valor) onActivoChanged;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
+  final List<DtoCategoriaCatalogoAdmin> categorias;
 
   @override
   Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    if (categorias.isEmpty) {
+      return const _ListaVacia(mensaje: 'Sin categorías');
+    }
+
     return ListView.builder(
-      padding: EdgeInsets.symmetric(
-        horizontal: espaciado.padX,
-        vertical: 12,
-      ),
-      itemCount: servicios.length,
-      itemBuilder: (context, index) {
-        final servicio = servicios[index];
-        final activo = activoMap[servicio.id] ?? servicio.activo;
-        return _TarjetaServicio(
-          servicio: servicio,
-          activo: activo,
-          onActivoChanged: (v) => onActivoChanged(servicio.id, v),
-          onTap: () {
-            // TODO: irAAdminDetalleServicio(servicio.id) —
-            // método pendiente de añadir en GestorNavegacion
-            // y ruta pendiente de declarar en Rutas
-          },
-          colorScheme: colorScheme,
-          textTheme: textTheme,
-          espaciado: espaciado,
-        );
-      },
+      padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
+      itemCount: categorias.length,
+      itemBuilder: (context, index) =>
+          _TarjetaSimpleCatalogo(nombre: categorias[index].nombre),
     );
   }
 }
 
-class _TarjetaServicio extends StatelessWidget {
-  const _TarjetaServicio({
-    required this.servicio,
-    required this.activo,
-    required this.onActivoChanged,
-    required this.onTap,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
+class _TabSkills extends StatelessWidget {
+  const _TabSkills({required this.skills});
 
-  final _Servicio servicio;
-  final bool activo;
-  final ValueChanged<bool> onActivoChanged;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
+  final List<DtoSkillCatalogoAdmin> skills;
 
   @override
   Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    if (skills.isEmpty) {
+      return const _ListaVacia(mensaje: 'Sin skills');
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
+      itemCount: skills.length,
+      itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
+        nombre: skills[index].nombre,
+        subtitulo: skills[index].descripcion,
+      ),
+    );
+  }
+}
+
+class _TarjetaSimpleCatalogo extends StatelessWidget {
+  const _TarjetaSimpleCatalogo({required this.nombre, this.subtitulo});
+
+  final String nombre;
+  final String? subtitulo;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      child: InkWell(
-        borderRadius: espaciado.radioCard,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Miniatura icono
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: espaciado.radioCard,
-                ),
-                child: Icon(
-                  Icons.car_repair,
-                  color: colorScheme.outline,
-                ),
-              ),
-              const SizedBox(width: 12),
+      child: ListTile(
+        leading: Icon(Icons.label_outline, color: colorScheme.outline),
+        title: Text(nombre, style: textTheme.displaySmall),
+        subtitle: subtitulo == null ? null : Text(subtitulo!),
+      ),
+    );
+  }
+}
 
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            servicio.nombre,
-                            style: textTheme.displaySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Switch(
-                          value: activo,
-                          onChanged: onActivoChanged,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          servicio.duracion,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.outline,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          servicio.precio,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ChipEstado(
-                          estado: activo
-                              ? EstadoReserva.confirmada
-                              : EstadoReserva.completada,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+class _ListaVacia extends StatelessWidget {
+  const _ListaVacia({required this.mensaje});
+
+  final String mensaje;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.45,
+          child: Center(child: Text(mensaje)),
+        ),
+      ],
+    );
+  }
+}
+
+class _EstadoCentrado extends StatelessWidget {
+  const _EstadoCentrado({
+    required this.mensaje,
+    required this.accionTexto,
+    required this.onAccion,
+  });
+
+  final String mensaje;
+  final String accionTexto;
+  final VoidCallback onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(mensaje, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
+          ],
         ),
       ),
     );
   }
 }
-
-// ── SliverPersistentHeaderDelegate para TabBar ────────────────────────────────
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   const _TabBarDelegate(this.tabBar);
