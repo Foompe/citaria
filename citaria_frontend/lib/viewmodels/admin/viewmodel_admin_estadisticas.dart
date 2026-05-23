@@ -6,7 +6,12 @@ import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
-enum PeriodoAdminEstadisticas { esteMes, ultimos3Meses, ultimos12Meses }
+enum PeriodoAdminEstadisticas {
+  esteMes,
+  ultimos3Meses,
+  ultimos12Meses,
+  personalizado,
+}
 
 @immutable
 class DtoKpiEstadisticaAdmin {
@@ -76,8 +81,11 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     decimalDigits: 0,
   );
   final NumberFormat _formatoPorcentaje = NumberFormat.decimalPattern('es_ES');
+  final DateFormat _formatoRango = DateFormat('d MMM yyyy', 'es_ES');
 
   PeriodoAdminEstadisticas _periodoActivo = PeriodoAdminEstadisticas.esteMes;
+  DateTime? _desdePersonalizada;
+  DateTime? _hastaPersonalizada;
   ResumenEstadistica? _resumen;
   List<EstadisticaMes> _clientesNuevosVsRecurrentes = const <EstadisticaMes>[];
   List<EstadisticaMes> _fidelizacion = const <EstadisticaMes>[];
@@ -89,11 +97,14 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   List<EstadisticaItem> _cancelacionesPorServicio = const <EstadisticaItem>[];
 
   PeriodoAdminEstadisticas get periodoActivo => _periodoActivo;
+  DateTime? get desdePersonalizada => _desdePersonalizada;
+  DateTime? get hastaPersonalizada => _hastaPersonalizada;
 
   String get subtituloPeriodo => switch (_periodoActivo) {
     PeriodoAdminEstadisticas.esteMes => 'Este mes',
     PeriodoAdminEstadisticas.ultimos3Meses => 'Últimos 3 meses',
     PeriodoAdminEstadisticas.ultimos12Meses => 'Últimos 12 meses',
+    PeriodoAdminEstadisticas.personalizado => _subtituloPersonalizado(),
   };
 
   List<DtoKpiEstadisticaAdmin> get kpis {
@@ -240,6 +251,33 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     await cargarEstadisticas();
   }
 
+  Future<void> seleccionarRangoPersonalizado({
+    required DateTime desde,
+    required DateTime hasta,
+  }) async {
+    final DateTime desdeNormalizada = DateTime(
+      desde.year,
+      desde.month,
+      desde.day,
+    );
+    final DateTime hastaNormalizada = DateTime(
+      hasta.year,
+      hasta.month,
+      hasta.day,
+    );
+
+    if (hastaNormalizada.isBefore(desdeNormalizada)) {
+      registrarError('La fecha final no puede ser anterior a la inicial.');
+      return;
+    }
+
+    _desdePersonalizada = desdeNormalizada;
+    _hastaPersonalizada = hastaNormalizada;
+    _periodoActivo = PeriodoAdminEstadisticas.personalizado;
+    notifyListeners();
+    await cargarEstadisticas();
+  }
+
   DtoSerieMesEstadisticaAdmin _crearSerieMes(EstadisticaMes mes) {
     return DtoSerieMesEstadisticaAdmin(
       periodo: _formatearPeriodo(mes.periodo),
@@ -270,6 +308,15 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   _RangoFechas _crearRango(PeriodoAdminEstadisticas periodo) {
     final DateTime hoy = DateTime.now();
     final DateTime hasta = DateTime(hoy.year, hoy.month, hoy.day);
+    if (periodo == PeriodoAdminEstadisticas.personalizado &&
+        _desdePersonalizada != null &&
+        _hastaPersonalizada != null) {
+      return _RangoFechas(
+        desde: _desdePersonalizada!,
+        hasta: _hastaPersonalizada!,
+      );
+    }
+
     final DateTime desde = switch (periodo) {
       PeriodoAdminEstadisticas.esteMes => DateTime(hoy.year, hoy.month),
       PeriodoAdminEstadisticas.ultimos3Meses => DateTime(
@@ -280,8 +327,21 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
         hoy.year,
         hoy.month - 11,
       ),
+      PeriodoAdminEstadisticas.personalizado => DateTime(
+        hoy.year,
+        hoy.month - 11,
+      ),
     };
     return _RangoFechas(desde: desde, hasta: hasta);
+  }
+
+  String _subtituloPersonalizado() {
+    final DateTime? desde = _desdePersonalizada;
+    final DateTime? hasta = _hastaPersonalizada;
+    if (desde == null || hasta == null) {
+      return 'Rango personalizado';
+    }
+    return '${_formatoRango.format(desde)} - ${_formatoRango.format(hasta)}';
   }
 
   String _formatearPeriodo(String? periodo) {

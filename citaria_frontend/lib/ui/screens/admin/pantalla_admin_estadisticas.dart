@@ -90,6 +90,8 @@ class _CuerpoEstadisticas extends StatelessWidget {
             periodoActivo: vmEstadisticas.periodoActivo,
             cargando: vmEstadisticas.cargando,
             onSeleccionar: vmEstadisticas.seleccionarPeriodo,
+            onSeleccionarPersonalizado: () =>
+                _seleccionarRangoPersonalizado(context, vmEstadisticas),
           ),
           const SizedBox(height: 24),
           GridView.count(
@@ -186,6 +188,39 @@ class _CuerpoEstadisticas extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _seleccionarRangoPersonalizado(
+    BuildContext context,
+    ViewModelAdminEstadisticas vmEstadisticas,
+  ) async {
+    final DateTime hoy = DateTime.now();
+    final DateTime primerDiaPermitido = DateTime(hoy.year - 5);
+    final DateTime ultimoDiaPermitido = DateTime(hoy.year + 1, 12, 31);
+    final DateTimeRange rangoInicial = DateTimeRange(
+      start:
+          vmEstadisticas.desdePersonalizada ??
+          DateTime(hoy.year, hoy.month - 2, hoy.day),
+      end:
+          vmEstadisticas.hastaPersonalizada ??
+          DateTime(hoy.year, hoy.month, hoy.day),
+    );
+
+    final DateTimeRange? rango = await showDateRangePicker(
+      context: context,
+      firstDate: primerDiaPermitido,
+      lastDate: ultimoDiaPermitido,
+      initialDateRange: rangoInicial,
+    );
+
+    if (rango == null) {
+      return;
+    }
+
+    await vmEstadisticas.seleccionarRangoPersonalizado(
+      desde: rango.start,
+      hasta: rango.end,
+    );
+  }
 }
 
 class _SelectorPeriodo extends StatelessWidget {
@@ -193,11 +228,13 @@ class _SelectorPeriodo extends StatelessWidget {
     required this.periodoActivo,
     required this.cargando,
     required this.onSeleccionar,
+    required this.onSeleccionarPersonalizado,
   });
 
   final PeriodoAdminEstadisticas periodoActivo;
   final bool cargando;
   final ValueChanged<PeriodoAdminEstadisticas> onSeleccionar;
+  final VoidCallback onSeleccionarPersonalizado;
 
   @override
   Widget build(BuildContext context) {
@@ -225,6 +262,11 @@ class _SelectorPeriodo extends StatelessWidget {
           onTap: cargando
               ? null
               : () => onSeleccionar(PeriodoAdminEstadisticas.ultimos12Meses),
+        ),
+        _ChipPeriodo(
+          etiqueta: 'Personalizado',
+          activo: periodoActivo == PeriodoAdminEstadisticas.personalizado,
+          onTap: cargando ? null : onSeleccionarPersonalizado,
         ),
       ],
     );
