@@ -3,6 +3,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
+import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -26,6 +27,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_actualizarFab);
     _viewModel = ViewModelAdminCatalogo(
       repoCatalogo: context.read<RepoCatalogo>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
@@ -34,9 +36,16 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
 
   @override
   void dispose() {
+    _tabController.removeListener(_actualizarFab);
     _tabController.dispose();
     _viewModel.dispose();
     super.dispose();
+  }
+
+  void _actualizarFab() {
+    if (!_tabController.indexIsChanging) {
+      setState(() {});
+    }
   }
 
   @override
@@ -52,17 +61,11 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
           bottomNavigationBar: const BarraNavegacionAdmin(
             seccionActiva: SeccionAdmin.mas,
           ),
-          floatingActionButton: FloatingActionButton(
-            tooltip: 'Nuevo servicio',
-            onPressed: () async {
-              final bool? creado = await GestorNavegacion.irAAdminNuevoServicio(
-                context,
-              );
-              if (creado == true) {
-                vmCatalogo.refrescar();
-              }
-            },
-            child: const Icon(Icons.add),
+          floatingActionButton: FabCitaria(
+            icono: Icons.add,
+            tooltip: _tooltipFab,
+            heroTag: 'fab-catalogo-${_tabController.index}',
+            onPressed: () => _manejarFab(context, vmCatalogo),
           ),
           body: NestedScrollView(
             headerSliverBuilder: (context, _) => [
@@ -99,6 +102,38 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
         ),
       ),
     );
+  }
+
+  String get _tooltipFab {
+    return switch (_tabController.index) {
+      1 => 'Nueva categoría',
+      2 => 'Nueva skill',
+      _ => 'Nuevo servicio',
+    };
+  }
+
+  Future<void> _manejarFab(
+    BuildContext context,
+    ViewModelAdminCatalogo vmCatalogo,
+  ) async {
+    if (_tabController.index == 0) {
+      final bool? creado = await GestorNavegacion.irAAdminNuevoServicio(
+        context,
+      );
+      if (creado == true) {
+        await vmCatalogo.refrescar();
+      }
+      return;
+    }
+
+    final String mensaje = _tabController.index == 1
+        ? 'Crear categoría se implementará en el siguiente paso.'
+        : 'Crear skill se implementará en el siguiente paso.';
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensaje)));
+    }
   }
 }
 
