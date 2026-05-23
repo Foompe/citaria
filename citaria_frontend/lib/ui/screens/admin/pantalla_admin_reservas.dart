@@ -1,91 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:citaria_frontend/data/enums/estado_reserva.dart' as datos;
+import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
+import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: datos reales de API
-
-class _DatosReserva {
-  const _DatosReserva({
-    required this.id,
-    required this.cliente,
-    required this.servicio,
-    required this.empleado,
-    required this.hora,
-    required this.precio,
-    required this.estado,
-  });
-
-  final String id;
-  final String cliente;
-  final String servicio;
-  final String empleado;
-  final String hora;
-  final String precio;
-  final EstadoReserva estado;
-}
-
-const List<_DatosReserva> _reservasEjemplo = [
-  _DatosReserva(
-    id: '1',
-    cliente: 'Ana García',
-    servicio: 'Lavado exterior',
-    empleado: 'Carlos M.',
-    hora: '09:00',
-    precio: '25,00 €',
-    estado: EstadoReserva.confirmada,
-  ),
-  _DatosReserva(
-    id: '2',
-    cliente: 'Luis Martín',
-    servicio: 'Pulido completo',
-    empleado: 'Carlos M.',
-    hora: '11:00',
-    precio: '80,00 €',
-    estado: EstadoReserva.pendiente,
-  ),
-  _DatosReserva(
-    id: '3',
-    cliente: 'Marta López',
-    servicio: 'Encerado',
-    empleado: 'Laura P.',
-    hora: '12:00',
-    precio: '45,00 €',
-    estado: EstadoReserva.pendiente,
-  ),
-  _DatosReserva(
-    id: '4',
-    cliente: 'Pedro Ruiz',
-    servicio: 'Lavado completo',
-    empleado: 'Laura P.',
-    hora: '10:00',
-    precio: '55,00 €',
-    estado: EstadoReserva.cancelada,
-  ),
-  _DatosReserva(
-    id: '5',
-    cliente: 'Jorge Díaz',
-    servicio: 'Pulido faros',
-    empleado: 'Sergio R.',
-    hora: '09:30',
-    precio: '30,00 €',
-    estado: EstadoReserva.completada,
-  ),
-  _DatosReserva(
-    id: '6',
-    cliente: 'Sara Gómez',
-    servicio: 'Lavado motor',
-    empleado: 'Sergio R.',
-    hora: '13:00',
-    precio: '60,00 €',
-    estado: EstadoReserva.confirmada,
-  ),
-];
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 
 // ── Filtros disponibles ───────────────────────────────────────────────────────
 
@@ -108,6 +34,23 @@ extension FiltroReservasAdminLabel on FiltroReservasAdmin {
   }
 }
 
+extension FiltroReservasAdminMapeo on FiltroReservasAdmin {
+  FiltroAdminReservas toViewModel() {
+    switch (this) {
+      case FiltroReservasAdmin.hoy:
+        return FiltroAdminReservas.hoy;
+      case FiltroReservasAdmin.semana:
+        return FiltroAdminReservas.semana;
+      case FiltroReservasAdmin.pendientes:
+        return FiltroAdminReservas.pendientes;
+      case FiltroReservasAdmin.confirmadas:
+        return FiltroAdminReservas.confirmadas;
+      case FiltroReservasAdmin.canceladas:
+        return FiltroAdminReservas.canceladas;
+    }
+  }
+}
+
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 
 /// P20 — Lista de reservas del área admin con filtros.
@@ -124,39 +67,41 @@ class PantallaAdminReservas extends StatefulWidget {
 }
 
 class _PantallaAdminReservasState extends State<PantallaAdminReservas> {
-  late FiltroReservasAdmin _filtroActivo;
+  late final ViewModelAdminReservas _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _filtroActivo = widget.filtroInicial;
+    _viewModel = ViewModelAdminReservas(
+      repoReservas: context.read<RepoReservas>(),
+      repoClientes: context.read<RepoClientes>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+      filtroInicial: widget.filtroInicial.toViewModel(),
+    );
+    _viewModel.cargarReservas();
   }
 
-  List<_DatosReserva> get _reservasFiltradas {
-    // TODO: mover a ViewModel cuando se conecte API.
-    // Por ahora el filtro de estado aplica sobre datos hardcodeados;
-    // los filtros temporales (hoy/semana) muestran todas las reservas.
-    switch (_filtroActivo) {
-      case FiltroReservasAdmin.hoy:
-      case FiltroReservasAdmin.semana:
-        return _reservasEjemplo;
-      case FiltroReservasAdmin.pendientes:
-        return _reservasEjemplo
-            .where((reserva) => reserva.estado == EstadoReserva.pendiente)
-            .toList();
-      case FiltroReservasAdmin.confirmadas:
-        return _reservasEjemplo
-            .where((reserva) => reserva.estado == EstadoReserva.confirmada)
-            .toList();
-      case FiltroReservasAdmin.canceladas:
-        return _reservasEjemplo
-            .where((reserva) => reserva.estado == EstadoReserva.cancelada)
-            .toList();
-    }
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider<ViewModelAdminReservas>.value(
+      value: _viewModel,
+      child: const _ContenidoAdminReservas(),
+    );
+  }
+}
+
+class _ContenidoAdminReservas extends StatelessWidget {
+  const _ContenidoAdminReservas();
+
+  @override
+  Widget build(BuildContext context) {
+    final vmReservas = context.watch<ViewModelAdminReservas>();
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final textTheme = Theme.of(context).textTheme;
 
@@ -222,14 +167,14 @@ class _PantallaAdminReservasState extends State<PantallaAdminReservas> {
                 ),
                 scrollDirection: Axis.horizontal,
                 children: FiltroReservasAdmin.values.map((filtro) {
-                  final activo = filtro == _filtroActivo;
+                  final activo = filtro.toViewModel() == vmReservas.filtroActivo;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
                       label: Text(filtro.etiqueta),
                       selected: activo,
                       onSelected: (_) =>
-                          setState(() => _filtroActivo = filtro),
+                          vmReservas.seleccionarFiltro(filtro.toViewModel()),
                     ),
                   );
                 }).toList(),
@@ -238,36 +183,96 @@ class _PantallaAdminReservasState extends State<PantallaAdminReservas> {
 
             // ── Lista de reservas ──────────────────────────────────────────
             Expanded(
-              child: _reservasFiltradas.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No hay reservas',
-                        style: textTheme.bodyLarge,
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.only(top: 8, bottom: 100),
-                      itemCount: _reservasFiltradas.length,
-                      itemBuilder: (context, index) {
-                        final reserva = _reservasFiltradas[index];
-                        return TarjetaReservaAdmin(
-                          estado: reserva.estado,
-                          cliente: reserva.cliente,
-                          servicio: reserva.servicio,
-                          empleado: reserva.empleado,
-                          hora: reserva.hora,
-                          precio: reserva.precio,
-                          onTap: () => GestorNavegacion.irAAdminDetalleReserva(
-                            context,
-                            reserva.id,
-                          ),
-                        );
-                      },
-                    ),
+              child: _ListaReservasAdmin(vmReservas: vmReservas),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+class _ListaReservasAdmin extends StatelessWidget {
+  const _ListaReservasAdmin({required this.vmReservas});
+
+  final ViewModelAdminReservas vmReservas;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final String? error = vmReservas.error;
+    final List<DtoReservaAdmin> reservas = vmReservas.reservas;
+
+    if (vmReservas.cargando && reservas.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (error != null && reservas.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error,
+                style: textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: vmReservas.refrescar,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (reservas.isEmpty) {
+      return Center(
+        child: Text(
+          'No hay reservas',
+          style: textTheme.bodyLarge,
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: vmReservas.refrescar,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 8, bottom: 100),
+        itemCount: reservas.length,
+        itemBuilder: (context, index) {
+          final DtoReservaAdmin reserva = reservas[index];
+          return TarjetaReservaAdmin(
+            estado: _estadoVisual(reserva.estado),
+            cliente: reserva.cliente,
+            servicio: reserva.servicio,
+            empleado: reserva.empleado,
+            hora: reserva.fechaHoraTexto,
+            precio: reserva.precio,
+            onTap: () => GestorNavegacion.irAAdminDetalleReserva(
+              context,
+              reserva.id,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
+    switch (estado) {
+      case datos.EstadoReserva.pendiente:
+        return chip.EstadoReserva.pendiente;
+      case datos.EstadoReserva.confirmada:
+        return chip.EstadoReserva.confirmada;
+      case datos.EstadoReserva.cancelada:
+        return chip.EstadoReserva.cancelada;
+      case datos.EstadoReserva.completada:
+        return chip.EstadoReserva.completada;
+    }
   }
 }

@@ -72,16 +72,6 @@ class _PantallaLoginState extends State<PantallaLogin> {
     }
   }
 
-  // ── BOTONES TESTING ───────────────────────────────────────────
-
-  void _entrarComoAdmin() {
-    GestorNavegacion.irAHomeAdmin(context);
-  }
-
-  void _entrarComoCliente() {
-    GestorNavegacion.irAHomeCliente(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;

@@ -1,66 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: datos reales de API
-
-class _DatosCliente {
-  const _DatosCliente({
-    required this.id,
-    required this.nombre,
-    required this.email,
-    required this.telefono,
-  });
-
-  final String id;
-  final String nombre;
-  final String email;
-  final String telefono;
-}
-
-const List<_DatosCliente> _clientesEjemplo = [
-  _DatosCliente(
-    id: 'c1',
-    nombre: 'Ana García',
-    email: 'ana.garcia@email.com',
-    telefono: '+34 612 345 678',
-  ),
-  _DatosCliente(
-    id: 'c2',
-    nombre: 'Luis Martín',
-    email: 'luis.martin@email.com',
-    telefono: '+34 623 456 789',
-  ),
-  _DatosCliente(
-    id: 'c3',
-    nombre: 'Marta López',
-    email: 'marta.lopez@email.com',
-    telefono: '+34 634 567 890',
-  ),
-  _DatosCliente(
-    id: 'c4',
-    nombre: 'Pedro Ruiz',
-    email: 'pedro.ruiz@email.com',
-    telefono: '+34 645 678 901',
-  ),
-  _DatosCliente(
-    id: 'c5',
-    nombre: 'Sara Gómez',
-    email: 'sara.gomez@email.com',
-    telefono: '+34 656 789 012',
-  ),
-];
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// P22 — Selección de cliente para nueva reserva.
 ///
 /// Ruta: /admin/nueva-reserva/cliente
 /// Argument opcional 'modoSeleccion' (bool) — por defecto true.
-///   true  → seleccionar cliente para nueva reserva
-///   false → modo exploración (PantallaAdminClientes lo instancia así)
 class PantallaAdminSeleccionCliente extends StatefulWidget {
   const PantallaAdminSeleccionCliente({super.key});
 
@@ -71,20 +22,25 @@ class PantallaAdminSeleccionCliente extends StatefulWidget {
 
 class _PantallaAdminSeleccionClienteState
     extends State<PantallaAdminSeleccionCliente> {
-  final TextEditingController _busqueda = TextEditingController();
-  String _textoBusqueda = '';
+  late final TextEditingController _busqueda;
+  late final ViewModelAdminClientes _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _busqueda.addListener(() {
-      setState(() => _textoBusqueda = _busqueda.text.toLowerCase());
-    });
+    _busqueda = TextEditingController();
+    _viewModel = ViewModelAdminClientes(
+      repoClientes: context.read<RepoClientes>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    );
+    _busqueda.addListener(() => _viewModel.buscar(_busqueda.text));
+    _viewModel.cargarClientes();
   }
 
   @override
   void dispose() {
     _busqueda.dispose();
+    _viewModel.dispose();
     super.dispose();
   }
 
@@ -94,30 +50,30 @@ class _PantallaAdminSeleccionClienteState
     return args?['modoSeleccion'] as bool? ?? true;
   }
 
-  List<_DatosCliente> get _clientesFiltrados {
-    if (_textoBusqueda.isEmpty) return _clientesEjemplo;
-    return _clientesEjemplo
-        .where((c) =>
-            c.nombre.toLowerCase().contains(_textoBusqueda) ||
-            c.email.toLowerCase().contains(_textoBusqueda) ||
-            c.telefono.contains(_textoBusqueda))
-        .toList();
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<ViewModelAdminClientes>.value(
+      value: _viewModel,
+      child: _ContenidoSeleccionCliente(
+        busqueda: _busqueda,
+        modoSeleccion: _esModoSeleccion(context),
+      ),
+    );
   }
+}
 
-  String _iniciales(String nombre) {
-    final partes = nombre.split(' ');
-    if (partes.length >= 2) {
-      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
-    }
-    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
-  }
+class _ContenidoSeleccionCliente extends StatelessWidget {
+  const _ContenidoSeleccionCliente({
+    required this.busqueda,
+    required this.modoSeleccion,
+  });
+
+  final TextEditingController busqueda;
+  final bool modoSeleccion;
 
   @override
   Widget build(BuildContext context) {
-    final modoSeleccion  = _esModoSeleccion(context);
-    final espaciado      = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final colorScheme    = Theme.of(context).colorScheme;
-    final textTheme      = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
     return Scaffold(
       appBar: CabeceraPantalla(
@@ -133,7 +89,6 @@ class _PantallaAdminSeleccionClienteState
       ),
       body: Column(
         children: [
-          // ── Buscador ───────────────────────────────────────────────────────
           Padding(
             padding: EdgeInsets.fromLTRB(
               espaciado.padX,
@@ -142,62 +97,125 @@ class _PantallaAdminSeleccionClienteState
               8,
             ),
             child: TextField(
-              controller: _busqueda,
+              controller: busqueda,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar cliente…',
-                border: OutlineInputBorder(
-                  borderRadius: espaciado.radioInput,
-                ),
+                hintText: 'Buscar cliente...',
+                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
               ),
             ),
           ),
-
-          // ── Lista de clientes ──────────────────────────────────────────────
-          Expanded(
-            child: _clientesFiltrados.isEmpty
-                ? Center(
-                    child: Text(
-                      'Sin resultados',
-                      style: textTheme.bodyLarge,
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 8),
-                    itemCount: _clientesFiltrados.length,
-                    itemBuilder: (context, index) {
-                      final cliente = _clientesFiltrados[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: colorScheme.primaryContainer,
-                          child: Text(
-                            _iniciales(cliente.nombre),
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        title: Text(cliente.nombre),
-                        subtitle: Text(
-                          modoSeleccion ? cliente.telefono : cliente.email,
-                          style: textTheme.bodySmall,
-                        ),
-                        onTap: () {
-                          if (modoSeleccion) {
-                            GestorNavegacion.irAWizardServicios(context);
-                          } else {
-                            GestorNavegacion.irAAdminDetalleCliente(
-                              context,
-                              cliente.id,
-                            );
-                          }
-                        },
-                      );
-                    },
-                  ),
-          ),
+          Expanded(child: _ListaSeleccionClientes(modoSeleccion: modoSeleccion)),
         ],
+      ),
+    );
+  }
+}
+
+class _ListaSeleccionClientes extends StatelessWidget {
+  const _ListaSeleccionClientes({required this.modoSeleccion});
+
+  final bool modoSeleccion;
+
+  @override
+  Widget build(BuildContext context) {
+    final vmClientes = context.watch<ViewModelAdminClientes>();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final List<DtoClienteAdmin> clientes = vmClientes.clientes;
+    final String? error = vmClientes.error;
+
+    if (vmClientes.cargando && clientes.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (error != null && clientes.isEmpty) {
+      return _EstadoClientes(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: vmClientes.refrescar,
+      );
+    }
+
+    if (clientes.isEmpty) {
+      return const _EstadoClientes(mensaje: 'Sin resultados');
+    }
+
+    return RefreshIndicator(
+      onRefresh: vmClientes.refrescar,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(top: 8),
+        itemCount: clientes.length,
+        itemBuilder: (context, index) {
+          final DtoClienteAdmin cliente = clientes[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: colorScheme.primaryContainer,
+              child: Text(
+                cliente.iniciales,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(cliente.nombreCompleto),
+            subtitle: Text(
+              modoSeleccion ? cliente.telefono : cliente.email,
+              style: textTheme.bodySmall,
+            ),
+            onTap: () {
+              if (modoSeleccion) {
+                GestorNavegacion.irAWizardServicios(
+                  context,
+                  clienteId: cliente.id,
+                  origen: OrigenWizard.admin,
+                );
+                return;
+              }
+              GestorNavegacion.irAAdminDetalleCliente(
+                context,
+                cliente.id.toString(),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EstadoClientes extends StatelessWidget {
+  const _EstadoClientes({
+    required this.mensaje,
+    this.accionTexto,
+    this.onAccion,
+  });
+
+  final String mensaje;
+  final String? accionTexto;
+  final VoidCallback? onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              mensaje,
+              style: textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            if (accionTexto != null && onAccion != null) ...[
+              const SizedBox(height: 12),
+              FilledButton(onPressed: onAccion, child: Text(accionTexto!)),
+            ],
+          ],
+        ),
       ),
     );
   }

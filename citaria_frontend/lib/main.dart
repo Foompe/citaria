@@ -11,8 +11,10 @@ import 'package:citaria_frontend/data/repositories/repo_chatbot.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_disponibilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
+import 'package:citaria_frontend/data/repositories/repo_estadisticas.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
+import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
 import 'package:citaria_frontend/ui/navigation/rutas.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
@@ -45,6 +47,8 @@ Future<void> main() async {
       repoOrganizaciones: RepoOrganizaciones(api),
       repoClientes: RepoClientes(api),
       repoEmpleados: RepoEmpleados(api),
+      repoEstadisticas: RepoEstadisticas(api),
+      repoUsuarios: RepoUsuarios(api),
       almacenamientoSeguro: almacenamientoSeguro,
       preferencias: preferencias,
     ),
@@ -65,6 +69,8 @@ class AplicacionCitaria extends StatelessWidget {
     required this.repoOrganizaciones,
     required this.repoClientes,
     required this.repoEmpleados,
+    required this.repoEstadisticas,
+    required this.repoUsuarios,
     required this.almacenamientoSeguro,
     required this.preferencias,
   });
@@ -77,6 +83,8 @@ class AplicacionCitaria extends StatelessWidget {
   final RepoOrganizaciones repoOrganizaciones;
   final RepoClientes repoClientes;
   final RepoEmpleados repoEmpleados;
+  final RepoEstadisticas repoEstadisticas;
+  final RepoUsuarios repoUsuarios;
   final FlutterSecureStorage almacenamientoSeguro;
   final SharedPreferences preferencias;
 
@@ -88,6 +96,11 @@ class AplicacionCitaria extends StatelessWidget {
         Provider<RepoReservas>.value(value: repoReservas),
         Provider<RepoDisponibilidad>.value(value: repoDisponibilidad),
         Provider<RepoChatbot>.value(value: repoChatbot),
+        Provider<RepoOrganizaciones>.value(value: repoOrganizaciones),
+        Provider<RepoClientes>.value(value: repoClientes),
+        Provider<RepoEmpleados>.value(value: repoEmpleados),
+        Provider<RepoEstadisticas>.value(value: repoEstadisticas),
+        Provider<RepoUsuarios>.value(value: repoUsuarios),
         ChangeNotifierProvider<ViewModelTema>(
           create: (_) => ViewModelTema(
             repoOrganizaciones: repoOrganizaciones,

@@ -1,62 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:citaria_frontend/data/enums/estado_reserva.dart' as datos;
+import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: datos reales de API — GET /reservas/:id
-
-class _ReservaDetalle {
-  const _ReservaDetalle({
-    required this.id,
-    required this.estado,
-    required this.cliente,
-    required this.clienteId,
-    required this.telefono,
-    required this.servicio,
-    required this.duracion,
-    required this.empleado,
-    required this.rolEmpleado,
-    required this.fecha,
-    required this.hora,
-    required this.total,
-    this.observaciones,
-  });
-
-  final String id;
-  final EstadoReserva estado;
-  final String cliente;
-  final String clienteId;
-  final String telefono;
-  final String servicio;
-  final String duracion;
-  final String empleado;
-  final String rolEmpleado;
-  final String fecha;
-  final String hora;
-  final String total;
-  final String? observaciones;
-}
-
-const _ReservaDetalle _reservaEjemplo = _ReservaDetalle(
-  id: '1',
-  estado: EstadoReserva.pendiente,
-  cliente: 'Ana García',
-  clienteId: 'c1',
-  telefono: '+34 612 345 678',
-  servicio: 'Lavado exterior premium',
-  duracion: '45 min',
-  empleado: 'Carlos Martínez',
-  rolEmpleado: 'Especialista',
-  fecha: 'Lun 3 may 2026',
-  hora: '09:00',
-  total: '25,00 €',
-  observaciones: 'El cliente pide que se evite el interior del maletero.',
-);
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// P21 — Detalle de una reserva en el área admin.
 ///
@@ -71,162 +24,318 @@ class PantallaAdminDetalleReserva extends StatefulWidget {
 
 class _PantallaAdminDetalleReservaState
     extends State<PantallaAdminDetalleReserva> {
-  // TODO: datos reales de API — GET /reservas/:id
-  // Estado local editable mientras no hay ViewModel
-  EstadoReserva _estado = _reservaEjemplo.estado;
+  late final ViewModelAdminReservas _viewModel;
+  int? _reservaId;
+  bool _inicializado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ViewModelAdminReservas(
+      repoReservas: context.read<RepoReservas>(),
+      repoClientes: context.read<RepoClientes>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_inicializado) {
+      return;
+    }
+    _inicializado = true;
+
+    final int? id = _leerIdReserva(context);
+    _reservaId = id;
+    if (id != null) {
+      _viewModel.cargarDetalleReserva(id);
+    }
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    return ChangeNotifierProvider<ViewModelAdminReservas>.value(
+      value: _viewModel,
+      child: _ContenidoDetalleReserva(reservaId: _reservaId),
+    );
+  }
+
+  int? _leerIdReserva(BuildContext context) {
+    final Object? argumentos = ModalRoute.of(context)?.settings.arguments;
+    if (argumentos is Map<String, dynamic>) {
+      final Object? id = argumentos['id'];
+      if (id is int) {
+        return id;
+      }
+      if (id is String) {
+        return int.tryParse(id);
+      }
+    }
+    return null;
+  }
+}
+
+class _ContenidoDetalleReserva extends StatelessWidget {
+  const _ContenidoDetalleReserva({required this.reservaId});
+
+  final int? reservaId;
+
+  @override
+  Widget build(BuildContext context) {
+    final vmReservas = context.watch<ViewModelAdminReservas>();
+    final detalle = vmReservas.detalle;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: CabeceraPantalla(
         titulo: 'Reserva',
         mostrarAtras: true,
-        accionDerecha: Tooltip(
-          message: 'Opciones',
-          child: IconButton(
-            icon: const Icon(Icons.more_horiz),
-            onPressed: () {
-              // TODO: menú de opciones
-            },
-          ),
-        ),
-      ),
-      bottomNavigationBar: BarraCtaFija(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                if (_estado == EstadoReserva.pendiente) ...[
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () {
-                        // TODO: PATCH /reservas/:id/estado → confirmada
-                        setState(() => _estado = EstadoReserva.confirmada);
-                      },
-                      child: const Text('Confirmar'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.error,
-                      side: BorderSide(color: colorScheme.error),
-                    ),
-                    onPressed: () {
-                      // TODO: PATCH /reservas/:id/estado → cancelada
-                      setState(() => _estado = EstadoReserva.cancelada);
-                    },
-                    child: const Text('Cancelar'),
-                  ),
+        accionDerecha: detalle == null
+            ? null
+            : Tooltip(
+                message: 'Actualizar',
+                child: IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: reservaId == null
+                      ? null
+                      : () => vmReservas.cargarDetalleReserva(reservaId!),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: colorScheme.error,
               ),
-              onPressed: () {
-                // TODO: DELETE /reservas/:id
-              },
-              child: const Text('Eliminar reserva'),
-            ),
-          ],
-        ),
       ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          espaciado.padX,
-          16,
-          espaciado.padX,
-          24,
-        ),
-        children: [
-          // Card estado
-          _CardEstado(
-            estado: _estado,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            espaciado: espaciado,
-            onCambiarEstado: (nuevo) => setState(() => _estado = nuevo),
-          ),
-          const SizedBox(height: 12),
-
-          // Card cliente
-          _CardCliente(
-            nombre: _reservaEjemplo.cliente,
-            telefono: _reservaEjemplo.telefono,
-            clienteId: _reservaEjemplo.clienteId,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-          ),
-          const SizedBox(height: 12),
-
-          // Card servicio + empleado
-          _CardServicioEmpleado(
-            servicio: _reservaEjemplo.servicio,
-            duracion: _reservaEjemplo.duracion,
-            empleado: _reservaEjemplo.empleado,
-            rol: _reservaEjemplo.rolEmpleado,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            espaciado: espaciado,
-          ),
-          const SizedBox(height: 12),
-
-          // Card fecha + total
-          _CardFechaTotal(
-            fecha: _reservaEjemplo.fecha,
-            hora: _reservaEjemplo.hora,
-            total: _reservaEjemplo.total,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-          ),
-
-          // Card observaciones (condicional)
-          if (_reservaEjemplo.observaciones != null) ...[
-            const SizedBox(height: 12),
-            _CardObservaciones(
-              texto: _reservaEjemplo.observaciones!,
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+      bottomNavigationBar: detalle == null
+          ? null
+          : _BarraAccionesDetalle(
+              reservaId: reservaId,
+              detalle: detalle,
+              vmReservas: vmReservas,
             ),
-          ],
-
-          const SizedBox(height: 120),
-        ],
+      body: _CuerpoDetalleReserva(
+        reservaId: reservaId,
+        detalle: detalle,
+        vmReservas: vmReservas,
+        espaciado: espaciado,
+        colorScheme: colorScheme,
+        textTheme: textTheme,
       ),
     );
   }
 }
 
-// ── Subwidgets ─────────────────────────────────────────────────────────────────
+class _CuerpoDetalleReserva extends StatelessWidget {
+  const _CuerpoDetalleReserva({
+    required this.reservaId,
+    required this.detalle,
+    required this.vmReservas,
+    required this.espaciado,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  final int? reservaId;
+  final DtoDetalleReservaAdmin? detalle;
+  final ViewModelAdminReservas vmReservas;
+  final EspaciadoCitaria espaciado;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    if (reservaId == null) {
+      return _EstadoCentrado(
+        mensaje: 'No se ha encontrado la reserva.',
+        accionTexto: 'Volver',
+        onAccion: () => Navigator.maybePop(context),
+      );
+    }
+
+    if (vmReservas.cargando && detalle == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final String? error = vmReservas.error;
+    if (error != null && detalle == null) {
+      return _EstadoCentrado(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: () => vmReservas.cargarDetalleReserva(reservaId!),
+      );
+    }
+
+    final DtoDetalleReservaAdmin? datos = detalle;
+    if (datos == null) {
+      return _EstadoCentrado(
+        mensaje: 'No se ha encontrado la reserva.',
+        accionTexto: 'Reintentar',
+        onAccion: () => vmReservas.cargarDetalleReserva(reservaId!),
+      );
+    }
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 24),
+      children: [
+        _CardEstado(
+          estado: datos.estado,
+          puedeCambiarEstado: datos.puedeCambiarEstado,
+          cargando: vmReservas.cargando,
+          espaciado: espaciado,
+          onCambiarEstado: (nuevo) =>
+              vmReservas.cambiarEstadoReserva(reservaId!, nuevo),
+        ),
+        const SizedBox(height: 12),
+        _CardCliente(
+          nombre: datos.cliente,
+          telefono: datos.telefono,
+          clienteId: datos.clienteId,
+          colorScheme: colorScheme,
+          textTheme: textTheme,
+        ),
+        const SizedBox(height: 12),
+        _CardServicioEmpleado(
+          servicio: datos.servicio,
+          duracion: datos.duracion,
+          empleado: datos.empleado,
+          lineas: datos.lineas,
+          colorScheme: colorScheme,
+          textTheme: textTheme,
+          espaciado: espaciado,
+        ),
+        const SizedBox(height: 12),
+        _CardFechaTotal(
+          fecha: datos.fecha,
+          hora: datos.hora,
+          total: datos.total,
+          colorScheme: colorScheme,
+          textTheme: textTheme,
+        ),
+        if (datos.observaciones != null) ...[
+          const SizedBox(height: 12),
+          _CardTexto(
+            titulo: 'OBSERVACIONES',
+            texto: datos.observaciones!,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+          ),
+        ],
+        if (datos.motivo != null) ...[
+          const SizedBox(height: 12),
+          _CardTexto(
+            titulo: 'MOTIVO',
+            texto: datos.motivo!,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+          ),
+        ],
+        const SizedBox(height: 120),
+      ],
+    );
+  }
+}
+
+class _BarraAccionesDetalle extends StatelessWidget {
+  const _BarraAccionesDetalle({
+    required this.reservaId,
+    required this.detalle,
+    required this.vmReservas,
+  });
+
+  final int? reservaId;
+  final DtoDetalleReservaAdmin detalle;
+  final ViewModelAdminReservas vmReservas;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final int? id = reservaId;
+    if (id == null || (!detalle.puedeConfirmar && !detalle.puedeCancelar)) {
+      return const SizedBox.shrink();
+    }
+
+    return BarraCtaFija(
+      child: Row(
+        children: [
+          if (detalle.puedeConfirmar) ...[
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: vmReservas.cargando
+                    ? null
+                    : () => _ejecutarAccion(
+                        context,
+                        vmReservas.confirmarReserva(id),
+                        'Reserva confirmada',
+                        vmReservas,
+                      ),
+                child: const Text('Confirmar'),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          if (detalle.puedeCancelar)
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(color: colorScheme.error),
+                ),
+                onPressed: vmReservas.cargando
+                    ? null
+                    : () => _ejecutarAccion(
+                        context,
+                        vmReservas.cancelarReserva(id),
+                        'Reserva cancelada',
+                        vmReservas,
+                      ),
+                child: const Text('Cancelar'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _ejecutarAccion(
+    BuildContext context,
+    Future<bool> accion,
+    String mensajeOk,
+    ViewModelAdminReservas vmReservas,
+  ) async {
+    final bool ok = await accion;
+    if (!context.mounted) {
+      return;
+    }
+    final String? error = vmReservas.error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(ok ? mensajeOk : error ?? 'No se pudo guardar.')),
+    );
+  }
+}
 
 class _CardEstado extends StatelessWidget {
   const _CardEstado({
     required this.estado,
-    required this.colorScheme,
-    required this.textTheme,
+    required this.puedeCambiarEstado,
+    required this.cargando,
     required this.espaciado,
     required this.onCambiarEstado,
   });
 
-  final EstadoReserva estado;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
+  final datos.EstadoReserva estado;
+  final bool puedeCambiarEstado;
+  final bool cargando;
   final EspaciadoCitaria espaciado;
-  final ValueChanged<EstadoReserva> onCambiarEstado;
+  final ValueChanged<datos.EstadoReserva> onCambiarEstado;
 
   @override
   Widget build(BuildContext context) {
@@ -236,19 +345,22 @@ class _CardEstado extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            ChipEstado(estado: estado),
+            chip.ChipEstado(estado: _estadoVisual(estado)),
             const Spacer(),
-            DropdownButton<EstadoReserva>(
+            DropdownButton<datos.EstadoReserva>(
               value: estado,
               underline: const SizedBox.shrink(),
-              onChanged: (v) {
-                if (v != null) onCambiarEstado(v);
-                // TODO: PATCH /reservas/:id/estado
-              },
-              items: EstadoReserva.values.map((e) {
+              onChanged: puedeCambiarEstado && !cargando
+                  ? (valor) {
+                      if (valor != null && valor != estado) {
+                        onCambiarEstado(valor);
+                      }
+                    }
+                  : null,
+              items: datos.EstadoReserva.values.map((estado) {
                 return DropdownMenuItem(
-                  value: e,
-                  child: ChipEstado(estado: e),
+                  value: estado,
+                  child: chip.ChipEstado(estado: _estadoVisual(estado)),
                 );
               }).toList(),
             ),
@@ -269,15 +381,18 @@ class _CardCliente extends StatelessWidget {
   });
 
   final String nombre;
-  final String telefono;
-  final String clienteId;
+  final String? telefono;
+  final String? clienteId;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
 
   String get _iniciales {
-    final partes = nombre.split(' ');
+    final List<String> partes = nombre
+        .split(' ')
+        .where((parte) => parte.trim().isNotEmpty)
+        .toList(growable: false);
     if (partes.length >= 2) {
-      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
+      return '${partes.first[0]}${partes.last[0]}'.toUpperCase();
     }
     return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
   }
@@ -316,27 +431,31 @@ class _CardCliente extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(nombre, style: textTheme.displaySmall),
-                      Text(
-                        telefono,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
+                      if (telefono != null)
+                        Text(
+                          telefono!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.outline,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
-                SizedBox(
-                  width: 90,
-                  child: OutlinedButton(
-                    onPressed: () =>
-                        GestorNavegacion.irAAdminDetalleCliente(context, clienteId),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 40),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                if (clienteId != null)
+                  SizedBox(
+                    width: 90,
+                    child: OutlinedButton(
+                      onPressed: () => GestorNavegacion.irAAdminDetalleCliente(
+                        context,
+                        clienteId!,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 40),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      child: const Text('Ver ficha'),
                     ),
-                    child: const Text('Ver ficha'),
                   ),
-                ),
               ],
             ),
           ],
@@ -351,7 +470,7 @@ class _CardServicioEmpleado extends StatelessWidget {
     required this.servicio,
     required this.duracion,
     required this.empleado,
-    required this.rol,
+    required this.lineas,
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
@@ -360,7 +479,7 @@ class _CardServicioEmpleado extends StatelessWidget {
   final String servicio;
   final String duracion;
   final String empleado;
-  final String rol;
+  final List<DtoLineaDetalleReservaAdmin> lineas;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
@@ -374,36 +493,19 @@ class _CardServicioEmpleado extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text(
-                  'SERVICIO + EMPLEADO',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.outline,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    // TODO: reasignar servicio/empleado
-                  },
-                  child: const Text('Reasignar'),
-                ),
-              ],
+            Text(
+              'SERVICIO + EMPLEADO',
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.outline,
+                letterSpacing: 1.1,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  Icons.auto_awesome,
-                  size: 16,
-                  color: colorScheme.primary,
-                ),
+                Icon(Icons.auto_awesome, size: 16, color: colorScheme.primary),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(servicio, style: textTheme.bodyLarge),
-                ),
+                Expanded(child: Text(servicio, style: textTheme.bodyLarge)),
                 Text(
                   duracion,
                   style: textTheme.bodySmall?.copyWith(
@@ -426,19 +528,70 @@ class _CardServicioEmpleado extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(empleado, style: textTheme.bodyLarge),
-                ),
-                Text(
-                  rol,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
-                  ),
-                ),
+                Expanded(child: Text(empleado, style: textTheme.bodyLarge)),
               ],
             ),
+            if (lineas.isNotEmpty) ...[
+              const Divider(height: 24),
+              ...lineas.map(
+                (linea) => _FilaLineaDetalle(
+                  linea: linea,
+                  colorScheme: colorScheme,
+                  textTheme: textTheme,
+                ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FilaLineaDetalle extends StatelessWidget {
+  const _FilaLineaDetalle({
+    required this.linea,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  final DtoLineaDetalleReservaAdmin linea;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(linea.servicio, style: textTheme.bodyMedium)),
+              Text(
+                linea.precioTexto,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${linea.empleado} · ${linea.horarioTexto} · '
+            '${linea.duracionTexto}',
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+          ),
+          if (linea.estadoTexto != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              linea.estadoTexto!,
+              style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -474,12 +627,7 @@ class _CardFechaTotal extends StatelessWidget {
                   color: colorScheme.outline,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '$fecha  ·  $hora',
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
+                Text('$fecha  ·  $hora', style: textTheme.bodyMedium),
               ],
             ),
             const Divider(height: 24),
@@ -503,13 +651,15 @@ class _CardFechaTotal extends StatelessWidget {
   }
 }
 
-class _CardObservaciones extends StatelessWidget {
-  const _CardObservaciones({
+class _CardTexto extends StatelessWidget {
+  const _CardTexto({
+    required this.titulo,
     required this.texto,
     required this.colorScheme,
     required this.textTheme,
   });
 
+  final String titulo;
   final String texto;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -523,7 +673,7 @@ class _CardObservaciones extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'OBSERVACIONES',
+              titulo,
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.outline,
                 letterSpacing: 1.1,
@@ -535,5 +685,47 @@ class _CardObservaciones extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _EstadoCentrado extends StatelessWidget {
+  const _EstadoCentrado({
+    required this.mensaje,
+    required this.accionTexto,
+    required this.onAccion,
+  });
+
+  final String mensaje;
+  final String accionTexto;
+  final VoidCallback onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(mensaje, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
+  switch (estado) {
+    case datos.EstadoReserva.pendiente:
+      return chip.EstadoReserva.pendiente;
+    case datos.EstadoReserva.confirmada:
+      return chip.EstadoReserva.confirmada;
+    case datos.EstadoReserva.cancelada:
+      return chip.EstadoReserva.cancelada;
+    case datos.EstadoReserva.completada:
+      return chip.EstadoReserva.completada;
   }
 }
