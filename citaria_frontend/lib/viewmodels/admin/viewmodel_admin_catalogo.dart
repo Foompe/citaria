@@ -169,6 +169,47 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
+  Future<Categoria?> crearCategoria({required String nombre}) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      return _repoCatalogo.crearCategoria(
+        Categoria(nombre: nombre.trim(), activo: true),
+        token,
+      );
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<Skill?> crearSkill({
+    required String nombre,
+    required String descripcion,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      return _repoCatalogo.crearSkill(
+        Skill(
+          nombre: nombre.trim(),
+          descripcion: _valorOpcional(descripcion),
+          activo: true,
+        ),
+        token,
+      );
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   DtoServicioCatalogoAdmin _crearDtoServicio(Servicio servicio) {
     return DtoServicioCatalogoAdmin(
       id: servicio.id ?? 0,

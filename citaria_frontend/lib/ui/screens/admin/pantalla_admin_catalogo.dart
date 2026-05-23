@@ -116,23 +116,15 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
     BuildContext context,
     ViewModelAdminCatalogo vmCatalogo,
   ) async {
-    if (_tabController.index == 0) {
-      final bool? creado = await GestorNavegacion.irAAdminNuevoServicio(
-        context,
-      );
-      if (creado == true) {
-        await vmCatalogo.refrescar();
-      }
-      return;
-    }
-
-    final String mensaje = _tabController.index == 1
-        ? 'Crear categoría se implementará en el siguiente paso.'
-        : 'Crear skill se implementará en el siguiente paso.';
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(mensaje)));
+    final int indice = _tabController.index;
+    final Future<bool?> navegacion = switch (indice) {
+      1 => GestorNavegacion.irAAdminNuevaCategoria(context),
+      2 => GestorNavegacion.irAAdminNuevaSkill(context),
+      _ => GestorNavegacion.irAAdminNuevoServicio(context),
+    };
+    final bool? creado = await navegacion;
+    if (creado == true) {
+      await vmCatalogo.refrescar();
     }
   }
 }

@@ -14,6 +14,8 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_empleados.dart'
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_empleado.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_catalogo.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_categoria.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_skill.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_servicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_horarios.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_estadisticas.dart';
@@ -379,6 +381,20 @@ class GestorNavegacion {
       _irAPinConDestino<bool>(
         context,
         (_) => const PantallaAdminNuevoServicio(),
+        'Catálogo',
+      );
+
+  static Future<bool?> irAAdminNuevaCategoria(BuildContext context) =>
+      _irAPinConDestino<bool>(
+        context,
+        (_) => const PantallaAdminNuevaCategoria(),
+        'Catálogo',
+      );
+
+  static Future<bool?> irAAdminNuevaSkill(BuildContext context) =>
+      _irAPinConDestino<bool>(
+        context,
+        (_) => const PantallaAdminNuevaSkill(),
         'Catálogo',
       );
 
