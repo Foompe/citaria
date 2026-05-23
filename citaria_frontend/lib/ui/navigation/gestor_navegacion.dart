@@ -364,7 +364,7 @@ class GestorNavegacion {
     String id,
   ) => _irAPinConDestino(
     context,
-    (_) => const PantallaAdminDetalleEmpleado(),
+    (_) => PantallaAdminDetalleEmpleado(id: int.tryParse(id)),
     'Empleados',
   );
 

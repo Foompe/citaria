@@ -181,9 +181,10 @@ class AplicacionCitaria extends StatelessWidget {
             }
             if (nombreRuta.startsWith('/admin/empleados/') &&
                 !nombreRuta.endsWith('/nuevo')) {
+              final int? empleadoId = int.tryParse(nombreRuta.split('/').last);
               return MaterialPageRoute(
                 settings: settings,
-                builder: (_) => const PantallaAdminDetalleEmpleado(),
+                builder: (_) => PantallaAdminDetalleEmpleado(id: empleadoId),
               );
             }
             return null;

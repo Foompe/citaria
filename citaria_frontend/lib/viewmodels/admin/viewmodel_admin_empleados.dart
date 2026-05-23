@@ -1,4 +1,6 @@
 import 'package:citaria_frontend/data/models/empleado.dart';
+import 'package:citaria_frontend/data/models/empleado_skill.dart';
+import 'package:citaria_frontend/data/models/horario_empleado.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
@@ -28,6 +30,53 @@ class DtoEmpleadoAdmin {
   final String? fotoUrl;
 }
 
+@immutable
+class DtoDetalleEmpleadoAdmin {
+  const DtoDetalleEmpleadoAdmin({
+    required this.id,
+    required this.nombre,
+    required this.apellidos,
+    required this.nombreCompleto,
+    required this.email,
+    required this.telefono,
+    required this.iniciales,
+    required this.activo,
+    required this.estado,
+    required this.fotoUrl,
+  });
+
+  final int id;
+  final String nombre;
+  final String apellidos;
+  final String nombreCompleto;
+  final String email;
+  final String telefono;
+  final String iniciales;
+  final bool activo;
+  final String estado;
+  final String? fotoUrl;
+}
+
+@immutable
+class DtoHorarioEmpleadoAdmin {
+  const DtoHorarioEmpleadoAdmin({
+    required this.dia,
+    required this.activo,
+    required this.horario,
+  });
+
+  final String dia;
+  final bool activo;
+  final String horario;
+}
+
+@immutable
+class DtoSkillEmpleadoAdmin {
+  const DtoSkillEmpleadoAdmin({required this.nombre});
+
+  final String nombre;
+}
+
 class ViewModelAdminEmpleados extends ViewModelAdminBase {
   ViewModelAdminEmpleados({
     required RepoEmpleados repoEmpleados,
@@ -37,9 +86,15 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
   final RepoEmpleados _repoEmpleados;
 
   List<Empleado> _empleados = const <Empleado>[];
+  DtoDetalleEmpleadoAdmin? _detalle;
+  List<DtoHorarioEmpleadoAdmin> _horarios = const <DtoHorarioEmpleadoAdmin>[];
+  List<DtoSkillEmpleadoAdmin> _skills = const <DtoSkillEmpleadoAdmin>[];
   String _busqueda = '';
 
   String get busqueda => _busqueda;
+  DtoDetalleEmpleadoAdmin? get detalle => _detalle;
+  List<DtoHorarioEmpleadoAdmin> get horarios => _horarios;
+  List<DtoSkillEmpleadoAdmin> get skills => _skills;
 
   List<DtoEmpleadoAdmin> get empleados {
     final String filtro = _normalizar(_busqueda);
@@ -73,6 +128,32 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     return cargarEmpleados();
   }
 
+  Future<void> cargarDetalleEmpleado(int id) async {
+    _detalle = null;
+    _horarios = const <DtoHorarioEmpleadoAdmin>[];
+    _skills = const <DtoSkillEmpleadoAdmin>[];
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Empleado empleado = await _repoEmpleados.obtenerPorId(id, token);
+      final List<HorarioEmpleado> horarios = await _repoEmpleados
+          .obtenerHorarios(id, token);
+      final List<EmpleadoSkill> skills = await _repoEmpleados.obtenerSkills(
+        id,
+        token,
+      );
+      _detalle = _crearDetalle(empleado);
+      _horarios = _crearHorarios(horarios);
+      _skills = _crearSkills(skills);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   void buscar(String valor) {
     if (_busqueda == valor) {
       return;
@@ -95,6 +176,60 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
       resumen: _crearResumen(empleado),
       fotoUrl: _textoOpcional(empleado.fotoUrl),
     );
+  }
+
+  DtoDetalleEmpleadoAdmin _crearDetalle(Empleado empleado) {
+    final String nombreCompleto = _crearNombreCompleto(empleado);
+    final bool activo = empleado.activo ?? true;
+    return DtoDetalleEmpleadoAdmin(
+      id: empleado.id ?? 0,
+      nombre: _textoConFallback(empleado.nombre, 'Sin nombre'),
+      apellidos: _textoConFallback(empleado.apellidos, 'Sin apellidos'),
+      nombreCompleto: nombreCompleto,
+      email: _textoConFallback(empleado.email, 'Sin email'),
+      telefono: _textoConFallback(empleado.telefono, 'Sin teléfono'),
+      iniciales: _crearIniciales(nombreCompleto),
+      activo: activo,
+      estado: activo ? 'Activo' : 'Inactivo',
+      fotoUrl: _textoOpcional(empleado.fotoUrl),
+    );
+  }
+
+  List<DtoHorarioEmpleadoAdmin> _crearHorarios(List<HorarioEmpleado> horarios) {
+    final Map<int, HorarioEmpleado> porDia = <int, HorarioEmpleado>{};
+    for (final HorarioEmpleado horario in horarios) {
+      final int? indice = _indiceDiaSemana(horario.diaSemana);
+      if (indice != null) {
+        porDia[indice] = horario;
+      }
+    }
+
+    return List<DtoHorarioEmpleadoAdmin>.generate(_diasSemana.length, (index) {
+      final HorarioEmpleado? horario = porDia[index];
+      if (horario == null) {
+        return DtoHorarioEmpleadoAdmin(
+          dia: _diasSemana[index],
+          activo: false,
+          horario: 'Cerrado',
+        );
+      }
+      return DtoHorarioEmpleadoAdmin(
+        dia: _diasSemana[index],
+        activo: horario.activo,
+        horario:
+            '${_formatearHora(horario.horaInicio)} - '
+            '${_formatearHora(horario.horaFin)}',
+      );
+    }, growable: false);
+  }
+
+  List<DtoSkillEmpleadoAdmin> _crearSkills(List<EmpleadoSkill> skills) {
+    return skills
+        .map((skill) => _textoOpcional(skill.nombreSkill))
+        .whereType<String>()
+        .map((nombre) => DtoSkillEmpleadoAdmin(nombre: nombre))
+        .toList(growable: false)
+      ..sort((a, b) => a.nombre.compareTo(b.nombre));
   }
 
   bool _coincideConBusqueda(Empleado empleado, String filtro) {
@@ -132,6 +267,24 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     return '$email · $telefono';
   }
 
+  int? _indiceDiaSemana(int diaSemana) {
+    if (diaSemana >= 1 && diaSemana <= 7) {
+      return diaSemana - 1;
+    }
+    if (diaSemana >= 0 && diaSemana <= 6) {
+      return diaSemana;
+    }
+    return null;
+  }
+
+  String _formatearHora(String hora) {
+    final List<String> partes = hora.split(':');
+    if (partes.length >= 2) {
+      return '${partes[0]}:${partes[1]}';
+    }
+    return hora;
+  }
+
   String _crearIniciales(String texto) {
     final List<String> partes = texto
         .trim()
@@ -161,3 +314,13 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     return texto.trim().toLowerCase();
   }
 }
+
+const List<String> _diasSemana = <String>[
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+  'Domingo',
+];
