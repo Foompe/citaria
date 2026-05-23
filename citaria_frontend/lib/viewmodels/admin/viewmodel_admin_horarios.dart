@@ -77,6 +77,35 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
     return cargarHorarios();
   }
 
+  Future<DtoCierreOrganizacionAdmin?> crearCierre({
+    required DateTime fecha,
+    String? motivo,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final int organizacionId = leerOrganizacionIdObligatoria();
+      final CierreOrganizacion cierreCreado = await _repoOrganizaciones
+          .crearCierre(
+            organizacionId,
+            CierreOrganizacion(fecha: fecha, motivo: motivo),
+            token,
+          );
+
+      _cierres = <CierreOrganizacion>[..._cierres, cierreCreado]
+        ..sort((a, b) => a.fecha.compareTo(b.fecha));
+      notifyListeners();
+
+      return _crearCierreDto(cierreCreado);
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   List<DtoHorarioOrganizacionAdmin> _crearHorarios() {
     final Map<int, HorarioOrganizacion> porDia = <int, HorarioOrganizacion>{};
     for (final HorarioOrganizacion horario in _horarios) {

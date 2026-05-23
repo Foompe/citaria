@@ -19,6 +19,7 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_servici
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_skill.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_categoria.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_skill.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_cierre.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_servicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_horarios.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_estadisticas.dart';
@@ -426,6 +427,13 @@ class GestorNavegacion {
       _irAPinConDestino(
         context,
         (_) => const PantallaAdminHorarios(),
+        'Horarios',
+      );
+
+  static Future<bool?> irAAdminNuevoCierre(BuildContext context) =>
+      _irAPinConDestino<bool>(
+        context,
+        (_) => const PantallaAdminNuevoCierre(),
         'Horarios',
       );
 
