@@ -1,19 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
+import 'dart:math' as math;
+
+import 'package:citaria_frontend/data/repositories/repo_estadisticas.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_estadisticas.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-// ── Enumerado de período ──────────────────────────────────────────────────────
-
-enum _Periodo { esteMes, ultimos3Meses, personalizado }
-
-// ── Pantalla ──────────────────────────────────────────────────────────────────
-
-/// P34 — Estadísticas del negocio con gráficos fl_chart.
-///
-/// Todos los datos están hardcodeados.
-/// TODO: datos reales de API
 class PantallaAdminEstadisticas extends StatefulWidget {
   const PantallaAdminEstadisticas({super.key});
 
@@ -22,337 +19,237 @@ class PantallaAdminEstadisticas extends StatefulWidget {
       _PantallaAdminEstadisticasState();
 }
 
-class _PantallaAdminEstadisticasState
-    extends State<PantallaAdminEstadisticas> {
-  _Periodo _periodoActivo = _Periodo.esteMes;
+class _PantallaAdminEstadisticasState extends State<PantallaAdminEstadisticas> {
+  late final ViewModelAdminEstadisticas _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ViewModelAdminEstadisticas(
+      repoEstadisticas: context.read<RepoEstadisticas>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    )..cargarEstadisticas();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
-
-    return Scaffold(
-      drawer: const MenuLateralAdmin(),
-      bottomNavigationBar: const BarraNavegacionAdmin(
-        seccionActiva: SeccionAdmin.mas,
-      ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          espaciado.padX, 16, espaciado.padX, 32,
+    return ChangeNotifierProvider<ViewModelAdminEstadisticas>.value(
+      value: _viewModel,
+      child: Consumer<ViewModelAdminEstadisticas>(
+        builder: (context, vmEstadisticas, _) => Scaffold(
+          drawer: const MenuLateralAdmin(),
+          bottomNavigationBar: const BarraNavegacionAdmin(
+            seccionActiva: SeccionAdmin.mas,
+          ),
+          appBar: const CabeceraPantalla(
+            titulo: 'Estadísticas',
+            mostrarAtras: false,
+          ),
+          body: _CuerpoEstadisticas(vmEstadisticas: vmEstadisticas),
         ),
-        children: [
-          // ── Cabecera manual ────────────────────────────────────────────────
-          Text('Estadísticas', style: textTheme.displayLarge),
-          const SizedBox(height: 12),
+      ),
+    );
+  }
+}
 
-          // Chips de período
-          Wrap(
-            spacing: 8,
-            children: [
-              _ChipPeriodo(
-                etiqueta: 'Este mes',
-                activo: _periodoActivo == _Periodo.esteMes,
-                onTap: () =>
-                    setState(() => _periodoActivo = _Periodo.esteMes),
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                espaciado: espaciado,
-              ),
-              _ChipPeriodo(
-                etiqueta: 'Últimos 3 meses',
-                activo: _periodoActivo == _Periodo.ultimos3Meses,
-                onTap: () =>
-                    setState(() => _periodoActivo = _Periodo.ultimos3Meses),
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                espaciado: espaciado,
-              ),
-              _ChipPeriodo(
-                etiqueta: 'Personalizado',
-                activo: _periodoActivo == _Periodo.personalizado,
-                onTap: () =>
-                    setState(() => _periodoActivo = _Periodo.personalizado),
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                espaciado: espaciado,
-              ),
-            ],
+class _CuerpoEstadisticas extends StatelessWidget {
+  const _CuerpoEstadisticas({required this.vmEstadisticas});
+
+  final ViewModelAdminEstadisticas vmEstadisticas;
+
+  @override
+  Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (vmEstadisticas.cargando && vmEstadisticas.sinDatos) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final String? error = vmEstadisticas.error;
+    if (error != null && vmEstadisticas.sinDatos) {
+      return _EstadoCentrado(
+        mensaje: error,
+        accionTexto: 'Reintentar',
+        onAccion: vmEstadisticas.refrescar,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: vmEstadisticas.refrescar,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 32),
+        children: [
+          _SelectorPeriodo(
+            periodoActivo: vmEstadisticas.periodoActivo,
+            cargando: vmEstadisticas.cargando,
+            onSeleccionar: vmEstadisticas.seleccionarPeriodo,
           ),
           const SizedBox(height: 24),
-
-          // ── KPIs 2×2 ──────────────────────────────────────────────────────
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
-            children: const [
-              _TarjetaKpi(
-                label: 'Reservas hoy',
-                valor: '14',
-                delta: '+3 vs ayer',
-              ),
-              _TarjetaKpi(
-                label: 'Reservas mes',
-                valor: '287',
-                delta: '+12% vs mes ant.',
-              ),
-              _TarjetaKpi(
-                label: 'Facturación hoy',
-                valor: '640 €',
-                delta: '+85 €',
-              ),
-              _TarjetaKpi(
-                label: 'Facturación mes',
-                valor: '11.2k €',
-                delta: '+18%',
-              ),
+            childAspectRatio: 1.35,
+            children: [
+              for (final DtoKpiEstadisticaAdmin kpi in vmEstadisticas.kpis)
+                _TarjetaKpi(kpi: kpi),
             ],
           ),
           const SizedBox(height: 16),
-
-          // Tarjeta servicio top
-          _TarjetaServicioTop(
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            espaciado: espaciado,
-          ),
+          _TarjetaServicioTop(servicio: vmEstadisticas.servicioTop),
           const SizedBox(height: 24),
-
-          // ── Gráficos ───────────────────────────────────────────────────────
           _TarjetaGrafico(
             titulo: 'Clientes nuevos vs recurrentes',
-            subtitulo: 'Últimos 6 meses',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
             grafico: _GraficoNuevosVsRecurrentes(
-              colorScheme: colorScheme,
+              datos: vmEstadisticas.clientesNuevosVsRecurrentes,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Fidelización mensual',
-            subtitulo: 'Últimos 12 meses',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoFidelizacion(colorScheme: colorScheme),
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoFidelizacion(datos: vmEstadisticas.fidelizacion),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Reservas por profesional',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoReservasPorProfesional(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoBarras(
+              datos: vmEstadisticas.reservasPorEmpleado,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Facturación por profesional',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoFacturacionPorProfesional(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoBarras(
+              datos: vmEstadisticas.importePorEmpleado,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Cancelaciones por profesional',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoCancelacionesPorProfesional(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoBarras(
+              datos: vmEstadisticas.cancelacionesPorEmpleado,
+              color: colorScheme.error,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Servicios más solicitados',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoServiciosMasSolicitados(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoBarras(
+              datos: vmEstadisticas.serviciosMasSolicitados,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Facturación por servicio',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
-            grafico: _GraficoFacturacionPorServicio(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
+            grafico: _GraficoBarras(
+              datos: vmEstadisticas.importePorServicio,
+              color: colorScheme.primary,
             ),
           ),
           const SizedBox(height: 16),
-
           _TarjetaGrafico(
             titulo: 'Cancelaciones por servicio',
-            subtitulo: 'Este mes',
-            espaciado: espaciado,
-            textTheme: textTheme,
-            colorScheme: colorScheme,
+            subtitulo: vmEstadisticas.subtituloPeriodo,
             grafico: _GraficoCancelacionesPorServicio(
-              colorScheme: colorScheme,
-              textTheme: textTheme,
+              datos: vmEstadisticas.cancelacionesPorServicio,
             ),
             alturaGrafico: 220,
           ),
+          if (error != null) ...[
+            const SizedBox(height: 16),
+            _AvisoError(mensaje: error),
+          ],
+          if (vmEstadisticas.cargando) ...[
+            const SizedBox(height: 16),
+            LinearProgressIndicator(color: colorScheme.primary),
+          ],
         ],
       ),
     );
   }
 }
 
-// ── _TarjetaKpi ───────────────────────────────────────────────────────────────
-
-class _TarjetaKpi extends StatelessWidget {
-  const _TarjetaKpi({
-    required this.label,
-    required this.valor,
-    required this.delta,
+class _SelectorPeriodo extends StatelessWidget {
+  const _SelectorPeriodo({
+    required this.periodoActivo,
+    required this.cargando,
+    required this.onSeleccionar,
   });
 
-  final String label;
-  final String valor;
-  final String delta;
+  final PeriodoAdminEstadisticas periodoActivo;
+  final bool cargando;
+  final ValueChanged<PeriodoAdminEstadisticas> onSeleccionar;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.outline,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              valor,
-              style: textTheme.displayMedium?.copyWith(
-                color: colorScheme.primary,
-              ),
-            ),
-            Text(
-              delta,
-              style: textTheme.bodySmall?.copyWith(
-                color: Colors.green.shade700,
-              ),
-            ),
-          ],
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _ChipPeriodo(
+          etiqueta: 'Este mes',
+          activo: periodoActivo == PeriodoAdminEstadisticas.esteMes,
+          onTap: cargando
+              ? null
+              : () => onSeleccionar(PeriodoAdminEstadisticas.esteMes),
         ),
-      ),
+        _ChipPeriodo(
+          etiqueta: 'Últimos 3 meses',
+          activo: periodoActivo == PeriodoAdminEstadisticas.ultimos3Meses,
+          onTap: cargando
+              ? null
+              : () => onSeleccionar(PeriodoAdminEstadisticas.ultimos3Meses),
+        ),
+        _ChipPeriodo(
+          etiqueta: 'Últimos 12 meses',
+          activo: periodoActivo == PeriodoAdminEstadisticas.ultimos12Meses,
+          onTap: cargando
+              ? null
+              : () => onSeleccionar(PeriodoAdminEstadisticas.ultimos12Meses),
+        ),
+      ],
     );
   }
 }
-
-// ── _TarjetaServicioTop ───────────────────────────────────────────────────────
-
-class _TarjetaServicioTop extends StatelessWidget {
-  const _TarjetaServicioTop({
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Servicio top del mes',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // TODO: servicio top real de API
-                Text('Lavado Premium', style: textTheme.displaySmall),
-              ],
-            ),
-            Text(
-              '98 reservas',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── _ChipPeriodo ──────────────────────────────────────────────────────────────
 
 class _ChipPeriodo extends StatelessWidget {
   const _ChipPeriodo({
     required this.etiqueta,
     required this.activo,
     required this.onTap,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
   });
 
   final String etiqueta;
   final bool activo;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return InkWell(
+      borderRadius: espaciado.radioPill,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -373,29 +270,121 @@ class _ChipPeriodo extends StatelessWidget {
   }
 }
 
-// ── _TarjetaGrafico ───────────────────────────────────────────────────────────
+class _TarjetaKpi extends StatelessWidget {
+  const _TarjetaKpi({required this.kpi});
+
+  final DtoKpiEstadisticaAdmin kpi;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              kpi.label,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            FittedBox(
+              alignment: Alignment.centerLeft,
+              fit: BoxFit.scaleDown,
+              child: Text(
+                kpi.valor,
+                style: textTheme.displayMedium?.copyWith(
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+            Text(
+              kpi.detalle,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TarjetaServicioTop extends StatelessWidget {
+  const _TarjetaServicioTop({required this.servicio});
+
+  final DtoServicioTopEstadisticaAdmin servicio;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Servicio top del periodo',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    servicio.nombre,
+                    style: textTheme.displaySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              servicio.detalle,
+              style: textTheme.bodyMedium?.copyWith(color: colorScheme.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _TarjetaGrafico extends StatelessWidget {
   const _TarjetaGrafico({
     required this.titulo,
     required this.subtitulo,
     required this.grafico,
-    required this.espaciado,
-    required this.textTheme,
-    required this.colorScheme,
     this.alturaGrafico = 200,
   });
 
   final String titulo;
   final String subtitulo;
   final Widget grafico;
-  final EspaciadoCitaria espaciado;
-  final TextTheme textTheme;
-  final ColorScheme colorScheme;
   final double alturaGrafico;
 
   @override
   Widget build(BuildContext context) {
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
       child: Padding(
@@ -407,9 +396,7 @@ class _TarjetaGrafico extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitulo,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.outline,
-              ),
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
             ),
             const SizedBox(height: 16),
             SizedBox(height: alturaGrafico, child: grafico),
@@ -420,24 +407,18 @@ class _TarjetaGrafico extends StatelessWidget {
   }
 }
 
-// ── Gráfico 1: Clientes nuevos vs recurrentes (BarChart doble) ────────────────
-
 class _GraficoNuevosVsRecurrentes extends StatelessWidget {
-  const _GraficoNuevosVsRecurrentes({required this.colorScheme});
+  const _GraficoNuevosVsRecurrentes({required this.datos});
 
-  final ColorScheme colorScheme;
-
-  // Datos: Nov(18,32) Dic(24,38) Ene(22,41) Feb(28,45) Mar(31,52) Abr(26,58)
-  // TODO: datos reales de API
-  static const List<(double, double)> _datos = [
-    (18, 32), (24, 38), (22, 41), (28, 45), (31, 52), (26, 58),
-  ];
-  static const List<String> _meses = [
-    'Nov', 'Dic', 'Ene', 'Feb', 'Mar', 'Abr',
-  ];
+  final List<DtoSerieMesEstadisticaAdmin> datos;
 
   @override
   Widget build(BuildContext context) {
+    if (datos.isEmpty) {
+      return const _EstadoVacioGrafico();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Column(
@@ -445,19 +426,20 @@ class _GraficoNuevosVsRecurrentes extends StatelessWidget {
         Expanded(
           child: BarChart(
             BarChartData(
+              maxY: _maxSerieDoble(datos),
               groupsSpace: 12,
-              barGroups: List.generate(_datos.length, (i) {
+              barGroups: List.generate(datos.length, (i) {
                 return BarChartGroupData(
                   x: i,
                   barRods: [
                     BarChartRodData(
-                      toY: _datos[i].$1,
+                      toY: datos[i].valor1,
                       color: colorScheme.primary,
                       width: 10,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     BarChartRodData(
-                      toY: _datos[i].$2,
+                      toY: datos[i].valor2,
                       color: colorScheme.outline,
                       width: 10,
                       borderRadius: BorderRadius.circular(4),
@@ -465,58 +447,19 @@ class _GraficoNuevosVsRecurrentes extends StatelessWidget {
                   ],
                 );
               }),
-              titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      final idx = value.toInt();
-                      if (idx < 0 || idx >= _meses.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return Text(
-                        _meses[idx],
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
-                          fontSize: 10,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                leftTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-              ),
+              titlesData: _titulosMeses(datos, textTheme, colorScheme),
               gridData: const FlGridData(show: false),
               borderData: FlBorderData(show: false),
             ),
           ),
         ),
         const SizedBox(height: 8),
-        // Leyenda
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _ItemLeyenda(
-              color: colorScheme.primary,
-              etiqueta: 'Nuevos',
-              textTheme: textTheme,
-              colorScheme: colorScheme,
-            ),
+            _ItemLeyenda(color: colorScheme.primary, etiqueta: 'Nuevos'),
             const SizedBox(width: 16),
-            _ItemLeyenda(
-              color: colorScheme.outline,
-              etiqueta: 'Recurrentes',
-              textTheme: textTheme,
-              colorScheme: colorScheme,
-            ),
+            _ItemLeyenda(color: colorScheme.outline, etiqueta: 'Recurrentes'),
           ],
         ),
       ],
@@ -524,27 +467,27 @@ class _GraficoNuevosVsRecurrentes extends StatelessWidget {
   }
 }
 
-// ── Gráfico 2: Fidelización mensual (LineChart) ───────────────────────────────
-
 class _GraficoFidelizacion extends StatelessWidget {
-  const _GraficoFidelizacion({required this.colorScheme});
+  const _GraficoFidelizacion({required this.datos});
 
-  final ColorScheme colorScheme;
-
-  // TODO: datos reales de API
-  static const List<double> _puntos = [
-    20, 35, 30, 50, 45, 70, 65, 85, 78, 92, 88, 105,
-  ];
+  final List<DtoSerieMesEstadisticaAdmin> datos;
 
   @override
   Widget build(BuildContext context) {
+    if (datos.isEmpty) {
+      return const _EstadoVacioGrafico();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+
     return LineChart(
       LineChartData(
+        maxY: math.max(100, _maxSerieSimple(datos.map((item) => item.valor2))),
         lineBarsData: [
           LineChartBarData(
             spots: List.generate(
-              _puntos.length,
-              (i) => FlSpot(i.toDouble(), _puntos[i]),
+              datos.length,
+              (i) => FlSpot(i.toDouble(), datos[i].valor2),
             ),
             isCurved: true,
             color: colorScheme.primary,
@@ -553,8 +496,8 @@ class _GraficoFidelizacion extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  colorScheme.primary.withOpacity(0.3),
-                  colorScheme.primary.withOpacity(0.0),
+                  colorScheme.primary.withValues(alpha: 0.3),
+                  colorScheme.primary.withValues(alpha: 0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -564,14 +507,10 @@ class _GraficoFidelizacion extends StatelessWidget {
           ),
         ],
         titlesData: const FlTitlesData(
-          bottomTitles:
-              AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles:
-              AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles:
-              AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
@@ -580,36 +519,32 @@ class _GraficoFidelizacion extends StatelessWidget {
   }
 }
 
-// ── Gráfico 3: Reservas por profesional (BarChart horizontal) ─────────────────
+class _GraficoBarras extends StatelessWidget {
+  const _GraficoBarras({required this.datos, required this.color});
 
-class _GraficoReservasPorProfesional extends StatelessWidget {
-  const _GraficoReservasPorProfesional({
-    required this.colorScheme,
-    required this.textTheme,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  static const List<(String, double)> _datos = [
-    ('Carlos M.', 112),
-    ('Ana R.', 96),
-    ('David L.', 79),
-  ];
+  final List<DtoItemEstadisticaAdmin> datos;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
+    if (datos.isEmpty) {
+      return const _EstadoVacioGrafico();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return BarChart(
       BarChartData(
-        barGroups: List.generate(_datos.length, (i) {
+        maxY: _maxSerieSimple(datos.map((item) => item.valor)),
+        barGroups: List.generate(datos.length, (i) {
           return BarChartGroupData(
             x: i,
             barRods: [
               BarChartRodData(
-                toY: _datos[i].$2,
-                color: colorScheme.primary,
-                width: 20,
+                toY: datos[i].valor,
+                color: color,
+                width: 18,
                 borderRadius: BorderRadius.circular(4),
               ),
             ],
@@ -620,14 +555,14 @@ class _GraficoReservasPorProfesional extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= _datos.length) {
+                final int idx = value.toInt();
+                if (idx < 0 || idx >= datos.length) {
                   return const SizedBox.shrink();
                 }
                 return Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    _datos[idx].$1,
+                    _abreviar(datos[idx].nombre),
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.outline,
                       fontSize: 10,
@@ -653,327 +588,28 @@ class _GraficoReservasPorProfesional extends StatelessWidget {
     );
   }
 }
-
-// ── Gráfico 4: Facturación por profesional (BarChart) ────────────────────────
-
-class _GraficoFacturacionPorProfesional extends StatelessWidget {
-  const _GraficoFacturacionPorProfesional({
-    required this.colorScheme,
-    required this.textTheme,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  static const List<(String, double)> _datos = [
-    ('Carlos', 4800),
-    ('Ana', 3200),
-    ('David', 2400),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return BarChart(
-      BarChartData(
-        barGroups: List.generate(_datos.length, (i) {
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: _datos[i].$2,
-                color: colorScheme.primary,
-                width: 20,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          );
-        }),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= _datos.length) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _datos[idx].$1,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-}
-
-// ── Gráfico 5: Cancelaciones por profesional (BarChart horizontal, error) ─────
-
-class _GraficoCancelacionesPorProfesional extends StatelessWidget {
-  const _GraficoCancelacionesPorProfesional({
-    required this.colorScheme,
-    required this.textTheme,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  static const List<(String, double)> _datos = [
-    ('David L.', 7),
-    ('Ana R.', 5),
-    ('Carlos M.', 3),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return BarChart(
-      BarChartData(
-        barGroups: List.generate(_datos.length, (i) {
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: _datos[i].$2,
-                color: colorScheme.error,
-                width: 20,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          );
-        }),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= _datos.length) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _datos[idx].$1,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-}
-
-// ── Gráfico 6: Servicios más solicitados (BarChart horizontal) ────────────────
-
-class _GraficoServiciosMasSolicitados extends StatelessWidget {
-  const _GraficoServiciosMasSolicitados({
-    required this.colorScheme,
-    required this.textTheme,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  static const List<(String, double)> _datos = [
-    ('L. Premium', 98),
-    ('Exterior', 76),
-    ('Interior', 64),
-    ('Encerado', 49),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return BarChart(
-      BarChartData(
-        barGroups: List.generate(_datos.length, (i) {
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: _datos[i].$2,
-                color: colorScheme.primary,
-                width: 16,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          );
-        }),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= _datos.length) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _datos[idx].$1,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-}
-
-// ── Gráfico 7: Facturación por servicio (BarChart) ────────────────────────────
-
-class _GraficoFacturacionPorServicio extends StatelessWidget {
-  const _GraficoFacturacionPorServicio({
-    required this.colorScheme,
-    required this.textTheme,
-  });
-
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  static const List<(String, double)> _datos = [
-    ('Premium', 5880),
-    ('Exterior', 1140),
-    ('Interior', 1600),
-    ('Encerado', 2450),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return BarChart(
-      BarChartData(
-        barGroups: List.generate(_datos.length, (i) {
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: _datos[i].$2,
-                color: colorScheme.primary,
-                width: 16,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          );
-        }),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final idx = value.toInt();
-                if (idx < 0 || idx >= _datos.length) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _datos[idx].$1,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        gridData: const FlGridData(show: false),
-        borderData: FlBorderData(show: false),
-      ),
-    );
-  }
-}
-
-// ── Gráfico 8: Cancelaciones por servicio (PieChart donut) ───────────────────
 
 class _GraficoCancelacionesPorServicio extends StatelessWidget {
-  const _GraficoCancelacionesPorServicio({
-    required this.colorScheme,
-    required this.textTheme,
-  });
+  const _GraficoCancelacionesPorServicio({required this.datos});
 
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-
-  // TODO: datos reales de API
-  // Exterior 4% | Interior 6% | Premium 2% | Encerado 3%
-  static const List<(String, double, Color)> _datos = [
-    ('Exterior', 4, Colors.blue),
-    ('Interior', 6, Colors.purple),
-    ('Premium', 2, Colors.green),
-    ('Encerado', 3, Colors.orange),
-  ];
+  final List<DtoItemEstadisticaAdmin> datos;
 
   @override
   Widget build(BuildContext context) {
+    if (datos.isEmpty) {
+      return const _EstadoVacioGrafico();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final List<Color> colores = <Color>[
+      colorScheme.primary,
+      Colors.purple,
+      Colors.green,
+      Colors.orange,
+      colorScheme.error,
+    ];
+
     return Row(
       children: [
         Expanded(
@@ -981,14 +617,13 @@ class _GraficoCancelacionesPorServicio extends StatelessWidget {
             PieChartData(
               centerSpaceRadius: 40,
               sectionsSpace: 2,
-              sections: List.generate(_datos.length, (i) {
-                final item = _datos[i];
-                // El color de Exterior usa colorScheme.primary
-                final color = i == 0 ? colorScheme.primary : item.$3;
+              sections: List.generate(datos.length, (i) {
+                final DtoItemEstadisticaAdmin item = datos[i];
+                final double valor = item.porcentaje ?? item.valor;
                 return PieChartSectionData(
-                  value: item.$2,
-                  color: color,
-                  title: '${item.$2}%',
+                  value: valor <= 0 ? 1 : valor,
+                  color: colores[i % colores.length],
+                  title: item.porcentajeTexto ?? item.valorTexto,
                   titleStyle: textTheme.bodySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -1001,65 +636,177 @@ class _GraficoCancelacionesPorServicio extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        // Leyenda lateral
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: List.generate(_datos.length, (i) {
-            final item = _datos[i];
-            final color = i == 0 ? colorScheme.primary : item.$3;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: _ItemLeyenda(
-                color: color,
-                etiqueta: item.$1,
-                textTheme: textTheme,
-                colorScheme: colorScheme,
-              ),
-            );
-          }),
+        Flexible(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: List.generate(datos.length, (i) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: _ItemLeyenda(
+                  color: colores[i % colores.length],
+                  etiqueta: datos[i].nombre,
+                ),
+              );
+            }),
+          ),
         ),
       ],
     );
   }
 }
 
-// ── _ItemLeyenda ──────────────────────────────────────────────────────────────
-
 class _ItemLeyenda extends StatelessWidget {
-  const _ItemLeyenda({
-    required this.color,
-    required this.etiqueta,
-    required this.textTheme,
-    required this.colorScheme,
-  });
+  const _ItemLeyenda({required this.color, required this.etiqueta});
 
   final Color color;
   final String etiqueta;
-  final TextTheme textTheme;
-  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(
-          etiqueta,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.outline,
+        Flexible(
+          child: Text(
+            etiqueta,
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
   }
+}
+
+class _EstadoVacioGrafico extends StatelessWidget {
+  const _EstadoVacioGrafico();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Center(
+      child: Text(
+        'Sin datos para el periodo',
+        style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
+      ),
+    );
+  }
+}
+
+class _AvisoError extends StatelessWidget {
+  const _AvisoError({required this.mensaje});
+
+  final String mensaje;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: espaciado.radioCard,
+      ),
+      child: Text(
+        mensaje,
+        style: TextStyle(color: colorScheme.onErrorContainer),
+      ),
+    );
+  }
+}
+
+class _EstadoCentrado extends StatelessWidget {
+  const _EstadoCentrado({
+    required this.mensaje,
+    required this.accionTexto,
+    required this.onAccion,
+  });
+
+  final String mensaje;
+  final String accionTexto;
+  final VoidCallback onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(mensaje, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+FlTitlesData _titulosMeses(
+  List<DtoSerieMesEstadisticaAdmin> datos,
+  TextTheme textTheme,
+  ColorScheme colorScheme,
+) {
+  return FlTitlesData(
+    bottomTitles: AxisTitles(
+      sideTitles: SideTitles(
+        showTitles: true,
+        getTitlesWidget: (value, meta) {
+          final int idx = value.toInt();
+          if (idx < 0 || idx >= datos.length) {
+            return const SizedBox.shrink();
+          }
+          return Text(
+            datos[idx].periodo,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.outline,
+              fontSize: 10,
+            ),
+          );
+        },
+      ),
+    ),
+    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+  );
+}
+
+double _maxSerieDoble(List<DtoSerieMesEstadisticaAdmin> datos) {
+  final Iterable<double> valores = datos.expand(
+    (item) => <double>[item.valor1, item.valor2],
+  );
+  return _maxSerieSimple(valores);
+}
+
+double _maxSerieSimple(Iterable<double> valores) {
+  final double maximo = valores.fold<double>(0, math.max);
+  if (maximo <= 0) {
+    return 1;
+  }
+  return maximo * 1.2;
+}
+
+String _abreviar(String texto) {
+  final String limpio = texto.trim();
+  if (limpio.length <= 12) {
+    return limpio;
+  }
+  return '${limpio.substring(0, 11)}.';
 }
