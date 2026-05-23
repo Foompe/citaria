@@ -1,80 +1,50 @@
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-
-// ── Datos hardcodeados ────────────────────────────────────────────────────────
-// TODO: GET /empleados
-
-class _Empleado {
-  const _Empleado({
-    required this.id,
-    required this.nombre,
-    required this.rol,
-    required this.activo,
-    required this.skills,
-  });
-
-  final String id;
-  final String nombre;
-  final String rol;
-  final bool activo;
-  final List<String> skills;
-}
-
-const List<_Empleado> _empleados = [
-  _Empleado(
-    id: 'e1',
-    nombre: 'Carlos Martínez',
-    rol: 'Detailer Senior',
-    activo: true,
-    skills: ['Exterior', 'Pulido', 'Cera', 'Premium'],
-  ),
-  _Empleado(
-    id: 'e2',
-    nombre: 'Ana Rodríguez',
-    rol: 'Detailer',
-    activo: true,
-    skills: ['Interior', 'Tapicería', 'Aspirado'],
-  ),
-  _Empleado(
-    id: 'e3',
-    nombre: 'David López',
-    rol: 'Detailer Junior',
-    activo: true,
-    skills: ['Exterior', 'Aspirado'],
-  ),
-  _Empleado(
-    id: 'e4',
-    nombre: 'Marta Sánchez',
-    rol: 'Recepcionista',
-    activo: false,
-    skills: ['Detallado'],
-  ),
-];
+import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 
 /// P28 — Listado de empleados del área admin protegida por PIN.
-class PantallaAdminEmpleados extends StatelessWidget {
+class PantallaAdminEmpleados extends StatefulWidget {
   const PantallaAdminEmpleados({super.key});
 
-  String _iniciales(String nombre) {
-    final partes = nombre.trim().split(' ');
-    if (partes.length >= 2) {
-      return '${partes[0][0]}${partes[1][0]}'.toUpperCase();
-    }
-    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
+  @override
+  State<PantallaAdminEmpleados> createState() => _PantallaAdminEmpleadosState();
+}
+
+class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
+  late final ViewModelAdminEmpleados _viewModel;
+  final TextEditingController _busquedaCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = ViewModelAdminEmpleados(
+      repoEmpleados: context.read<RepoEmpleados>(),
+      autenticacion: context.read<ViewModelAutenticacion>(),
+    )..cargarEmpleados();
+  }
+
+  @override
+  void dispose() {
+    _busquedaCtrl.dispose();
+    _viewModel.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme   = Theme.of(context).textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       drawer: const MenuLateralAdmin(),
@@ -92,20 +62,53 @@ class PantallaAdminEmpleados extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(
-          horizontal: espaciado.padX,
-          vertical: 12,
-        ),
-        itemCount: _empleados.length,
-        itemBuilder: (context, index) {
-          final empleado = _empleados[index];
-          return _TarjetaEmpleado(
-            empleado: empleado,
-            iniciales: _iniciales(empleado.nombre),
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            espaciado: espaciado,
+      body: AnimatedBuilder(
+        animation: _viewModel,
+        builder: (context, _) {
+          final empleados = _viewModel.empleados;
+          return RefreshIndicator(
+            onRefresh: _viewModel.refrescar,
+            child: ListView(
+              padding: EdgeInsets.symmetric(
+                horizontal: espaciado.padX,
+                vertical: 12,
+              ),
+              children: [
+                _CampoBusquedaEmpleados(
+                  controller: _busquedaCtrl,
+                  onChanged: _viewModel.buscar,
+                ),
+                const SizedBox(height: 12),
+                if (_viewModel.error != null)
+                  _EstadoEmpleados(
+                    icono: Icons.error_outline,
+                    titulo: 'No se pudieron cargar los empleados',
+                    mensaje: _viewModel.error!,
+                    accion: 'Reintentar',
+                    onPressed: _viewModel.refrescar,
+                  )
+                else if (_viewModel.cargando && empleados.isEmpty)
+                  const _CargaEmpleados()
+                else if (empleados.isEmpty)
+                  _EstadoEmpleados(
+                    icono: Icons.people_outline,
+                    titulo: _viewModel.busqueda.trim().isEmpty
+                        ? 'Aún no hay empleados'
+                        : 'Sin resultados',
+                    mensaje: _viewModel.busqueda.trim().isEmpty
+                        ? 'Cuando se creen empleados aparecerán aquí.'
+                        : 'Prueba con otro nombre, email o teléfono.',
+                  )
+                else
+                  for (final empleado in empleados)
+                    _TarjetaEmpleado(
+                      empleado: empleado,
+                      colorScheme: colorScheme,
+                      textTheme: textTheme,
+                      espaciado: espaciado,
+                    ),
+              ],
+            ),
           );
         },
       ),
@@ -118,42 +121,35 @@ class PantallaAdminEmpleados extends StatelessWidget {
 class _TarjetaEmpleado extends StatelessWidget {
   const _TarjetaEmpleado({
     required this.empleado,
-    required this.iniciales,
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
   });
 
-  final _Empleado empleado;
-  final String iniciales;
+  final DtoEmpleadoAdmin empleado;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
 
   @override
   Widget build(BuildContext context) {
-    const int maxSkillsVisibles = 2;
-    final skillsVisibles = empleado.skills.take(maxSkillsVisibles).toList();
-    final skillsExtra = empleado.skills.length - maxSkillsVisibles;
-
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
       child: InkWell(
         borderRadius: espaciado.radioCard,
         onTap: () =>
-            GestorNavegacion.irAAdminDetalleEmpleado(context, empleado.id),
+            GestorNavegacion.irAAdminDetalleEmpleado(context, '${empleado.id}'),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar
               CircleAvatar(
                 radius: 26,
                 backgroundColor: colorScheme.primaryContainer,
                 child: Text(
-                  iniciales,
+                  empleado.iniciales,
                   style: textTheme.labelSmall?.copyWith(
                     color: colorScheme.onPrimaryContainer,
                     fontWeight: FontWeight.bold,
@@ -162,17 +158,15 @@ class _TarjetaEmpleado extends StatelessWidget {
               ),
               const SizedBox(width: 12),
 
-              // Contenido
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Nombre + indicador activo
                     Row(
                       children: [
                         Flexible(
                           child: Text(
-                            empleado.nombre,
+                            empleado.nombreCompleto,
                             style: textTheme.displaySmall,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -192,48 +186,111 @@ class _TarjetaEmpleado extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-
-                    // Rol
                     Text(
-                      empleado.rol,
+                      empleado.resumen,
                       style: textTheme.bodySmall?.copyWith(
                         color: colorScheme.outline,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-
-                    // Skills
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
-                      children: [
-                        for (final skill in skillsVisibles)
-                          EtiquetaWizard(etiqueta: skill),
-                        if (skillsExtra > 0)
-                          Text(
-                            '+$skillsExtra más',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.outline,
-                            ),
-                          ),
-                      ],
+                      children: [EtiquetaWizard(etiqueta: empleado.estado)],
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
 
-              // Chevron
               Semantics(
-                label: 'Ver detalle de ${empleado.nombre}',
-                child: Icon(
-                  Icons.chevron_right,
-                  color: colorScheme.outline,
-                ),
+                label: 'Ver detalle de ${empleado.nombreCompleto}',
+                child: Icon(Icons.chevron_right, color: colorScheme.outline),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CampoBusquedaEmpleados extends StatelessWidget {
+  const _CampoBusquedaEmpleados({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      decoration: const InputDecoration(
+        hintText: 'Buscar empleado',
+        prefixIcon: Icon(Icons.search),
+      ),
+    );
+  }
+}
+
+class _CargaEmpleados extends StatelessWidget {
+  const _CargaEmpleados();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(top: 48),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _EstadoEmpleados extends StatelessWidget {
+  const _EstadoEmpleados({
+    required this.icono,
+    required this.titulo,
+    required this.mensaje,
+    this.accion,
+    this.onPressed,
+  });
+
+  final IconData icono;
+  final String titulo;
+  final String mensaje;
+  final String? accion;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 48),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icono, size: 40, color: colorScheme.outline),
+          const SizedBox(height: 12),
+          Text(titulo, style: textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            mensaje,
+            style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
+            textAlign: TextAlign.center,
+          ),
+          if (accion != null && onPressed != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onPressed, child: Text(accion!)),
+          ],
+        ],
       ),
     );
   }
