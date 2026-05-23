@@ -170,6 +170,19 @@ class _CuerpoHorarios extends StatelessWidget {
                             vmHorarios.cierres[i].motivo,
                             style: textTheme.bodySmall,
                           ),
+                          trailing: Tooltip(
+                            message: 'Eliminar cierre',
+                            child: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: vmHorarios.cargando
+                                  ? null
+                                  : () => _confirmarEliminarCierre(
+                                      context,
+                                      vmHorarios,
+                                      vmHorarios.cierres[i],
+                                    ),
+                            ),
+                          ),
                         ),
                         if (i < vmHorarios.cierres.length - 1)
                           Divider(height: 1, color: colorScheme.outlineVariant),
@@ -178,6 +191,49 @@ class _CuerpoHorarios extends StatelessWidget {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _confirmarEliminarCierre(
+    BuildContext context,
+    ViewModelAdminHorarios vmHorarios,
+    DtoCierreOrganizacionAdmin cierre,
+  ) async {
+    final bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar cierre'),
+        content: Text('¿Quieres eliminar el cierre del ${cierre.fecha}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !context.mounted) {
+      return;
+    }
+
+    final bool eliminado = await vmHorarios.eliminarCierre(cierre.id);
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          eliminado
+              ? 'Cierre eliminado'
+              : vmHorarios.error ?? 'No se pudo eliminar el cierre.',
+        ),
       ),
     );
   }
