@@ -111,6 +111,64 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     return cargarCatalogo();
   }
 
+  Future<void> cargarFormularioNuevoServicio() async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final List<Categoria> categorias = await _repoCatalogo.listarCategorias(
+        token,
+      );
+      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      _categorias = List<Categoria>.from(categorias)..sort(_compararCategorias);
+      _skills = List<Skill>.from(skills)..sort(_compararSkills);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<Servicio?> crearServicio({
+    required String nombre,
+    required String descripcion,
+    required String precio,
+    required String duracion,
+    required int? categoriaId,
+    required Set<int> skillIds,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final Servicio creado = await _repoCatalogo.crearServicio(
+        Servicio(
+          categoriaId: categoriaId,
+          nombre: nombre.trim(),
+          descripcion: _valorOpcional(descripcion),
+          precio: _parsearPrecio(precio),
+          duracionMinutos: _parsearEntero(duracion),
+          activo: true,
+        ),
+        token,
+      );
+      final int? servicioId = creado.id;
+      if (servicioId == null) {
+        return creado;
+      }
+      for (final int skillId in skillIds) {
+        await _repoCatalogo.asignarSkillServicio(servicioId, skillId, token);
+      }
+      return creado;
+    } catch (e) {
+      registrarError(e);
+      return null;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   DtoServicioCatalogoAdmin _crearDtoServicio(Servicio servicio) {
     return DtoServicioCatalogoAdmin(
       id: servicio.id ?? 0,
@@ -166,5 +224,18 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
   String _textoConFallback(String? texto, String fallback) {
     final String? limpio = texto?.trim();
     return limpio == null || limpio.isEmpty ? fallback : limpio;
+  }
+
+  String? _valorOpcional(String valor) {
+    final String limpio = valor.trim();
+    return limpio.isEmpty ? null : limpio;
+  }
+
+  double _parsearPrecio(String valor) {
+    return double.parse(valor.trim().replaceAll(',', '.'));
+  }
+
+  int _parsearEntero(String valor) {
+    return int.parse(valor.trim());
   }
 }

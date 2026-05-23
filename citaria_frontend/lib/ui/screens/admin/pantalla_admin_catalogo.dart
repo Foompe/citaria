@@ -54,7 +54,14 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
           ),
           floatingActionButton: FloatingActionButton(
             tooltip: 'Nuevo servicio',
-            onPressed: () => GestorNavegacion.irAAdminNuevoServicio(context),
+            onPressed: () async {
+              final bool? creado = await GestorNavegacion.irAAdminNuevoServicio(
+                context,
+              );
+              if (creado == true) {
+                vmCatalogo.refrescar();
+              }
+            },
             child: const Icon(Icons.add),
           ),
           body: NestedScrollView(

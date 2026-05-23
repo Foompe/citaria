@@ -375,8 +375,8 @@ class GestorNavegacion {
         'Catálogo',
       );
 
-  static Future<void> irAAdminNuevoServicio(BuildContext context) =>
-      _irAPinConDestino(
+  static Future<bool?> irAAdminNuevoServicio(BuildContext context) =>
+      _irAPinConDestino<bool>(
         context,
         (_) => const PantallaAdminNuevoServicio(),
         'Catálogo',
