@@ -1,16 +1,18 @@
-import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/theme/extension_estados.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
-import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
+import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 
@@ -44,6 +46,13 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
     super.dispose();
   }
 
+  Future<void> _irANuevoEmpleado() async {
+    final bool? creado = await GestorNavegacion.irAAdminNuevoEmpleado(context);
+    if (creado == true && mounted) {
+      _viewModel.refrescar();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
@@ -55,23 +64,15 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
       bottomNavigationBar: const BarraNavegacionAdmin(
         seccionActiva: SeccionAdmin.mas,
       ),
-      appBar: CabeceraPantalla(
+      floatingActionButton: FabCitaria(
+        icono: Icons.person_add_outlined,
+        tooltip: 'Nuevo empleado',
+        heroTag: 'fab-admin-empleados-nuevo',
+        onPressed: _irANuevoEmpleado,
+      ),
+      appBar: const CabeceraPantalla(
         titulo: 'Empleados',
         mostrarAtras: false,
-        accionDerecha: Tooltip(
-          message: 'Nuevo empleado',
-          child: IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () async {
-              final bool? creado = await GestorNavegacion.irAAdminNuevoEmpleado(
-                context,
-              );
-              if (creado == true && mounted) {
-                _viewModel.refrescar();
-              }
-            },
-          ),
-        ),
       ),
       body: AnimatedBuilder(
         animation: _viewModel,
@@ -156,16 +157,11 @@ class _TarjetaEmpleado extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: colorScheme.primaryContainer,
-                child: Text(
-                  empleado.iniciales,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              AvatarFallbackCitaria(
+                texto: empleado.nombreCompleto,
+                imagenUrl: empleado.fotoUrl,
+                tamano: 52,
+                radio: 26,
               ),
               const SizedBox(width: 12),
 
@@ -173,28 +169,11 @@ class _TarjetaEmpleado extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            empleado.nombreCompleto,
-                            style: textTheme.displaySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: empleado.activo
-                                ? Colors.green
-                                : colorScheme.outline,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      empleado.nombreCompleto,
+                      style: textTheme.displaySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -206,10 +185,32 @@ class _TarjetaEmpleado extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: [EtiquetaWizard(etiqueta: empleado.estado)],
+                    Builder(
+                      builder: (ctx) {
+                        final estados =
+                            Theme.of(ctx).extension<EstadosReservaCitaria>()!;
+                        final colores = empleado.activo
+                            ? estados.confirmada
+                            : estados.completada;
+                        final espaciadoCtx =
+                            Theme.of(ctx).extension<EspaciadoCitaria>()!;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colores.fondo,
+                            borderRadius: espaciadoCtx.radioPill,
+                          ),
+                          child: Text(
+                            empleado.estado,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colores.texto,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

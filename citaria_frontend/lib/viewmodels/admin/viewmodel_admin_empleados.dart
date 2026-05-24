@@ -64,20 +64,29 @@ class DtoDetalleEmpleadoAdmin {
 @immutable
 class DtoHorarioEmpleadoAdmin {
   const DtoHorarioEmpleadoAdmin({
+    required this.id,
+    required this.diaSemana,
     required this.dia,
     required this.activo,
     required this.horario,
+    required this.horaInicio,
+    required this.horaFin,
   });
 
+  final int? id;
+  final int diaSemana;
   final String dia;
   final bool activo;
   final String horario;
+  final String horaInicio;
+  final String horaFin;
 }
 
 @immutable
 class DtoSkillEmpleadoAdmin {
-  const DtoSkillEmpleadoAdmin({required this.nombre});
+  const DtoSkillEmpleadoAdmin({required this.id, required this.nombre});
 
+  final int id;
   final String nombre;
 }
 
@@ -191,6 +200,7 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     _detalle = null;
     _horarios = const <DtoHorarioEmpleadoAdmin>[];
     _skills = const <DtoSkillEmpleadoAdmin>[];
+    _skillsDisponibles = const <DtoSkillDisponibleEmpleadoAdmin>[];
     iniciarCarga();
 
     try {
@@ -202,9 +212,13 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
         id,
         token,
       );
+      final List<Skill> skillsDisponibles = await _repoCatalogo.listarSkills(
+        token,
+      );
       _detalle = _crearDetalle(empleado);
       _horarios = _crearHorarios(horarios);
       _skills = _crearSkills(skills);
+      _skillsDisponibles = _crearSkillsDisponibles(skillsDisponibles);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -312,6 +326,160 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     notifyListeners();
   }
 
+  Future<bool> actualizarEmpleado({
+    required int id,
+    required String nombre,
+    required String apellidos,
+    required String email,
+    required String telefono,
+  }) async {
+    try {
+      final String token = leerTokenObligatorio();
+      final Empleado actualizado = await _repoEmpleados.actualizar(
+        id,
+        Empleado(
+          nombre: nombre.trim(),
+          apellidos: apellidos.trim(),
+          email: _valorOpcional(email),
+          telefono: _valorOpcional(telefono),
+        ),
+        token,
+      );
+      _detalle = _crearDetalle(actualizado);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
+  Future<bool> cambiarEstadoEmpleado(int id, {required bool activo}) async {
+    try {
+      final String token = leerTokenObligatorio();
+      final Empleado empleado = await _repoEmpleados.obtenerPorId(id, token);
+      final Empleado actualizado = await _repoEmpleados.actualizar(
+        id,
+        Empleado(
+          nombre: empleado.nombre,
+          apellidos: empleado.apellidos,
+          email: empleado.email,
+          telefono: empleado.telefono,
+          activo: activo,
+        ),
+        token,
+      );
+      _detalle = _crearDetalle(actualizado);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
+  Future<bool> guardarHorario({
+    required int empleadoId,
+    required DtoHorarioEmpleadoAdmin horario,
+    required bool activo,
+    required String horaInicio,
+    required String horaFin,
+  }) async {
+    try {
+      final String token = leerTokenObligatorio();
+      final HorarioEmpleado datos = HorarioEmpleado(
+        diaSemana: horario.diaSemana,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        activo: activo,
+      );
+      final HorarioEmpleado resultado;
+      final int? horarioId = horario.id;
+      if (horarioId != null) {
+        resultado = await _repoEmpleados.actualizarHorario(
+          empleadoId,
+          horarioId,
+          datos,
+          token,
+        );
+      } else {
+        resultado = await _repoEmpleados.crearHorario(
+          empleadoId,
+          datos,
+          token,
+        );
+      }
+      final int idx = _horarios.indexWhere(
+        (h) => h.diaSemana == horario.diaSemana,
+      );
+      if (idx >= 0) {
+        final List<DtoHorarioEmpleadoAdmin> actualizado = List.from(_horarios);
+        actualizado[idx] = DtoHorarioEmpleadoAdmin(
+          id: resultado.id,
+          diaSemana: resultado.diaSemana,
+          dia: horario.dia,
+          activo: resultado.activo,
+          horario:
+              '${_formatearHora(resultado.horaInicio)} - '
+              '${_formatearHora(resultado.horaFin)}',
+          horaInicio: resultado.horaInicio,
+          horaFin: resultado.horaFin,
+        );
+        _horarios = actualizado;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
+  Future<bool> asignarSkillDetalle({
+    required int empleadoId,
+    required int skillId,
+  }) async {
+    try {
+      final String token = leerTokenObligatorio();
+      final EmpleadoSkill asignada = await _repoEmpleados.asignarSkill(
+        empleadoId,
+        skillId,
+        token,
+      );
+      final int? sid = asignada.skillId;
+      final String? nombre = asignada.nombreSkill;
+      if (sid != null && nombre != null) {
+        _skills = [
+          ..._skills,
+          DtoSkillEmpleadoAdmin(id: sid, nombre: nombre),
+        ]..sort((a, b) => a.nombre.compareTo(b.nombre));
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
+  Future<bool> eliminarSkillDetalle({
+    required int empleadoId,
+    required int skillId,
+  }) async {
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoEmpleados.eliminarSkill(empleadoId, skillId, token);
+      _skills = _skills
+          .where((s) => s.id != skillId)
+          .toList(growable: false);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
   DtoEmpleadoAdmin _crearDto(Empleado empleado) {
     final String nombreCompleto = _crearNombreCompleto(empleado);
     final bool activo = empleado.activo ?? true;
@@ -358,26 +526,36 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
       final HorarioEmpleado? horario = porDia[index];
       if (horario == null) {
         return DtoHorarioEmpleadoAdmin(
+          id: null,
+          diaSemana: index + 1,
           dia: _diasSemana[index],
           activo: false,
           horario: 'Cerrado',
+          horaInicio: '09:00',
+          horaFin: '18:00',
         );
       }
       return DtoHorarioEmpleadoAdmin(
+        id: horario.id,
+        diaSemana: horario.diaSemana,
         dia: _diasSemana[index],
         activo: horario.activo,
         horario:
             '${_formatearHora(horario.horaInicio)} - '
             '${_formatearHora(horario.horaFin)}',
+        horaInicio: horario.horaInicio,
+        horaFin: horario.horaFin,
       );
     }, growable: false);
   }
 
   List<DtoSkillEmpleadoAdmin> _crearSkills(List<EmpleadoSkill> skills) {
     return skills
-        .map((skill) => _textoOpcional(skill.nombreSkill))
-        .whereType<String>()
-        .map((nombre) => DtoSkillEmpleadoAdmin(nombre: nombre))
+        .where((skill) => skill.skillId != null && skill.nombreSkill != null)
+        .map(
+          (skill) =>
+              DtoSkillEmpleadoAdmin(id: skill.skillId!, nombre: skill.nombreSkill!),
+        )
         .toList(growable: false)
       ..sort((a, b) => a.nombre.compareTo(b.nombre));
   }
