@@ -126,6 +126,10 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     GraficoAdmin.clientesVsRecurrentes: DateTime.now().year,
     GraficoAdmin.fidelizacion: DateTime.now().year,
   };
+  final Map<GraficoAdmin, Set<int>> _anosSinDatos = {
+    GraficoAdmin.clientesVsRecurrentes: {},
+    GraficoAdmin.fidelizacion: {},
+  };
   final Map<GraficoAdmin, bool> _cargandoPorGrafico = {
     for (final g in GraficoAdmin.values) g: false,
   };
@@ -134,6 +138,10 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   ResumenEstadistica? _resumen;
   List<EstadisticaMes> _clientesNuevosVsRecurrentes = const [];
   List<EstadisticaMes> _fidelizacion = const [];
+  DateTime _mesServicioTop =
+      DateTime(DateTime.now().year, DateTime.now().month);
+  List<EstadisticaItem> _servicioTopItems = const [];
+  bool _cargandoServicioTop = false;
   List<EstadisticaItem> _reservasPorEmpleado = const [];
   List<EstadisticaItem> _importePorEmpleado = const [];
   List<EstadisticaItem> _cancelacionesPorEmpleado = const [];
@@ -144,7 +152,11 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   // ── Getters de estado ──────────────────────────────────────────────────────
   PeriodoAdminEstadisticas periodoGrafico(GraficoAdmin g) => _periodos[g]!;
   int anoGrafico(GraficoAdmin g) => _anos[g] ?? DateTime.now().year;
+  Set<int> anosSinDatos(GraficoAdmin g) =>
+      Set.unmodifiable(_anosSinDatos[g] ?? const {});
   bool cargandoGrafico(GraficoAdmin g) => _cargandoPorGrafico[g]!;
+  DateTime get mesServicioTop => _mesServicioTop;
+  bool get cargandoServicioTop => _cargandoServicioTop;
 
   bool get sinDatos =>
       !cargando &&
@@ -173,9 +185,8 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   );
 
   DtoServicioTopEstadisticaAdmin get servicioTop {
-    final EstadisticaItem? top = _serviciosMasSolicitados.isEmpty
-        ? null
-        : _serviciosMasSolicitados.first;
+    final EstadisticaItem? top =
+        _servicioTopItems.isEmpty ? null : _servicioTopItems.first;
     final String nombre =
         _textoOpcional(top?.nombre) ??
         _textoOpcional(_resumen?.servicioMasSolicitadoMes) ??
@@ -187,10 +198,16 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   }
 
   List<DtoSerieMesEstadisticaAdmin> get clientesNuevosVsRecurrentes =>
-      _clientesNuevosVsRecurrentes.map(_crearSerieMes).toList(growable: false);
+      _rellenarMesesAnuales(
+        _clientesNuevosVsRecurrentes,
+        _anos[GraficoAdmin.clientesVsRecurrentes] ?? DateTime.now().year,
+      );
 
   List<DtoSerieMesEstadisticaAdmin> get fidelizacion =>
-      _fidelizacion.map(_crearSerieMes).toList(growable: false);
+      _rellenarMesesAnuales(
+        _fidelizacion,
+        _anos[GraficoAdmin.fidelizacion] ?? DateTime.now().year,
+      );
 
   List<DtoRendimientoProfesionalAdmin> get rendimientoPorProfesional {
     final Map<String, _RendimientoBuilder> mapa = {};
@@ -254,35 +271,69 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
 
     try {
       final String token = leerTokenObligatorio();
+      final DateTime hoy = DateTime.now();
 
-      final _RangoFechas rangoNvsR = _rangoGrafico(GraficoAdmin.clientesVsRecurrentes);
-      final _RangoFechas rangoFid = _rangoGrafico(GraficoAdmin.fidelizacion);
-      final _RangoFechas rangoProf = _rangoGrafico(GraficoAdmin.rendimientoProfesional);
-      final _RangoFechas rangoSvc = _rangoGrafico(GraficoAdmin.serviciosMasSolicitados);
-      final _RangoFechas rangoFact = _rangoGrafico(GraficoAdmin.facturacionPorServicio);
-      final _RangoFechas rangoCanc = _rangoGrafico(GraficoAdmin.cancelacionesPorServicio);
+      // Wide range for year-based charts: probes last 5 years in one call
+      final DateTime amplioDe = DateTime(hoy.year - 5, 1, 1);
+      final DateTime amplioHasta = DateTime(hoy.year, hoy.month, hoy.day);
+
+      final _RangoFechas rangoProf =
+          _rangoGrafico(GraficoAdmin.rendimientoProfesional);
+      final _RangoFechas rangoSvc =
+          _rangoGrafico(GraficoAdmin.serviciosMasSolicitados);
+      final _RangoFechas rangoFact =
+          _rangoGrafico(GraficoAdmin.facturacionPorServicio);
+      final _RangoFechas rangoCanc =
+          _rangoGrafico(GraficoAdmin.cancelacionesPorServicio);
 
       final resultados = await Future.wait<Object>(<Future<Object>>[
         _repoEstadisticas.obtenerResumen(token),
-        _repoEstadisticas.clientesNuevosVsRecurrentes(rangoNvsR.desde, rangoNvsR.hasta, token),
-        _repoEstadisticas.fidelizacionClientes(rangoFid.desde, rangoFid.hasta, token),
-        _repoEstadisticas.reservasPorEmpleado(rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.importePorEmpleado(rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.cancelacionesPorEmpleado(rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.serviciosMasSolicitados(rangoSvc.desde, rangoSvc.hasta, token),
-        _repoEstadisticas.importePorServicio(rangoFact.desde, rangoFact.hasta, token),
-        _repoEstadisticas.cancelacionesPorServicio(rangoCanc.desde, rangoCanc.hasta, token),
+        _repoEstadisticas.clientesNuevosVsRecurrentes(
+            amplioDe, amplioHasta, token),
+        _repoEstadisticas.fidelizacionClientes(amplioDe, amplioHasta, token),
+        _repoEstadisticas.reservasPorEmpleado(
+            rangoProf.desde, rangoProf.hasta, token),
+        _repoEstadisticas.importePorEmpleado(
+            rangoProf.desde, rangoProf.hasta, token),
+        _repoEstadisticas.cancelacionesPorEmpleado(
+            rangoProf.desde, rangoProf.hasta, token),
+        _repoEstadisticas.serviciosMasSolicitados(
+            rangoSvc.desde, rangoSvc.hasta, token),
+        _repoEstadisticas.importePorServicio(
+            rangoFact.desde, rangoFact.hasta, token),
+        _repoEstadisticas.cancelacionesPorServicio(
+            rangoCanc.desde, rangoCanc.hasta, token),
       ]);
 
       _resumen = resultados[0] as ResumenEstadistica;
-      _clientesNuevosVsRecurrentes = resultados[1] as List<EstadisticaMes>;
-      _fidelizacion = resultados[2] as List<EstadisticaMes>;
+      final List<EstadisticaMes> todosNvsR =
+          resultados[1] as List<EstadisticaMes>;
+      final List<EstadisticaMes> todosFid =
+          resultados[2] as List<EstadisticaMes>;
       _reservasPorEmpleado = resultados[3] as List<EstadisticaItem>;
       _importePorEmpleado = resultados[4] as List<EstadisticaItem>;
       _cancelacionesPorEmpleado = resultados[5] as List<EstadisticaItem>;
       _serviciosMasSolicitados = resultados[6] as List<EstadisticaItem>;
       _importePorServicio = resultados[7] as List<EstadisticaItem>;
       _cancelacionesPorServicio = resultados[8] as List<EstadisticaItem>;
+
+      // Determine which past years have data — no extra API calls
+      _actualizarAnosSinDatos(
+          todosNvsR, GraficoAdmin.clientesVsRecurrentes, hoy.year);
+      _actualizarAnosSinDatos(todosFid, GraficoAdmin.fidelizacion, hoy.year);
+
+      // Store only current year data for initial display
+      _clientesNuevosVsRecurrentes = todosNvsR
+          .where((m) => _extraerAnoNumero(m.periodo) == hoy.year)
+          .toList();
+      _fidelizacion = todosFid
+          .where((m) => _extraerAnoNumero(m.periodo) == hoy.year)
+          .toList();
+
+      // Servicio top starts with current month data
+      _mesServicioTop = DateTime(hoy.year, hoy.month);
+      _servicioTopItems = _serviciosMasSolicitados;
+
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -360,9 +411,28 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
         case GraficoAdmin.clientesVsRecurrentes:
           _clientesNuevosVsRecurrentes = await _repoEstadisticas
               .clientesNuevosVsRecurrentes(rango.desde, rango.hasta, token);
+          if (_clientesNuevosVsRecurrentes.isEmpty &&
+              ano != DateTime.now().year) {
+            _anosSinDatos[grafico]?.add(ano);
+            _anos[grafico] = DateTime.now().year;
+            final _RangoFechas rangoActual =
+                _crearRangoAnual(DateTime.now().year);
+            _clientesNuevosVsRecurrentes = await _repoEstadisticas
+                .clientesNuevosVsRecurrentes(
+                    rangoActual.desde, rangoActual.hasta, token);
+          }
         case GraficoAdmin.fidelizacion:
           _fidelizacion = await _repoEstadisticas
               .fidelizacionClientes(rango.desde, rango.hasta, token);
+          if (_fidelizacion.isEmpty && ano != DateTime.now().year) {
+            _anosSinDatos[grafico]?.add(ano);
+            _anos[grafico] = DateTime.now().year;
+            final _RangoFechas rangoActual =
+                _crearRangoAnual(DateTime.now().year);
+            _fidelizacion = await _repoEstadisticas
+                .fidelizacionClientes(
+                    rangoActual.desde, rangoActual.hasta, token);
+          }
         default:
           break;
       }
@@ -371,6 +441,30 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
       registrarError(e);
     } finally {
       _cargandoPorGrafico[grafico] = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Cambio de mes en servicio top ──────────────────────────────────────────
+  Future<void> cambiarMesServicioTop(DateTime mes) async {
+    if (_mesServicioTop.year == mes.year && _mesServicioTop.month == mes.month) {
+      return;
+    }
+    _mesServicioTop = mes;
+    _cargandoServicioTop = true;
+    notifyListeners();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final DateTime desde = DateTime(mes.year, mes.month);
+      final DateTime hasta = DateTime(mes.year, mes.month + 1, 0);
+      _servicioTopItems = await _repoEstadisticas
+          .serviciosMasSolicitados(desde, hasta, token);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      _cargandoServicioTop = false;
       notifyListeners();
     }
   }
@@ -400,12 +494,60 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     return _RangoFechas(desde: desde, hasta: hasta);
   }
 
-  DtoSerieMesEstadisticaAdmin _crearSerieMes(EstadisticaMes mes) {
-    return DtoSerieMesEstadisticaAdmin(
-      periodo: _formatearPeriodo(mes.periodo),
-      valor1: mes.valor1 ?? 0,
-      valor2: mes.valor2 ?? 0,
-    );
+  void _actualizarAnosSinDatos(
+    List<EstadisticaMes> datos,
+    GraficoAdmin grafico,
+    int anoActual,
+  ) {
+    final Set<int> presentes = {};
+    for (final item in datos) {
+      final int? ano = _extraerAnoNumero(item.periodo);
+      if (ano != null) presentes.add(ano);
+    }
+    _anosSinDatos[grafico]?.clear();
+    for (int i = 1; i <= 5; i++) {
+      final int ano = anoActual - i;
+      if (!presentes.contains(ano)) {
+        _anosSinDatos[grafico]?.add(ano);
+      }
+    }
+  }
+
+  int? _extraerAnoNumero(String? periodo) {
+    if (periodo == null) return null;
+    final List<String> partes = periodo.trim().split('-');
+    if (partes.isNotEmpty) return int.tryParse(partes[0]);
+    return null;
+  }
+
+  List<DtoSerieMesEstadisticaAdmin> _rellenarMesesAnuales(
+    List<EstadisticaMes> datos,
+    int ano,
+  ) {
+    final DateTime hoy = DateTime.now();
+    final int mesesHasta = ano == hoy.year ? hoy.month : 12;
+
+    final Map<int, EstadisticaMes> porMes = {};
+    for (final EstadisticaMes item in datos) {
+      final int? mes = _extraerMesNumero(item.periodo);
+      if (mes != null) porMes[mes] = item;
+    }
+
+    return [
+      for (int m = 1; m <= mesesHasta; m++)
+        DtoSerieMesEstadisticaAdmin(
+          periodo: DateFormat.MMM('es_ES').format(DateTime(ano, m)),
+          valor1: porMes[m]?.valor1 ?? 0.0,
+          valor2: porMes[m]?.valor2 ?? 0.0,
+        ),
+    ];
+  }
+
+  int? _extraerMesNumero(String? periodo) {
+    if (periodo == null) return null;
+    final List<String> partes = periodo.trim().split('-');
+    if (partes.length == 2) return int.tryParse(partes[1]);
+    return null;
   }
 
   List<DtoItemEstadisticaAdmin> _crearItems(
@@ -425,19 +567,6 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
           ),
         )
         .toList(growable: false);
-  }
-
-  String _formatearPeriodo(String? periodo) {
-    final String? texto = _textoOpcional(periodo);
-    if (texto == null) return '-';
-    final List<String> partes = texto.split('-');
-    if (partes.length == 2) {
-      final int? mes = int.tryParse(partes[1]);
-      if (mes != null && mes >= 1 && mes <= 12) {
-        return DateFormat.MMM('es_ES').format(DateTime(2026, mes));
-      }
-    }
-    return texto;
   }
 
   String _formatearValor(double? valor, TipoValorEstadistica tipo) {

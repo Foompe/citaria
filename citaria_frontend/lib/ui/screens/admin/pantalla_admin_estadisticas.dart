@@ -10,6 +10,7 @@ import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_estadisticas.d
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class PantallaAdminEstadisticas extends StatefulWidget {
@@ -119,13 +120,21 @@ class _CuerpoEstadisticas extends StatelessWidget {
                 icono: Icons.euro_outlined,
               ),
               const SizedBox(height: 12),
-              _TarjetaServicioTop(servicio: vmEstadisticas.servicioTop),
+              _TarjetaServicioTop(
+                servicio: vmEstadisticas.servicioTop,
+                mesActivo: vmEstadisticas.mesServicioTop,
+                cargando: vmEstadisticas.cargandoServicioTop,
+                onMesChanged: vmEstadisticas.cambiarMesServicioTop,
+              ),
               const SizedBox(height: 24),
 
               // ── Clientes ───────────────────────────────────────────────────
               _TarjetaGrafico(
                 titulo: 'Clientes nuevos vs recurrentes',
                 anoActivo: vmEstadisticas.anoGrafico(
+                  GraficoAdmin.clientesVsRecurrentes,
+                ),
+                anosOcultos: vmEstadisticas.anosSinDatos(
                   GraficoAdmin.clientesVsRecurrentes,
                 ),
                 cargandoGrafico: vmEstadisticas.cargandoGrafico(
@@ -144,6 +153,9 @@ class _CuerpoEstadisticas extends StatelessWidget {
               _TarjetaGrafico(
                 titulo: 'Fidelización mensual',
                 anoActivo: vmEstadisticas.anoGrafico(
+                  GraficoAdmin.fidelizacion,
+                ),
+                anosOcultos: vmEstadisticas.anosSinDatos(
                   GraficoAdmin.fidelizacion,
                 ),
                 cargandoGrafico: vmEstadisticas.cargandoGrafico(
@@ -300,33 +312,85 @@ class _SelectorPeriodoCompacto extends StatelessWidget {
 class _SelectorAnoCompacto extends StatelessWidget {
   const _SelectorAnoCompacto({
     required this.anoActivo,
+    required this.anosOcultos,
     required this.cargando,
     required this.onSeleccionar,
   });
 
   final int anoActivo;
+  final Set<int> anosOcultos;
   final bool cargando;
   final ValueChanged<int> onSeleccionar;
 
   @override
   Widget build(BuildContext context) {
     final int anoActual = DateTime.now().year;
+    final List<int> visibles = [
+      for (int i = 0; i <= 5; i++)
+        if (!anosOcultos.contains(anoActual - i)) anoActual - i,
+    ];
+
+    if (visibles.isEmpty) return const SizedBox.shrink();
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (int i = 0; i <= 5; i++) ...[
+          for (int i = 0; i < visibles.length; i++) ...[
             if (i > 0) const SizedBox(width: 6),
             _ChipCompacto(
-              etiqueta: '${anoActual - i}',
-              activo: anoActivo == anoActual - i,
-              onTap: cargando ? null : () => onSeleccionar(anoActual - i),
+              etiqueta: '${visibles[i]}',
+              activo: anoActivo == visibles[i],
+              onTap: cargando ? null : () => onSeleccionar(visibles[i]),
             ),
           ],
         ],
       ),
     );
   }
+}
+
+class _SelectorMesCompacto extends StatelessWidget {
+  const _SelectorMesCompacto({
+    required this.mesActivo,
+    required this.cargando,
+    required this.onSeleccionar,
+  });
+
+  final DateTime mesActivo;
+  final bool cargando;
+  final ValueChanged<DateTime> onSeleccionar;
+
+  @override
+  Widget build(BuildContext context) {
+    final DateTime hoy = DateTime.now();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (int i = 0; i < 6; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            Builder(builder: (ctx) {
+              final DateTime mes = DateTime(hoy.year, hoy.month - i);
+              final bool activo = mesActivo.year == mes.year &&
+                  mesActivo.month == mes.month;
+              return _ChipCompacto(
+                etiqueta: _etiquetaMes(mes, hoy),
+                activo: activo,
+                onTap: cargando ? null : () => onSeleccionar(mes),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _etiquetaMes(DateTime mes, DateTime hoy) {
+  final String nombre = DateFormat.MMM('es_ES').format(mes);
+  if (mes.year == hoy.year) return nombre;
+  return '$nombre ${mes.year.toString().substring(2)}';
 }
 
 class _ChipCompacto extends StatelessWidget {
@@ -476,9 +540,17 @@ class _ColumnaKpi extends StatelessWidget {
 // ── Servicio top ──────────────────────────────────────────────────────────────
 
 class _TarjetaServicioTop extends StatelessWidget {
-  const _TarjetaServicioTop({required this.servicio});
+  const _TarjetaServicioTop({
+    required this.servicio,
+    required this.mesActivo,
+    required this.cargando,
+    required this.onMesChanged,
+  });
 
   final DtoServicioTopEstadisticaAdmin servicio;
+  final DateTime mesActivo;
+  final bool cargando;
+  final ValueChanged<DateTime> onMesChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -490,34 +562,55 @@ class _TarjetaServicioTop extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
                     'Servicio top del periodo',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.outline,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
+                ),
+                if (cargando)
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _SelectorMesCompacto(
+              mesActivo: mesActivo,
+              cargando: cargando,
+              onSeleccionar: onMesChanged,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
                     servicio.nombre,
                     style: textTheme.displaySmall,
                     maxLines: 2,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Text(
-              servicio.detalle,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.primary,
-              ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  servicio.detalle,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -537,6 +630,7 @@ class _TarjetaGrafico extends StatelessWidget {
     this.cargandoGrafico = false,
     this.onPeriodoChanged,
     this.anoActivo,
+    this.anosOcultos = const {},
     this.onAnoChanged,
   });
 
@@ -547,6 +641,7 @@ class _TarjetaGrafico extends StatelessWidget {
   final bool cargandoGrafico;
   final ValueChanged<PeriodoAdminEstadisticas>? onPeriodoChanged;
   final int? anoActivo;
+  final Set<int> anosOcultos;
   final ValueChanged<int>? onAnoChanged;
 
   @override
@@ -582,6 +677,7 @@ class _TarjetaGrafico extends StatelessWidget {
               const SizedBox(height: 10),
               _SelectorAnoCompacto(
                 anoActivo: anoActivo!,
+                anosOcultos: anosOcultos,
                 cargando: cargandoGrafico,
                 onSeleccionar: onAnoChanged!,
               ),
