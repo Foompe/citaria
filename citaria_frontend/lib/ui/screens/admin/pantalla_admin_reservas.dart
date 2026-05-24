@@ -6,6 +6,7 @@ import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
+import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
@@ -137,15 +138,6 @@ class _ContenidoAdminReservas extends StatelessWidget {
                     ),
                   ),
                   Tooltip(
-                    message: 'Filtros',
-                    child: IconButton(
-                      icon: const Icon(Icons.tune),
-                      onPressed: () {
-                        // TODO: panel de filtros avanzados
-                      },
-                    ),
-                  ),
-                  Tooltip(
                     message: 'Nueva reserva',
                     child: IconButton(
                       icon: const Icon(Icons.add),
@@ -159,31 +151,30 @@ class _ContenidoAdminReservas extends StatelessWidget {
 
             // ── Chips de filtro ────────────────────────────────────────────
             SizedBox(
-              height: 48,
-              child: ListView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: espaciado.padX,
-                  vertical: 8,
-                ),
+              height: 36,
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
                 scrollDirection: Axis.horizontal,
-                children: FiltroReservasAdmin.values.map((filtro) {
+                itemCount: FiltroReservasAdmin.values.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final filtro = FiltroReservasAdmin.values[i];
                   final activo = filtro.toViewModel() == vmReservas.filtroActivo;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(filtro.etiqueta),
-                      selected: activo,
-                      onSelected: (_) =>
-                          vmReservas.seleccionarFiltro(filtro.toViewModel()),
+                  return GestureDetector(
+                    onTap: () =>
+                        vmReservas.seleccionarFiltro(filtro.toViewModel()),
+                    child: ChipCategoria(
+                      etiqueta: filtro.etiqueta,
+                      activo: activo,
                     ),
                   );
-                }).toList(),
+                },
               ),
             ),
 
             // ── Lista de reservas ──────────────────────────────────────────
-            Expanded(
-              child: _ListaReservasAdmin(vmReservas: vmReservas),
+            const Expanded(
+              child: _ListaReservasAdmin(),
             ),
           ],
         ),
@@ -193,17 +184,16 @@ class _ContenidoAdminReservas extends StatelessWidget {
 }
 
 class _ListaReservasAdmin extends StatelessWidget {
-  const _ListaReservasAdmin({required this.vmReservas});
-
-  final ViewModelAdminReservas vmReservas;
+  const _ListaReservasAdmin();
 
   @override
   Widget build(BuildContext context) {
+    final vmReservas = context.watch<ViewModelAdminReservas>();
     final textTheme = Theme.of(context).textTheme;
     final String? error = vmReservas.error;
     final List<DtoReservaAdmin> reservas = vmReservas.reservas;
 
-    if (vmReservas.cargando && reservas.isEmpty) {
+    if (vmReservas.cargando) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -233,7 +223,7 @@ class _ListaReservasAdmin extends StatelessWidget {
     if (reservas.isEmpty) {
       return Center(
         child: Text(
-          'No hay reservas',
+          _mensajeVacio(vmReservas.filtroActivo),
           style: textTheme.bodyLarge,
         ),
       );
@@ -261,6 +251,16 @@ class _ListaReservasAdmin extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _mensajeVacio(FiltroAdminReservas filtro) {
+    return switch (filtro) {
+      FiltroAdminReservas.hoy => 'No hay reservas para hoy',
+      FiltroAdminReservas.semana => 'No hay reservas esta semana',
+      FiltroAdminReservas.pendientes => 'No hay reservas pendientes',
+      FiltroAdminReservas.confirmadas => 'No hay reservas confirmadas',
+      FiltroAdminReservas.canceladas => 'No hay reservas canceladas',
+    };
   }
 
   chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {

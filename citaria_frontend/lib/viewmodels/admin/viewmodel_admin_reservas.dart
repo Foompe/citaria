@@ -361,19 +361,15 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
   }
 
   Future<Map<int, List<ReservaServicio>>> _cargarDetallesReservas(
+
     String token,
     List<Reserva> reservas,
   ) async {
-    final Map<int, List<ReservaServicio>> detalles =
-        <int, List<ReservaServicio>>{};
-    for (final Reserva reserva in reservas) {
-      final int? id = reserva.id;
-      if (id == null) {
-        continue;
-      }
-      detalles[id] = await _repoReservas.obtenerDetalles(id, token);
-    }
-    return detalles;
+    final ids = reservas.map((r) => r.id).whereType<int>().toList();
+    final resultados = await Future.wait(
+      ids.map((id) async => MapEntry(id, await _repoReservas.obtenerDetalles(id, token))),
+    );
+    return Map.fromEntries(resultados);
   }
 
   double _calcularTotal(List<ReservaServicio> detalles) {
