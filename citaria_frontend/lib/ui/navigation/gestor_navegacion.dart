@@ -336,6 +336,7 @@ class GestorNavegacion {
       return Navigator.push<T>(context, MaterialPageRoute(builder: builder));
     }
 
+    final navigator = Navigator.of(context);
     final ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -344,9 +345,7 @@ class GestorNavegacion {
 
     if (ok == true) {
       SesionPin.activar();
-      if (context.mounted) {
-        return Navigator.push<T>(context, MaterialPageRoute(builder: builder));
-      }
+      return navigator.push<T>(MaterialPageRoute(builder: builder));
     }
     return null;
   }
