@@ -1,8 +1,10 @@
 import 'package:citaria_frontend/data/enums/estado_reserva.dart';
 import 'package:citaria_frontend/data/models/cliente.dart';
+import 'package:citaria_frontend/data/models/empleado.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
@@ -36,6 +38,7 @@ class DtoLineaDetalleReservaAdmin {
   const DtoLineaDetalleReservaAdmin({
     required this.servicio,
     required this.empleado,
+    required this.fotoUrlEmpleado,
     required this.horarioTexto,
     required this.duracionTexto,
     required this.precioTexto,
@@ -44,6 +47,7 @@ class DtoLineaDetalleReservaAdmin {
 
   final String servicio;
   final String empleado;
+  final String? fotoUrlEmpleado;
   final String horarioTexto;
   final String duracionTexto;
   final String precioTexto;
@@ -58,9 +62,11 @@ class DtoDetalleReservaAdmin {
     required this.cliente,
     required this.clienteId,
     required this.telefono,
+    required this.fotoUrlCliente,
     required this.servicio,
     required this.duracion,
     required this.empleado,
+    required this.fotoUrlEmpleado,
     required this.fecha,
     required this.hora,
     required this.total,
@@ -77,9 +83,11 @@ class DtoDetalleReservaAdmin {
   final String cliente;
   final String? clienteId;
   final String? telefono;
+  final String? fotoUrlCliente;
   final String servicio;
   final String duracion;
   final String empleado;
+  final String? fotoUrlEmpleado;
   final String fecha;
   final String hora;
   final String total;
@@ -95,14 +103,17 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
   ViewModelAdminReservas({
     required RepoReservas repoReservas,
     required RepoClientes repoClientes,
+    required RepoEmpleados repoEmpleados,
     required super.autenticacion,
     FiltroAdminReservas filtroInicial = FiltroAdminReservas.hoy,
   }) : _repoReservas = repoReservas,
        _repoClientes = repoClientes,
+       _repoEmpleados = repoEmpleados,
        _filtroActivo = filtroInicial;
 
   final RepoReservas _repoReservas;
   final RepoClientes _repoClientes;
+  final RepoEmpleados _repoEmpleados;
   final NumberFormat _formatoPrecio = NumberFormat.currency(
     locale: 'es_ES',
     symbol: '€',
@@ -118,9 +129,21 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       const <int, List<ReservaServicio>>{};
   FiltroAdminReservas _filtroActivo;
   DtoDetalleReservaAdmin? _detalle;
+  EstadoReserva? _estadoPendiente;
 
   FiltroAdminReservas get filtroActivo => _filtroActivo;
   DtoDetalleReservaAdmin? get detalle => _detalle;
+  EstadoReserva? get estadoPendiente => _estadoPendiente;
+
+  void seleccionarEstadoPendiente(EstadoReserva estado) {
+    _estadoPendiente = estado == _detalle?.estado ? null : estado;
+    notifyListeners();
+  }
+
+  void descartarEstadoPendiente() {
+    _estadoPendiente = null;
+    notifyListeners();
+  }
 
   List<DtoReservaAdmin> get reservas {
     return _reservas
@@ -159,13 +182,14 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     try {
       final String token = leerTokenObligatorio();
       final Reserva reserva = await _repoReservas.obtenerPorId(id, token);
-      final List<ReservaServicio> detalles = await _repoReservas
-          .obtenerDetalles(id, token);
-      final Cliente? cliente = await _obtenerClienteSiEsPosible(
-        reserva,
-        token,
-      );
-      _detalle = _crearDetalle(reserva, detalles, cliente);
+      final resultados = await Future.wait([
+        _repoReservas.obtenerDetalles(id, token),
+        _obtenerClienteSiEsPosible(reserva, token),
+      ]);
+      final detalles = resultados[0] as List<ReservaServicio>;
+      final cliente = resultados[1] as Cliente?;
+      final fotosEmpleados = await _cargarFotosEmpleados(detalles, token);
+      _detalle = _crearDetalle(reserva, detalles, cliente, fotosEmpleados);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -180,7 +204,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     try {
       final String token = leerTokenObligatorio();
       await _repoReservas.actualizarEstado(id, estado, token);
-      await _recargarTrasAccion(id);
+      await _recargarDetalleTrasAccion(id);
       return true;
     } catch (e) {
       registrarError(e);
@@ -200,7 +224,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     try {
       final String token = leerTokenObligatorio();
       await _repoReservas.cancelar(id, token, motivo: motivo);
-      await _recargarTrasAccion(id);
+      await _recargarDetalleTrasAccion(id);
       return true;
     } catch (e) {
       registrarError(e);
@@ -260,6 +284,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     Reserva reserva,
     List<ReservaServicio> detalles,
     Cliente? cliente,
+    Map<int, String?> fotosEmpleados,
   ) {
     final ReservaServicio? primerDetalle = detalles.isEmpty
         ? null
@@ -277,6 +302,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       cliente: _nombreCliente(reserva, cliente),
       clienteId: reserva.clienteId?.toString(),
       telefono: _textoOpcional(cliente?.telefono),
+      fotoUrlCliente: _textoOpcional(cliente?.fotoUrl),
       servicio: detalles.isEmpty
           ? _resumenServicios(reserva.servicioIds.length)
           : detalles
@@ -284,6 +310,9 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
                 .join(', '),
       duracion: '$duracion min',
       empleado: empleado,
+      fotoUrlEmpleado: primerDetalle != null
+          ? fotosEmpleados[primerDetalle.empleadoId]
+          : null,
       fecha: _capitalizar(_formatoFechaCompleta.format(reserva.fecha)),
       hora: _textoConFallback(reserva.horaInicio, '--:--'),
       total: _formatoPrecio.format(_calcularTotal(detalles)),
@@ -294,11 +323,16 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
           reserva.estado == EstadoReserva.pendiente ||
           reserva.estado == EstadoReserva.confirmada,
       puedeCambiarEstado: reserva.estado != EstadoReserva.cancelada,
-      lineas: detalles.map(_crearLineaDetalle).toList(growable: false),
+      lineas: detalles
+          .map((d) => _crearLineaDetalle(d, fotosEmpleados))
+          .toList(growable: false),
     );
   }
 
-  DtoLineaDetalleReservaAdmin _crearLineaDetalle(ReservaServicio detalle) {
+  DtoLineaDetalleReservaAdmin _crearLineaDetalle(
+    ReservaServicio detalle,
+    Map<int, String?> fotosEmpleados,
+  ) {
     final int duracion = _duracionDetalle(detalle);
     return DtoLineaDetalleReservaAdmin(
       servicio: _textoConFallback(detalle.nombreServicio, 'Servicio'),
@@ -306,6 +340,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
         detalle.nombreEmpleado,
         'Sin empleado asignado',
       ),
+      fotoUrlEmpleado: fotosEmpleados[detalle.empleadoId],
       horarioTexto:
           '${_formatearHora(detalle.horaInicio)} - '
           '${_formatearHora(detalle.horaFin)}',
@@ -315,6 +350,24 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       ),
       estadoTexto: _estadoDetalleTexto(detalle),
     );
+  }
+
+  Future<Map<int, String?>> _cargarFotosEmpleados(
+    List<ReservaServicio> detalles,
+    String token,
+  ) async {
+    final ids = detalles.map((d) => d.empleadoId).toSet();
+    final entries = await Future.wait(
+      ids.map((id) async {
+        try {
+          final Empleado emp = await _repoEmpleados.obtenerPorId(id, token);
+          return MapEntry(id, emp.fotoUrl);
+        } catch (_) {
+          return MapEntry<int, String?>(id, null);
+        }
+      }),
+    );
+    return Map.fromEntries(entries);
   }
 
   int _compararReservas(Reserva a, Reserva b) {
@@ -342,21 +395,18 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     return !fecha.isBefore(inicioSemana) && fecha.isBefore(finSemana);
   }
 
-  Future<void> _recargarTrasAccion(int id) async {
+  Future<void> _recargarDetalleTrasAccion(int id) async {
     final String token = leerTokenObligatorio();
     final Reserva reserva = await _repoReservas.obtenerPorId(id, token);
-    final List<ReservaServicio> detalles = await _repoReservas.obtenerDetalles(
-      id,
-      token,
-    );
-    final Cliente? cliente = await _obtenerClienteSiEsPosible(reserva, token);
-    _detalle = _crearDetalle(reserva, detalles, cliente);
-    final List<Reserva> reservas = await _repoReservas.listarTodas(token);
-    _reservas = reservas
-        .where((reserva) => reserva.id != null)
-        .toList(growable: false)
-      ..sort(_compararReservas);
-    _detallesPorReserva = await _cargarDetallesReservas(token, _reservas);
+    final resultados = await Future.wait([
+      _repoReservas.obtenerDetalles(id, token),
+      _obtenerClienteSiEsPosible(reserva, token),
+    ]);
+    final detalles = resultados[0] as List<ReservaServicio>;
+    final cliente = resultados[1] as Cliente?;
+    final fotosEmpleados = await _cargarFotosEmpleados(detalles, token);
+    _estadoPendiente = null;
+    _detalle = _crearDetalle(reserva, detalles, cliente, fotosEmpleados);
     notifyListeners();
   }
 

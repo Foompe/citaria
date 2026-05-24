@@ -25,7 +25,7 @@ class CabeceraPantalla extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(titulo),
+      title: Text(titulo, style: Theme.of(context).textTheme.displaySmall),
       automaticallyImplyLeading: false,
       leading: mostrarAtras
           ? IconButton(

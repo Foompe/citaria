@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/data/enums/estado_reserva.dart' as datos;
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
@@ -76,6 +77,7 @@ class _PantallaAdminReservasState extends State<PantallaAdminReservas> {
     _viewModel = ViewModelAdminReservas(
       repoReservas: context.read<RepoReservas>(),
       repoClientes: context.read<RepoClientes>(),
+      repoEmpleados: context.read<RepoEmpleados>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
       filtroInicial: widget.filtroInicial.toViewModel(),
     );
