@@ -244,8 +244,8 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
 
   bool _coincideConFiltro(Reserva reserva) {
     return switch (_filtroActivo) {
-      FiltroAdminReservas.hoy => _esMismoDia(reserva.fecha, DateTime.now()),
-      FiltroAdminReservas.semana => _estaEnSemanaActual(reserva.fecha),
+      FiltroAdminReservas.hoy => _esHoyYNoHaPasado(reserva),
+      FiltroAdminReservas.semana => _estaEnRestoSemana(reserva.fecha),
       FiltroAdminReservas.pendientes =>
         reserva.estado == EstadoReserva.pendiente,
       FiltroAdminReservas.confirmadas =>
@@ -378,21 +378,38 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     return a.horaInicio.compareTo(b.horaInicio);
   }
 
+  bool _esHoyYNoHaPasado(Reserva reserva) {
+    final DateTime ahora = DateTime.now();
+    if (!_esMismoDia(reserva.fecha, ahora)) return false;
+    final DateTime horaReserva = _horaEnFecha(reserva.horaInicio, ahora);
+    return !horaReserva.isBefore(ahora);
+  }
+
+  bool _estaEnRestoSemana(DateTime fecha) {
+    final DateTime ahora = DateTime.now();
+    final DateTime inicioHoy = DateTime(ahora.year, ahora.month, ahora.day);
+    final DateTime inicioSemana = inicioHoy.subtract(
+      Duration(days: ahora.weekday - 1),
+    );
+    final DateTime finSemana = inicioSemana.add(const Duration(days: 7));
+    return !fecha.isBefore(inicioHoy) && fecha.isBefore(finSemana);
+  }
+
   bool _esMismoDia(DateTime fecha, DateTime referencia) {
     return fecha.year == referencia.year &&
         fecha.month == referencia.month &&
         fecha.day == referencia.day;
   }
 
-  bool _estaEnSemanaActual(DateTime fecha) {
-    final DateTime hoy = DateTime.now();
-    final DateTime inicioSemana = DateTime(
-      hoy.year,
-      hoy.month,
-      hoy.day,
-    ).subtract(Duration(days: hoy.weekday - 1));
-    final DateTime finSemana = inicioSemana.add(const Duration(days: 7));
-    return !fecha.isBefore(inicioSemana) && fecha.isBefore(finSemana);
+  DateTime _horaEnFecha(String hora, DateTime fecha) {
+    final List<String> partes = hora.split(':');
+    return DateTime(
+      fecha.year,
+      fecha.month,
+      fecha.day,
+      int.tryParse(partes.first) ?? 0,
+      partes.length > 1 ? int.tryParse(partes[1]) ?? 0 : 0,
+    );
   }
 
   Future<void> _recargarDetalleTrasAccion(int id) async {
