@@ -1,9 +1,9 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -25,12 +25,21 @@ class _PantallaAdminDetalleServicioState
   final _ctrlNombre = TextEditingController();
   final _ctrlDescripcion = TextEditingController();
   final _ctrlPrecio = TextEditingController();
-  final _ctrlDuracion = TextEditingController();
   final Set<int> _skillsSeleccionadas = <int>{};
   late final ViewModelAdminCatalogo _viewModel;
   int? _categoriaSeleccionadaId;
   bool _activo = true;
   bool _sincronizado = false;
+
+  // Duración: horas (0–8) y minutos (0, 5, 10, …, 55)
+  int _duracionHoras = 0;
+  int _duracionMinutos = 30;
+
+  int get _duracionTotalMinutos => _duracionHoras * 60 + _duracionMinutos;
+
+  static const List<int> _opcionesMinutos = [
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  ];
 
   @override
   void initState() {
@@ -46,13 +55,36 @@ class _PantallaAdminDetalleServicioState
     _ctrlNombre.dispose();
     _ctrlDescripcion.dispose();
     _ctrlPrecio.dispose();
-    _ctrlDuracion.dispose();
     _viewModel.dispose();
     super.dispose();
   }
 
+  void _sincronizarDetalle(DtoDetalleServicioCatalogoAdmin detalle) {
+    _ctrlNombre.text = detalle.nombre;
+    _ctrlDescripcion.text = detalle.descripcion;
+    _ctrlPrecio.text = detalle.precio.toStringAsFixed(2);
+    _categoriaSeleccionadaId = detalle.categoriaId;
+    _activo = detalle.activo;
+    _skillsSeleccionadas
+      ..clear()
+      ..addAll(detalle.skillIds);
+    // Descomponer minutos totales en horas + minutos redondeados a 5
+    final int total = detalle.duracionMinutos;
+    _duracionHoras = total ~/ 60;
+    final int restoMin = total % 60;
+    _duracionMinutos = _opcionesMinutos.reduce(
+      (prev, curr) =>
+          (curr - restoMin).abs() < (prev - restoMin).abs() ? curr : prev,
+    );
+    _sincronizado = true;
+  }
+
   Future<void> _guardar() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_duracionTotalMinutos <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La duración debe ser mayor que 0.')),
+      );
       return;
     }
 
@@ -61,46 +93,40 @@ class _PantallaAdminDetalleServicioState
       nombre: _ctrlNombre.text,
       descripcion: _ctrlDescripcion.text,
       precio: _ctrlPrecio.text,
-      duracion: _ctrlDuracion.text,
+      duracion: _duracionTotalMinutos.toString(),
       categoriaId: _categoriaSeleccionadaId,
       activo: _activo,
       skillIds: _skillsSeleccionadas,
     );
 
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     if (servicio == null) {
-      _mostrarError('No se pudo guardar el servicio.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_viewModel.error ?? 'No se pudo guardar.')),
+      );
       return;
     }
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Servicio guardado')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Servicio guardado')),
+    );
     Navigator.pop(context, true);
   }
 
   Future<void> _desactivar() async {
     final bool ok = await _viewModel.desactivarServicio(widget.id);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     if (!ok) {
-      _mostrarError('No se pudo desactivar el servicio.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_viewModel.error ?? 'No se pudo desactivar.'),
+        ),
+      );
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Servicio desactivado')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Servicio desactivado')),
+    );
     Navigator.pop(context, true);
-  }
-
-  void _mostrarError(String fallback) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(_viewModel.error ?? fallback)));
   }
 
   void _alternarSkill(int id) {
@@ -113,6 +139,12 @@ class _PantallaAdminDetalleServicioState
     });
   }
 
+  void _mostrarImagenNoImplementada() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Función no implementada.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
@@ -123,16 +155,7 @@ class _PantallaAdminDetalleServicioState
         builder: (context, vmCatalogo, _) {
           final detalle = vmCatalogo.detalleServicio;
           if (detalle != null && !_sincronizado) {
-            _ctrlNombre.text = detalle.nombre;
-            _ctrlDescripcion.text = detalle.descripcion;
-            _ctrlPrecio.text = detalle.precio.toStringAsFixed(2);
-            _ctrlDuracion.text = detalle.duracionMinutos.toString();
-            _categoriaSeleccionadaId = detalle.categoriaId;
-            _activo = detalle.activo;
-            _skillsSeleccionadas
-              ..clear()
-              ..addAll(detalle.skillIds);
-            _sincronizado = true;
+            _sincronizarDetalle(detalle);
           }
 
           return Scaffold(
@@ -166,7 +189,8 @@ class _PantallaAdminDetalleServicioState
               ctrlNombre: _ctrlNombre,
               ctrlDescripcion: _ctrlDescripcion,
               ctrlPrecio: _ctrlPrecio,
-              ctrlDuracion: _ctrlDuracion,
+              duracionHoras: _duracionHoras,
+              duracionMinutos: _duracionMinutos,
               categorias: vmCatalogo.categorias,
               skills: vmCatalogo.skills,
               categoriaSeleccionadaId: _categoriaSeleccionadaId,
@@ -176,8 +200,11 @@ class _PantallaAdminDetalleServicioState
                   setState(() => _categoriaSeleccionadaId = id),
               onSkillTap: _alternarSkill,
               onActivoChanged: (valor) => setState(() => _activo = valor),
+              onHorasChanged: (h) => setState(() => _duracionHoras = h),
+              onMinutosChanged: (m) => setState(() => _duracionMinutos = m),
               onReintentar: () => vmCatalogo.cargarDetalleServicio(widget.id),
               onDesactivar: detalle == null ? null : _desactivar,
+              onEditarImagen: _mostrarImagenNoImplementada,
             ),
           );
         },
@@ -185,6 +212,8 @@ class _PantallaAdminDetalleServicioState
     );
   }
 }
+
+// ── Cuerpo ────────────────────────────────────────────────────────────────────
 
 class _CuerpoDetalleServicio extends StatelessWidget {
   const _CuerpoDetalleServicio({
@@ -196,7 +225,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
     required this.ctrlNombre,
     required this.ctrlDescripcion,
     required this.ctrlPrecio,
-    required this.ctrlDuracion,
+    required this.duracionHoras,
+    required this.duracionMinutos,
     required this.categorias,
     required this.skills,
     required this.categoriaSeleccionadaId,
@@ -205,8 +235,11 @@ class _CuerpoDetalleServicio extends StatelessWidget {
     required this.onCategoriaChanged,
     required this.onSkillTap,
     required this.onActivoChanged,
+    required this.onHorasChanged,
+    required this.onMinutosChanged,
     required this.onReintentar,
     required this.onDesactivar,
+    required this.onEditarImagen,
   });
 
   final DtoDetalleServicioCatalogoAdmin? detalle;
@@ -217,7 +250,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
   final TextEditingController ctrlNombre;
   final TextEditingController ctrlDescripcion;
   final TextEditingController ctrlPrecio;
-  final TextEditingController ctrlDuracion;
+  final int duracionHoras;
+  final int duracionMinutos;
   final List<DtoCategoriaCatalogoAdmin> categorias;
   final List<DtoSkillCatalogoAdmin> skills;
   final int? categoriaSeleccionadaId;
@@ -226,8 +260,15 @@ class _CuerpoDetalleServicio extends StatelessWidget {
   final ValueChanged<int?> onCategoriaChanged;
   final ValueChanged<int> onSkillTap;
   final ValueChanged<bool> onActivoChanged;
+  final ValueChanged<int> onHorasChanged;
+  final ValueChanged<int> onMinutosChanged;
   final VoidCallback onReintentar;
   final VoidCallback? onDesactivar;
+  final VoidCallback onEditarImagen;
+
+  static const List<int> _opcionesMinutos = [
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -257,11 +298,24 @@ class _CuerpoDetalleServicio extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 120),
         children: [
+          // ── Imagen ────────────────────────────────────────────────────────
+          Center(
+            child: _ImagenServicioEditable(
+              imagenUrl: detalle!.imagenUrl,
+              espaciado: espaciado,
+              colorScheme: colorScheme,
+              onEditar: onEditarImagen,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Campos de texto ───────────────────────────────────────────────
           TextFormField(
             controller: ctrlNombre,
-            validator: (valor) => valor == null || valor.trim().isEmpty
-                ? 'El nombre es obligatorio'
-                : null,
+            validator: (valor) =>
+                valor == null || valor.trim().isEmpty
+                    ? 'El nombre es obligatorio'
+                    : null,
             decoration: InputDecoration(
               labelText: 'Nombre *',
               border: OutlineInputBorder(borderRadius: espaciado.radioInput),
@@ -280,7 +334,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: ctrlPrecio,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
             validator: _validarPrecio,
             decoration: InputDecoration(
               labelText: 'Precio *',
@@ -288,17 +343,67 @@ class _CuerpoDetalleServicio extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: ctrlDuracion,
-            keyboardType: TextInputType.number,
-            validator: _validarDuracion,
-            decoration: InputDecoration(
-              labelText: 'Duración (minutos) *',
-              border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-            ),
+
+          // ── Duración ──────────────────────────────────────────────────────
+          Text(
+            'Duración *',
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  key: ValueKey('horas-$duracionHoras'),
+                  initialValue: duracionHoras,
+                  decoration: InputDecoration(
+                    labelText: 'Horas',
+                    border: OutlineInputBorder(
+                      borderRadius: espaciado.radioInput,
+                    ),
+                  ),
+                  items: [
+                    for (int h = 0; h <= 8; h++)
+                      DropdownMenuItem(
+                        value: h,
+                        child: Text('$h h'),
+                      ),
+                  ],
+                  onChanged: (h) {
+                    if (h != null) onHorasChanged(h);
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  key: ValueKey('minutos-$duracionMinutos'),
+                  initialValue: duracionMinutos,
+                  decoration: InputDecoration(
+                    labelText: 'Minutos',
+                    border: OutlineInputBorder(
+                      borderRadius: espaciado.radioInput,
+                    ),
+                  ),
+                  items: [
+                    for (final m in _opcionesMinutos)
+                      DropdownMenuItem(
+                        value: m,
+                        child: Text('$m min'),
+                      ),
+                  ],
+                  onChanged: (m) {
+                    if (m != null) onMinutosChanged(m);
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
+
+          // ── Categoría + activo ────────────────────────────────────────────
           DropdownButtonFormField<int>(
+            key: ValueKey('categoria-$categoriaSeleccionadaId'),
             initialValue: categoriaSeleccionadaId,
             decoration: InputDecoration(
               labelText: 'Categoría',
@@ -320,6 +425,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
             title: const Text('Activo'),
             contentPadding: EdgeInsets.zero,
           ),
+
+          // ── Skills ────────────────────────────────────────────────────────
           const SizedBox(height: 24),
           Text(
             'SKILLS REQUERIDAS',
@@ -332,7 +439,9 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           if (skills.isEmpty)
             Text(
               'Sin skills disponibles',
-              style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.outline,
+              ),
             )
           else
             Wrap(
@@ -347,6 +456,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
                   ),
               ],
             ),
+
+          // ── Desactivar ────────────────────────────────────────────────────
           const SizedBox(height: 24),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
@@ -364,18 +475,89 @@ class _CuerpoDetalleServicio extends StatelessWidget {
   String? _validarPrecio(String? valor) {
     final String texto = valor?.trim().replaceAll(',', '.') ?? '';
     final double? precio = double.tryParse(texto);
-    if (precio == null || precio <= 0) {
-      return 'Introduce un precio válido';
-    }
-    return null;
-  }
-
-  String? _validarDuracion(String? valor) {
-    final int? duracion = int.tryParse(valor?.trim() ?? '');
-    if (duracion == null || duracion <= 0) {
-      return 'Introduce una duración válida';
-    }
+    if (precio == null || precio <= 0) return 'Introduce un precio válido';
     return null;
   }
 }
 
+// ── Imagen editable ───────────────────────────────────────────────────────────
+
+class _ImagenServicioEditable extends StatelessWidget {
+  const _ImagenServicioEditable({
+    required this.imagenUrl,
+    required this.espaciado,
+    required this.colorScheme,
+    required this.onEditar,
+  });
+
+  final String? imagenUrl;
+  final EspaciadoCitaria espaciado;
+  final ColorScheme colorScheme;
+  final VoidCallback onEditar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: espaciado.radioCard,
+          child: SizedBox(
+            width: 120,
+            height: 120,
+            child: imagenUrl != null && imagenUrl!.isNotEmpty
+                ? Image.network(
+                    imagenUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        _FondoIconoServicio(colorScheme: colorScheme),
+                  )
+                : _FondoIconoServicio(colorScheme: colorScheme),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: GestureDetector(
+            onTap: onEditar,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(8),
+                  bottomRight: Radius.circular(espaciado.radioCard.topRight.x),
+                ),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: colorScheme.onPrimary,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FondoIconoServicio extends StatelessWidget {
+  const _FondoIconoServicio({required this.colorScheme});
+
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.design_services_outlined,
+          size: 48,
+          color: colorScheme.outline,
+        ),
+      ),
+    );
+  }
+}

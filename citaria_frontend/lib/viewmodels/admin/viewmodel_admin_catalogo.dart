@@ -67,6 +67,7 @@ class DtoDetalleServicioCatalogoAdmin {
     required this.categoriaId,
     required this.activo,
     required this.skillIds,
+    this.imagenUrl,
   });
 
   final int id;
@@ -77,6 +78,7 @@ class DtoDetalleServicioCatalogoAdmin {
   final int? categoriaId;
   final bool activo;
   final Set<int> skillIds;
+  final String? imagenUrl;
 }
 
 class ViewModelAdminCatalogo extends ViewModelAdminBase {
@@ -493,6 +495,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       duracionMinutos: servicio.duracionMinutos,
       categoriaId: servicio.categoriaId,
       activo: servicio.activo ?? true,
+      imagenUrl: _textoOpcional(servicio.imagenUrl),
       skillIds: skillIds,
     );
   }
