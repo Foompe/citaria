@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -181,10 +181,6 @@ class _ContenidoNuevoServicio extends StatelessWidget {
         vmCatalogo.skills.isEmpty;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(
-        titulo: 'Nuevo servicio',
-        mostrarAtras: true,
-      ),
       bottomNavigationBar: BarraCtaFija(
         child: SizedBox(
           width: double.infinity,
@@ -200,9 +196,18 @@ class _ContenidoNuevoServicio extends StatelessWidget {
           ),
         ),
       ),
-      body: cargandoInicial
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(
+              titulo: 'Nuevo servicio',
+              mostrarAtras: true,
+            ),
+          ],
+          body: cargandoInicial
+              ? const Center(child: CircularProgressIndicator())
+              : Form(
               key: formKey,
               child: ListView(
                 padding: EdgeInsets.fromLTRB(
@@ -385,6 +390,8 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                 ],
               ),
             ),
+        ),
+      ),
     );
   }
 

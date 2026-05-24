@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 
@@ -66,9 +66,17 @@ class _PantallaDetalleReservaClienteState
     final reserva = reservas.detalle;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(titulo: 'Reserva', mostrarAtras: true),
-      body: reserva == null
-          ? Center(
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(
+              titulo: 'Reserva',
+              mostrarAtras: true,
+            ),
+          ],
+          body: reserva == null
+              ? Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
                 child: Text(
@@ -126,6 +134,8 @@ class _PantallaDetalleReservaClienteState
                 ],
               ],
             ),
+        ),
+      ),
       bottomNavigationBar: reserva == null || !reserva.puedeCancelar
           ? null
           : BarraCtaFija(

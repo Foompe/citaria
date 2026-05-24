@@ -2,7 +2,7 @@ import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
@@ -78,37 +78,45 @@ class _ContenidoSeleccionCliente extends StatelessWidget {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
     return Scaffold(
-      appBar: CabeceraPantalla(
-        titulo: modoSeleccion ? 'Seleccionar cliente' : 'Clientes',
-        mostrarAtras: true,
-        accionDerecha: Tooltip(
-          message: 'Nuevo cliente',
-          child: IconButton(
-            icon: const Icon(Icons.person_add_outlined),
-            onPressed: () => GestorNavegacion.irAAdminNuevoCliente(context),
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              espaciado.padX,
-              16,
-              espaciado.padX,
-              8,
-            ),
-            child: TextField(
-              controller: busqueda,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar cliente...',
-                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            CabeceraTituloGrande(
+              titulo: modoSeleccion ? 'Seleccionar cliente' : 'Clientes',
+              mostrarAtras: true,
+              accionDerecha: Tooltip(
+                message: 'Nuevo cliente',
+                child: IconButton(
+                  icon: const Icon(Icons.person_add_outlined),
+                  onPressed: () =>
+                      GestorNavegacion.irAAdminNuevoCliente(context),
+                ),
               ),
             ),
-          ),
-          Expanded(child: _ListaSeleccionClientes(modoSeleccion: modoSeleccion)),
-        ],
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  espaciado.padX,
+                  0,
+                  espaciado.padX,
+                  8,
+                ),
+                child: TextField(
+                  controller: busqueda,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: 'Buscar cliente...',
+                    border: OutlineInputBorder(
+                      borderRadius: espaciado.radioInput,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          body: _ListaSeleccionClientes(modoSeleccion: modoSeleccion),
+        ),
       ),
     );
   }

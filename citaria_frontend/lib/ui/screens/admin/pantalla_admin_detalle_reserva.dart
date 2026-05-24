@@ -6,7 +6,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/detalle_widgets.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
@@ -91,7 +91,6 @@ class _ContenidoDetalleReserva extends StatelessWidget {
     final detalle = vm.detalle;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(titulo: 'Reserva', mostrarAtras: true),
       bottomNavigationBar: detalle == null
           ? null
           : _BarraAcciones(
@@ -99,7 +98,15 @@ class _ContenidoDetalleReserva extends StatelessWidget {
               detalle: detalle,
               vm: vm,
             ),
-      body: _Cuerpo(reservaId: reservaId, detalle: detalle, vm: vm),
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(titulo: 'Reserva', mostrarAtras: true),
+          ],
+          body: _Cuerpo(reservaId: reservaId, detalle: detalle, vm: vm),
+        ),
+      ),
     );
   }
 }

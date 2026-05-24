@@ -3,7 +3,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_horarios.dart';
@@ -47,10 +47,6 @@ class _PantallaAdminHorariosState extends State<PantallaAdminHorarios> {
           bottomNavigationBar: const BarraNavegacionAdmin(
             seccionActiva: SeccionAdmin.mas,
           ),
-          appBar: const CabeceraPantalla(
-            titulo: 'Horarios',
-            mostrarAtras: false,
-          ),
           floatingActionButton: FabCitaria(
             icono: Icons.add,
             tooltip: 'Añadir cierre',
@@ -66,7 +62,15 @@ class _PantallaAdminHorariosState extends State<PantallaAdminHorarios> {
           ),
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          body: _CuerpoHorarios(vmHorarios: vmHorarios),
+          body: SafeArea(
+            bottom: false,
+            child: NestedScrollView(
+              headerSliverBuilder: (_, _) => [
+                const CabeceraTituloGrande(titulo: 'Horarios'),
+              ],
+              body: _CuerpoHorarios(vmHorarios: vmHorarios),
+            ),
+          ),
         ),
       ),
     );

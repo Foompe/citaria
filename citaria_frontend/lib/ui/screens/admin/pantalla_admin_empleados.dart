@@ -6,7 +6,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
@@ -70,13 +70,16 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
         heroTag: 'fab-admin-empleados-nuevo',
         onPressed: _irANuevoEmpleado,
       ),
-      appBar: const CabeceraPantalla(
-        titulo: 'Empleados',
-        mostrarAtras: false,
-      ),
-      body: AnimatedBuilder(
-        animation: _viewModel,
-        builder: (context, _) {
+
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(titulo: 'Empleados'),
+          ],
+          body: AnimatedBuilder(
+            animation: _viewModel,
+            builder: (context, _) {
           final empleados = _viewModel.empleados;
           return RefreshIndicator(
             onRefresh: _viewModel.refrescar,
@@ -123,6 +126,8 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
             ),
           );
         },
+          ),
+        ),
       ),
     );
   }

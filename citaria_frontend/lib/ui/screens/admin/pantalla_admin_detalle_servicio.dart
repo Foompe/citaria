@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
@@ -159,10 +159,6 @@ class _PantallaAdminDetalleServicioState
           }
 
           return Scaffold(
-            appBar: const CabeceraPantalla(
-              titulo: 'Servicio',
-              mostrarAtras: true,
-            ),
             bottomNavigationBar: BarraCtaFija(
               child: SizedBox(
                 width: double.infinity,
@@ -180,7 +176,16 @@ class _PantallaAdminDetalleServicioState
                 ),
               ),
             ),
-            body: _CuerpoDetalleServicio(
+            body: SafeArea(
+              bottom: false,
+              child: NestedScrollView(
+                headerSliverBuilder: (_, _) => [
+                  const CabeceraTituloGrande(
+                    titulo: 'Servicio',
+                    mostrarAtras: true,
+                  ),
+                ],
+                body: _CuerpoDetalleServicio(
               detalle: detalle,
               cargando: vmCatalogo.cargando,
               error: vmCatalogo.error,
@@ -206,6 +211,8 @@ class _PantallaAdminDetalleServicioState
               onDesactivar: detalle == null ? null : _desactivar,
               onEditarImagen: _mostrarImagenNoImplementada,
             ),
+                ),
+              ),
           );
         },
       ),

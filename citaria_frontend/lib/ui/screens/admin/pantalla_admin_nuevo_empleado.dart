@@ -4,7 +4,7 @@ import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
@@ -152,10 +152,6 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
     final bool formularioListo = vmEmpleados.horariosNuevo.isNotEmpty;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(
-        titulo: 'Nuevo empleado',
-        mostrarAtras: true,
-      ),
       bottomNavigationBar: BarraCtaFija(
         child: SizedBox(
           width: double.infinity,
@@ -173,11 +169,20 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
           ),
         ),
       ),
-      body: cargandoInicial
-          ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: formKey,
-              child: ListView(
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(
+              titulo: 'Nuevo empleado',
+              mostrarAtras: true,
+            ),
+          ],
+          body: cargandoInicial
+              ? const Center(child: CircularProgressIndicator())
+              : Form(
+                  key: formKey,
+                  child: ListView(
                 padding: EdgeInsets.fromLTRB(
                   espaciado.padX,
                   24,
@@ -268,6 +273,8 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                 ],
               ),
             ),
+        ),
+      ),
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
@@ -92,10 +92,16 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
     final vmAuth = context.watch<ViewModelAutenticacion>();
 
     return Scaffold(
-      appBar: const CabeceraPantalla(titulo: 'Únete', mostrarAtras: true),
       body: SafeArea(
-        bottom: true,
-        child: SingleChildScrollView(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(
+              titulo: 'Únete',
+              mostrarAtras: true,
+            ),
+          ],
+          body: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             espaciado.padX,
             24,
@@ -166,6 +172,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
               const SizedBox(height: 16),
             ],
           ),
+        ),
         ),
       ),
     );

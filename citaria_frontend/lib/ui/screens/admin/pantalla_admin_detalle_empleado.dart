@@ -4,7 +4,7 @@ import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -105,14 +105,21 @@ class _ContenidoDetalleEmpleado extends StatelessWidget {
     final detalle = vmEmpleados.detalle;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(titulo: 'Empleado', mostrarAtras: true),
       body: SafeArea(
-        top: false,
-        child: _CuerpoDetalleEmpleado(
-          empleadoId: empleadoId,
-          detalle: detalle,
-          vmEmpleados: vmEmpleados,
-          tabController: tabController,
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(titulo: 'Empleado', mostrarAtras: true),
+          ],
+          body: SafeArea(
+            top: false,
+            child: _CuerpoDetalleEmpleado(
+              empleadoId: empleadoId,
+              detalle: detalle,
+              vmEmpleados: vmEmpleados,
+              tabController: tabController,
+            ),
+          ),
         ),
       ),
     );

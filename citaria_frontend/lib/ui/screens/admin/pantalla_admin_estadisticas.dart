@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:citaria_frontend/data/repositories/repo_estadisticas.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
@@ -66,7 +67,6 @@ class _CuerpoEstadisticas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
     if (vmEstadisticas.cargando && vmEstadisticas.sinDatos) {
@@ -92,17 +92,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
       bottom: false,
       child: NestedScrollView(
         headerSliverBuilder: (ctx, _) => [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                espaciado.padX,
-                12,
-                espaciado.padX,
-                8,
-              ),
-              child: Text('Estadísticas', style: textTheme.displayLarge),
-            ),
-          ),
+          const CabeceraTituloGrande(titulo: 'Estadísticas'),
         ],
         body: RefreshIndicator(
           onRefresh: vmEstadisticas.refrescar,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
 
@@ -60,34 +60,39 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
     final chatbot = context.watch<ViewModelChatbot>();
 
     return Scaffold(
-      appBar: CabeceraPantalla(
-        mostrarAtras: true,
-        titulo: 'Asistente',
-        accionDerecha: Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
+      body: SafeArea(
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            CabeceraTituloGrande(
+              titulo: 'Asistente',
+              mostrarAtras: true,
+              accionDerecha: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'En línea',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                'En línea',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.outline,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: Column(
+            ),
+          ],
+          body: Column(
         children: [
           Expanded(
             child: ListView.builder(
@@ -136,6 +141,8 @@ class _PantallaChatbotState extends State<PantallaChatbot> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
@@ -51,9 +52,6 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
 
   @override
   Widget build(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final textTheme = Theme.of(context).textTheme;
-
     return ChangeNotifierProvider<ViewModelAdminCatalogo>.value(
       value: _viewModel,
       child: Consumer<ViewModelAdminCatalogo>(
@@ -72,17 +70,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
             bottom: false,
             child: NestedScrollView(
             headerSliverBuilder: (context, _) => [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    espaciado.padX,
-                    12,
-                    espaciado.padX,
-                    0,
-                  ),
-                  child: Text('Catálogo', style: textTheme.displayLarge),
-                ),
-              ),
+              const CabeceraTituloGrande(titulo: 'Catálogo'),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _TabBarDelegate(

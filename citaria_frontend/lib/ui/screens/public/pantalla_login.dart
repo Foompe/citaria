@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
@@ -84,8 +84,13 @@ class _PantallaLoginState extends State<PantallaLogin> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        appBar: const CabeceraPantalla(titulo: 'Iniciar sesión'),
-        body: SingleChildScrollView(
+        body: SafeArea(
+          bottom: false,
+          child: NestedScrollView(
+            headerSliverBuilder: (_, _) => [
+              const CabeceraTituloGrande(titulo: 'Iniciar sesión'),
+            ],
+            body: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             espaciado.padX,
             24,
@@ -198,6 +203,8 @@ class _PantallaLoginState extends State<PantallaLogin> {
                 ),
               ),
             ],
+          ),
+        ),
           ),
         ),
       ),

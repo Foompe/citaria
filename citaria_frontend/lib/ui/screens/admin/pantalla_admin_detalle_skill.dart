@@ -2,7 +2,7 @@ import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -110,7 +110,6 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
           }
 
           return Scaffold(
-            appBar: const CabeceraPantalla(titulo: 'Skill', mostrarAtras: true),
             bottomNavigationBar: BarraCtaFija(
               child: SizedBox(
                 width: double.infinity,
@@ -128,18 +127,29 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
                 ),
               ),
             ),
-            body: _CuerpoDetalleSkill(
-              detalle: detalle,
-              cargando: vmCatalogo.cargando,
-              error: vmCatalogo.error,
-              espaciado: espaciado,
-              formKey: _formKey,
-              ctrlNombre: _ctrlNombre,
-              ctrlDescripcion: _ctrlDescripcion,
-              activo: _activo,
-              onActivoChanged: (valor) => setState(() => _activo = valor),
-              onReintentar: () => vmCatalogo.cargarDetalleSkill(widget.id),
-              onDesactivar: detalle == null ? null : _desactivar,
+            body: SafeArea(
+              bottom: false,
+              child: NestedScrollView(
+                headerSliverBuilder: (_, _) => [
+                  const CabeceraTituloGrande(
+                    titulo: 'Skill',
+                    mostrarAtras: true,
+                  ),
+                ],
+                body: _CuerpoDetalleSkill(
+                  detalle: detalle,
+                  cargando: vmCatalogo.cargando,
+                  error: vmCatalogo.error,
+                  espaciado: espaciado,
+                  formKey: _formKey,
+                  ctrlNombre: _ctrlNombre,
+                  ctrlDescripcion: _ctrlDescripcion,
+                  activo: _activo,
+                  onActivoChanged: (valor) => setState(() => _activo = valor),
+                  onReintentar: () => vmCatalogo.cargarDetalleSkill(widget.id),
+                  onDesactivar: detalle == null ? null : _desactivar,
+                ),
+              ),
             ),
           );
         },

@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_horarios.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -103,10 +103,6 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
       value: _viewModel,
       child: Consumer<ViewModelAdminHorarios>(
         builder: (context, vmHorarios, _) => Scaffold(
-          appBar: const CabeceraPantalla(
-            titulo: 'Nuevo cierre',
-            mostrarAtras: true,
-          ),
           bottomNavigationBar: BarraCtaFija(
             child: SizedBox(
               width: double.infinity,
@@ -122,44 +118,55 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
               ),
             ),
           ),
-          body: Form(
-            key: _formKey,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                espaciado.padX,
-                24,
-                espaciado.padX,
-                120,
-              ),
-              children: [
-                TextFormField(
-                  controller: _ctrlFecha,
-                  readOnly: true,
-                  onTap: _seleccionarFecha,
-                  validator: (_) => _fechaSeleccionada == null
-                      ? 'La fecha es obligatoria'
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: 'Fecha *',
-                    suffixIcon: const Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(
-                      borderRadius: espaciado.radioInput,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _ctrlMotivo,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Motivo',
-                    alignLabelWithHint: true,
-                    border: OutlineInputBorder(
-                      borderRadius: espaciado.radioInput,
-                    ),
-                  ),
+          body: SafeArea(
+            bottom: false,
+            child: NestedScrollView(
+              headerSliverBuilder: (_, _) => [
+                const CabeceraTituloGrande(
+                  titulo: 'Nuevo cierre',
+                  mostrarAtras: true,
                 ),
               ],
+              body: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    espaciado.padX,
+                    24,
+                    espaciado.padX,
+                    120,
+                  ),
+                  children: [
+                    TextFormField(
+                      controller: _ctrlFecha,
+                      readOnly: true,
+                      onTap: _seleccionarFecha,
+                      validator: (_) => _fechaSeleccionada == null
+                          ? 'La fecha es obligatoria'
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha *',
+                        suffixIcon: const Icon(Icons.calendar_today),
+                        border: OutlineInputBorder(
+                          borderRadius: espaciado.radioInput,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _ctrlMotivo,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Motivo',
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(
+                          borderRadius: espaciado.radioInput,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

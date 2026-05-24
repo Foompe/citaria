@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -75,10 +75,6 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
       value: _viewModel,
       child: Consumer<ViewModelAdminCatalogo>(
         builder: (context, vmCatalogo, _) => Scaffold(
-          appBar: const CabeceraPantalla(
-            titulo: 'Nueva skill',
-            mostrarAtras: true,
-          ),
           bottomNavigationBar: BarraCtaFija(
             child: SizedBox(
               width: double.infinity,
@@ -94,42 +90,53 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
               ),
             ),
           ),
-          body: Form(
-            key: _formKey,
-            child: ListView(
-              padding: EdgeInsets.fromLTRB(
-                espaciado.padX,
-                24,
-                espaciado.padX,
-                120,
-              ),
-              children: [
-                TextFormField(
-                  controller: _ctrlNombre,
-                  textInputAction: TextInputAction.next,
-                  validator: (valor) => valor == null || valor.trim().isEmpty
-                      ? 'El nombre es obligatorio'
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre *',
-                    border: OutlineInputBorder(
-                      borderRadius: espaciado.radioInput,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _ctrlDescripcion,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Descripción',
-                    alignLabelWithHint: true,
-                    border: OutlineInputBorder(
-                      borderRadius: espaciado.radioInput,
-                    ),
-                  ),
+          body: SafeArea(
+            bottom: false,
+            child: NestedScrollView(
+              headerSliverBuilder: (_, _) => [
+                const CabeceraTituloGrande(
+                  titulo: 'Nueva skill',
+                  mostrarAtras: true,
                 ),
               ],
+              body: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    espaciado.padX,
+                    24,
+                    espaciado.padX,
+                    120,
+                  ),
+                  children: [
+                    TextFormField(
+                      controller: _ctrlNombre,
+                      textInputAction: TextInputAction.next,
+                      validator: (valor) => valor == null || valor.trim().isEmpty
+                          ? 'El nombre es obligatorio'
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre *',
+                        border: OutlineInputBorder(
+                          borderRadius: espaciado.radioInput,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _ctrlDescripcion,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Descripción',
+                        alignLabelWithHint: true,
+                        border: OutlineInputBorder(
+                          borderRadius: espaciado.radioInput,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

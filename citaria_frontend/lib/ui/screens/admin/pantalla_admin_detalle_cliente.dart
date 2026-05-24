@@ -4,7 +4,7 @@ import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
@@ -108,18 +108,25 @@ class _ContenidoDetalleCliente extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: const CabeceraPantalla(titulo: 'Cliente', mostrarAtras: true),
       body: SafeArea(
-        top: false,
-        child: _CuerpoDetalleCliente(
-          clienteId: clienteId,
-          detalle: detalle,
-          reservas: vmClientes.reservasCliente,
-          vmClientes: vmClientes,
-          tabController: tabController,
-          espaciado: espaciado,
-          colorScheme: colorScheme,
-          textTheme: textTheme,
+        bottom: false,
+        child: NestedScrollView(
+          headerSliverBuilder: (_, _) => [
+            const CabeceraTituloGrande(titulo: 'Cliente', mostrarAtras: true),
+          ],
+          body: SafeArea(
+            top: false,
+            child: _CuerpoDetalleCliente(
+              clienteId: clienteId,
+              detalle: detalle,
+              reservas: vmClientes.reservasCliente,
+              vmClientes: vmClientes,
+              tabController: tabController,
+              espaciado: espaciado,
+              colorScheme: colorScheme,
+              textTheme: textTheme,
+            ),
+          ),
         ),
       ),
     );
