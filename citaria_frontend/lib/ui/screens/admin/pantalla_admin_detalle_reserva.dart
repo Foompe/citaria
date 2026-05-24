@@ -229,12 +229,12 @@ class _BarraAcciones extends StatelessWidget {
                   ? () => _confirmar(context, id)
                   : null,
               child: cargando
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     )
                   : const Text('Confirmar'),

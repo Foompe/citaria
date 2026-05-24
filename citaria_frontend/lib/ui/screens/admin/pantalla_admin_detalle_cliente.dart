@@ -108,28 +108,19 @@ class _ContenidoDetalleCliente extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: CabeceraPantalla(
-        titulo: 'Cliente',
-        mostrarAtras: true,
-        accionDerecha: Tooltip(
-          message: 'Actualizar',
-          child: IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: clienteId == null
-                ? null
-                : () => vmClientes.cargarDetalleCliente(clienteId!),
-          ),
+      appBar: const CabeceraPantalla(titulo: 'Cliente', mostrarAtras: true),
+      body: SafeArea(
+        top: false,
+        child: _CuerpoDetalleCliente(
+          clienteId: clienteId,
+          detalle: detalle,
+          reservas: vmClientes.reservasCliente,
+          vmClientes: vmClientes,
+          tabController: tabController,
+          espaciado: espaciado,
+          colorScheme: colorScheme,
+          textTheme: textTheme,
         ),
-      ),
-      body: _CuerpoDetalleCliente(
-        clienteId: clienteId,
-        detalle: detalle,
-        reservas: vmClientes.reservasCliente,
-        vmClientes: vmClientes,
-        tabController: tabController,
-        espaciado: espaciado,
-        colorScheme: colorScheme,
-        textTheme: textTheme,
       ),
     );
   }
@@ -196,6 +187,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
             children: [
               AvatarFallbackCitaria(
                 texto: cliente.nombreCompleto,
+                imagenUrl: cliente.fotoUrl,
                 tamano: 72,
                 radio: 36,
               ),
@@ -226,13 +218,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
           child: TabBarView(
             controller: tabController,
             children: [
-              _TabDatos(
-                cliente: cliente,
-                vmClientes: vmClientes,
-                colorScheme: colorScheme,
-                textTheme: textTheme,
-                espaciado: espaciado,
-              ),
+              _TabDatos(cliente: cliente),
               _TabReservas(
                 reservas: reservas,
                 clienteNombre: cliente.nombreCompleto,
@@ -245,58 +231,188 @@ class _CuerpoDetalleCliente extends StatelessWidget {
   }
 }
 
-class _TabDatos extends StatelessWidget {
-  const _TabDatos({
-    required this.cliente,
-    required this.vmClientes,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
+enum _CampoAdmin { nombre, apellidos, dni, telefono, notas }
+
+class _TabDatos extends StatefulWidget {
+  const _TabDatos({required this.cliente});
 
   final DtoDetalleClienteAdmin cliente;
-  final ViewModelAdminClientes vmClientes;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
+
+  @override
+  State<_TabDatos> createState() => _TabDatosState();
+}
+
+class _TabDatosState extends State<_TabDatos> {
+  _CampoAdmin? _campoEnEdicion;
+  final TextEditingController _controlador = TextEditingController();
+
+  static String _raw(String dtoValue, String fallback) =>
+      dtoValue == fallback ? '' : dtoValue;
+
+  @override
+  void dispose() {
+    _controlador.dispose();
+    super.dispose();
+  }
+
+  void _editarCampo(_CampoAdmin campo, String valorOriginal) {
+    setState(() {
+      _campoEnEdicion = campo;
+      _controlador.text = valorOriginal;
+      _controlador.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controlador.text.length),
+      );
+    });
+  }
+
+  void _cancelarEdicion() {
+    setState(() {
+      _campoEnEdicion = null;
+      _controlador.clear();
+    });
+  }
+
+  Future<void> _guardarCampo(
+    BuildContext context,
+    ViewModelAdminClientes vmClientes,
+  ) async {
+    final _CampoAdmin? campo = _campoEnEdicion;
+    if (campo == null) return;
+
+    final String valor = _controlador.text.trim();
+    if (campo == _CampoAdmin.nombre && valor.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El nombre es obligatorio.')),
+      );
+      return;
+    }
+
+    final c = widget.cliente;
+    final bool ok = await vmClientes.actualizarCliente(
+      id: c.id,
+      nombre: campo == _CampoAdmin.nombre ? valor : c.nombre,
+      apellidos: campo == _CampoAdmin.apellidos
+          ? valor
+          : _raw(c.apellidos, 'Sin apellidos'),
+      dni: campo == _CampoAdmin.dni ? valor : _raw(c.dni, 'Sin DNI'),
+      telefono: campo == _CampoAdmin.telefono
+          ? valor
+          : _raw(c.telefono, 'Sin teléfono'),
+      notas: campo == _CampoAdmin.notas ? valor : (c.notas ?? ''),
+    );
+
+    if (!context.mounted) return;
+    if (ok) {
+      _cancelarEdicion();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vmClientes.error ?? 'No se pudo guardar.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final campos = [
-      (Icons.person_outline, 'Nombre', cliente.nombre),
-      (Icons.group_outlined, 'Apellidos', cliente.apellidos),
-      (Icons.badge_outlined, 'DNI', cliente.dni),
-      (Icons.email_outlined, 'Email', cliente.email),
-      (Icons.phone_outlined, 'Teléfono', cliente.telefono),
-      if (cliente.notas != null)
-        (Icons.notes_outlined, 'Notas', cliente.notas!),
-    ];
+    final vmClientes = context.watch<ViewModelAdminClientes>();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final bool cargando = vmClientes.cargando;
+    final c = widget.cliente;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 24),
       children: [
+        Text(
+          'DATOS',
+          style: textTheme.labelSmall?.copyWith(
+            color: colorScheme.outline,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(height: 8),
         Card(
           shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
           child: Column(
             children: [
-              for (int i = 0; i < campos.length; i++) ...[
-                ListTile(
-                  leading: Icon(campos[i].$1, color: colorScheme.outline),
-                  title: Text(
-                    campos[i].$2,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
-                  ),
-                  subtitle: Text(campos[i].$3, style: textTheme.bodyLarge),
+              _FilaDatoAdmin(
+                icono: Icons.person_outline,
+                label: 'Nombre',
+                valor: c.nombre,
+                campo: _CampoAdmin.nombre,
+                campoEnEdicion: _campoEnEdicion,
+                controller: _controlador,
+                guardando: cargando,
+                onEditar: () => _editarCampo(_CampoAdmin.nombre, c.nombre),
+                onGuardar: () => _guardarCampo(context, vmClientes),
+                onCancelar: _cancelarEdicion,
+              ),
+              const _DivisorAdmin(),
+              _FilaDatoAdmin(
+                icono: Icons.group_outlined,
+                label: 'Apellidos',
+                valor: c.apellidos,
+                campo: _CampoAdmin.apellidos,
+                campoEnEdicion: _campoEnEdicion,
+                controller: _controlador,
+                guardando: cargando,
+                onEditar: () => _editarCampo(
+                  _CampoAdmin.apellidos,
+                  _raw(c.apellidos, 'Sin apellidos'),
                 ),
-                if (i < campos.length - 1)
-                  Divider(
-                    height: 1,
-                    indent: espaciado.padX,
-                    endIndent: espaciado.padX,
-                  ),
-              ],
+                onGuardar: () => _guardarCampo(context, vmClientes),
+                onCancelar: _cancelarEdicion,
+              ),
+              const _DivisorAdmin(),
+              _FilaDatoAdmin(
+                icono: Icons.badge_outlined,
+                label: 'DNI',
+                valor: c.dni,
+                campo: _CampoAdmin.dni,
+                campoEnEdicion: _campoEnEdicion,
+                controller: _controlador,
+                guardando: cargando,
+                onEditar: () =>
+                    _editarCampo(_CampoAdmin.dni, _raw(c.dni, 'Sin DNI')),
+                onGuardar: () => _guardarCampo(context, vmClientes),
+                onCancelar: _cancelarEdicion,
+              ),
+              const _DivisorAdmin(),
+              _FilaDatoAdmin(
+                icono: Icons.email_outlined,
+                label: 'Email',
+                valor: c.email,
+              ),
+              const _DivisorAdmin(),
+              _FilaDatoAdmin(
+                icono: Icons.phone_outlined,
+                label: 'Teléfono',
+                valor: c.telefono,
+                campo: _CampoAdmin.telefono,
+                campoEnEdicion: _campoEnEdicion,
+                controller: _controlador,
+                guardando: cargando,
+                onEditar: () => _editarCampo(
+                  _CampoAdmin.telefono,
+                  _raw(c.telefono, 'Sin teléfono'),
+                ),
+                onGuardar: () => _guardarCampo(context, vmClientes),
+                onCancelar: _cancelarEdicion,
+              ),
+              const _DivisorAdmin(),
+              _FilaDatoAdmin(
+                icono: Icons.notes_outlined,
+                label: 'Notas',
+                valor: c.notas ?? 'No indicado',
+                campo: _CampoAdmin.notas,
+                campoEnEdicion: _campoEnEdicion,
+                controller: _controlador,
+                guardando: cargando,
+                onEditar: () =>
+                    _editarCampo(_CampoAdmin.notas, c.notas ?? ''),
+                onGuardar: () => _guardarCampo(context, vmClientes),
+                onCancelar: _cancelarEdicion,
+              ),
             ],
           ),
         ),
@@ -306,9 +422,9 @@ class _TabDatos extends StatelessWidget {
             foregroundColor: colorScheme.error,
             side: BorderSide(color: colorScheme.error),
           ),
-          onPressed: vmClientes.cargando
+          onPressed: cargando
               ? null
-              : () => _darDeBaja(context, vmClientes, cliente.id),
+              : () => _darDeBaja(context, vmClientes, c.id),
           child: const Text('Dar de baja'),
         ),
       ],
@@ -321,15 +437,133 @@ class _TabDatos extends StatelessWidget {
     int id,
   ) async {
     final bool ok = await vmClientes.darDeBajaCliente(id);
-    if (!context.mounted) {
-      return;
-    }
+    if (!context.mounted) return;
     if (ok) {
       Navigator.maybePop(context);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(vmClientes.error ?? 'No se pudo dar de baja.')),
+    );
+  }
+}
+
+// ── Fila de dato editable (patrón perfil cliente) ─────────────────────────────
+
+class _FilaDatoAdmin extends StatelessWidget {
+  const _FilaDatoAdmin({
+    required this.icono,
+    required this.label,
+    required this.valor,
+    this.campo,
+    this.campoEnEdicion,
+    this.controller,
+    this.guardando = false,
+    this.onEditar,
+    this.onGuardar,
+    this.onCancelar,
+  });
+
+  final IconData icono;
+  final String label;
+  final String valor;
+  final _CampoAdmin? campo;
+  final _CampoAdmin? campoEnEdicion;
+  final TextEditingController? controller;
+  final bool guardando;
+  final VoidCallback? onEditar;
+  final VoidCallback? onGuardar;
+  final VoidCallback? onCancelar;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final bool editable = campo != null;
+    final bool editando = editable && campoEnEdicion == campo;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Icon(icono, color: colorScheme.outline, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                if (editando)
+                  TextFormField(
+                    controller: controller,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    enabled: !guardando,
+                    onFieldSubmitted: (_) => onGuardar?.call(),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  )
+                else
+                  Text(valor, style: textTheme.bodyLarge),
+              ],
+            ),
+          ),
+          if (editando) ...[
+            IconButton(
+              tooltip: 'Cancelar',
+              icon: Icon(Icons.close, color: colorScheme.outline, size: 20),
+              onPressed: guardando ? null : onCancelar,
+            ),
+            IconButton(
+              tooltip: 'Guardar $label',
+              icon: guardando
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : Icon(Icons.check, color: colorScheme.primary, size: 20),
+              onPressed: guardando ? null : onGuardar,
+            ),
+          ] else if (editable)
+            Semantics(
+              label: 'Editar $label',
+              child: IconButton(
+                tooltip: 'Editar $label',
+                icon: Icon(
+                  Icons.edit_outlined,
+                  color: colorScheme.outline,
+                  size: 18,
+                ),
+                onPressed: onEditar,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DivisorAdmin extends StatelessWidget {
+  const _DivisorAdmin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      indent: 48,
+      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
     );
   }
 }

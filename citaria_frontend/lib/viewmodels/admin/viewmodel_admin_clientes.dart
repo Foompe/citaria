@@ -17,6 +17,7 @@ class DtoClienteAdmin {
     required this.telefono,
     required this.dni,
     required this.iniciales,
+    required this.fotoUrl,
     required this.tieneUsuario,
   });
 
@@ -26,6 +27,7 @@ class DtoClienteAdmin {
   final String telefono;
   final String dni;
   final String iniciales;
+  final String? fotoUrl;
   final bool tieneUsuario;
 }
 
@@ -41,6 +43,7 @@ class DtoDetalleClienteAdmin {
     required this.telefono,
     required this.notas,
     required this.iniciales,
+    required this.fotoUrl,
     required this.tieneUsuario,
   });
 
@@ -53,6 +56,7 @@ class DtoDetalleClienteAdmin {
   final String telefono;
   final String? notas;
   final String iniciales;
+  final String? fotoUrl;
   final bool tieneUsuario;
 }
 
@@ -221,6 +225,7 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
       telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
       dni: _textoConFallback(cliente.dni, 'Sin DNI'),
       iniciales: _crearIniciales(nombreCompleto),
+      fotoUrl: cliente.fotoUrl,
       tieneUsuario: cliente.tieneUsuario,
     );
   }
@@ -237,8 +242,45 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
       telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
       notas: _textoOpcional(cliente.notas),
       iniciales: _crearIniciales(nombreCompleto),
+      fotoUrl: cliente.fotoUrl,
       tieneUsuario: cliente.tieneUsuario,
     );
+  }
+
+  Future<bool> actualizarCliente({
+    required int id,
+    required String nombre,
+    required String apellidos,
+    required String dni,
+    required String telefono,
+    required String notas,
+  }) async {
+    iniciarCarga();
+    try {
+      final String token = leerTokenObligatorio();
+      final String? emailOriginal = _textoOpcional(
+        (_detalle?.email == 'Sin email') ? null : _detalle?.email,
+      );
+      final Cliente cliente = Cliente(
+        id: id,
+        nombre: nombre.trim(),
+        apellidos: _valorOpcional(apellidos),
+        dni: _valorOpcional(dni),
+        email: emailOriginal,
+        telefono: _valorOpcional(telefono),
+        notas: _valorOpcional(notas),
+        fotoUrl: _detalle?.fotoUrl,
+        tieneUsuario: _detalle?.tieneUsuario ?? false,
+      );
+      await _repoClientes.actualizar(id, cliente, token);
+      await cargarDetalleCliente(id);
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
   }
 
   Future<List<DtoReservaClienteAdmin>> _crearReservasCliente(

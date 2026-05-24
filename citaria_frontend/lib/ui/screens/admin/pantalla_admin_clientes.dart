@@ -2,8 +2,9 @@ import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
-import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -59,45 +60,69 @@ class _ContenidoAdminClientes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       drawer: const MenuLateralAdmin(),
       bottomNavigationBar: const BarraNavegacionAdmin(
         seccionActiva: SeccionAdmin.clientes,
       ),
-      appBar: CabeceraPantalla(
-        titulo: 'Clientes',
-        mostrarAtras: false,
-        accionDerecha: Tooltip(
-          message: 'Nuevo cliente',
-          child: IconButton(
-            icon: const Icon(Icons.person_add_outlined),
-            onPressed: () => GestorNavegacion.irAAdminNuevoCliente(context),
-          ),
-        ),
+      floatingActionButton: FabCitaria(
+        icono: Icons.person_add_outlined,
+        tooltip: 'Nuevo cliente',
+        heroTag: 'fab-admin-clientes-nuevo',
+        onPressed: () => GestorNavegacion.irAAdminNuevoCliente(context),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              espaciado.padX,
-              16,
-              espaciado.padX,
-              8,
-            ),
-            child: TextField(
-              controller: busqueda,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search),
-                hintText: 'Buscar cliente...',
-                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                16,
+                espaciado.padX / 2,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('Clientes', style: textTheme.displayLarge),
+                  ),
+                  Tooltip(
+                    message: 'Nuevo cliente',
+                    child: IconButton(
+                      icon: const Icon(Icons.person_add_outlined),
+                      onPressed: () =>
+                          GestorNavegacion.irAAdminNuevoCliente(context),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const Expanded(
-            child: _ListaClientesAdmin(modoSeleccion: false),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                12,
+                espaciado.padX,
+                8,
+              ),
+              child: TextField(
+                controller: busqueda,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
+                  hintText: 'Buscar cliente...',
+                  border: OutlineInputBorder(
+                    borderRadius: espaciado.radioInput,
+                  ),
+                ),
+              ),
+            ),
+            const Expanded(
+              child: _ListaClientesAdmin(modoSeleccion: false),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -140,21 +165,20 @@ class _ListaClientesAdmin extends StatelessWidget {
         itemBuilder: (context, index) {
           final DtoClienteAdmin cliente = clientes[index];
           return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: colorScheme.primaryContainer,
-              child: Text(
-                cliente.iniciales,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            leading: AvatarFallbackCitaria(
+              texto: cliente.nombreCompleto,
+              imagenUrl: cliente.fotoUrl,
+              tamano: 44,
+              radio: 22,
             ),
             title: Text(cliente.nombreCompleto),
             subtitle: Text(
               modoSeleccion ? cliente.telefono : cliente.email,
               style: textTheme.bodySmall,
             ),
+            trailing: cliente.tieneUsuario
+                ? Icon(Icons.verified, color: colorScheme.primary, size: 20)
+                : null,
             onTap: () => GestorNavegacion.irAAdminDetalleCliente(
               context,
               cliente.id.toString(),
