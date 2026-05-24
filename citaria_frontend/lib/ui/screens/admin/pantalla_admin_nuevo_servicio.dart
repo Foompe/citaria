@@ -23,10 +23,17 @@ class _PantallaAdminNuevoServicioState
   final _ctrlNombre = TextEditingController();
   final _ctrlDescripcion = TextEditingController();
   final _ctrlPrecio = TextEditingController();
-  final _ctrlDuracion = TextEditingController();
   final Set<int> _skillsSeleccionadas = <int>{};
   late final ViewModelAdminCatalogo _viewModel;
   int? _categoriaSeleccionadaId;
+  int _duracionHoras = 0;
+  int _duracionMinutos = 30;
+
+  static const List<int> _opcionesMinutos = [
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
+  ];
+
+  int get _duracionTotalMinutos => _duracionHoras * 60 + _duracionMinutos;
 
   @override
   void initState() {
@@ -42,13 +49,22 @@ class _PantallaAdminNuevoServicioState
     _ctrlNombre.dispose();
     _ctrlDescripcion.dispose();
     _ctrlPrecio.dispose();
-    _ctrlDuracion.dispose();
     _viewModel.dispose();
     super.dispose();
   }
 
+  void _mostrarImagenNoImplementada() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Función no implementada.')),
+    );
+  }
+
   Future<void> _crearServicio() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_duracionTotalMinutos <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La duración debe ser mayor que 0.')),
+      );
       return;
     }
 
@@ -56,14 +72,12 @@ class _PantallaAdminNuevoServicioState
       nombre: _ctrlNombre.text,
       descripcion: _ctrlDescripcion.text,
       precio: _ctrlPrecio.text,
-      duracion: _ctrlDuracion.text,
+      duracion: _duracionTotalMinutos.toString(),
       categoriaId: _categoriaSeleccionadaId,
       skillIds: _skillsSeleccionadas,
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (servicio == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,14 +104,19 @@ class _PantallaAdminNuevoServicioState
           ctrlNombre: _ctrlNombre,
           ctrlDescripcion: _ctrlDescripcion,
           ctrlPrecio: _ctrlPrecio,
-          ctrlDuracion: _ctrlDuracion,
+          duracionHoras: _duracionHoras,
+          duracionMinutos: _duracionMinutos,
+          opcionesMinutos: _opcionesMinutos,
           categoriaSeleccionadaId: _categoriaSeleccionadaId,
           skillsSeleccionadas: _skillsSeleccionadas,
           vmCatalogo: vmCatalogo,
           onCrear: _crearServicio,
           onCategoriaChanged: (id) =>
               setState(() => _categoriaSeleccionadaId = id),
+          onHorasChanged: (h) => setState(() => _duracionHoras = h),
+          onMinutosChanged: (m) => setState(() => _duracionMinutos = m),
           onSkillTap: _alternarSkill,
+          onEditarImagen: _mostrarImagenNoImplementada,
         ),
       ),
     );
@@ -120,26 +139,36 @@ class _ContenidoNuevoServicio extends StatelessWidget {
     required this.ctrlNombre,
     required this.ctrlDescripcion,
     required this.ctrlPrecio,
-    required this.ctrlDuracion,
+    required this.duracionHoras,
+    required this.duracionMinutos,
+    required this.opcionesMinutos,
     required this.categoriaSeleccionadaId,
     required this.skillsSeleccionadas,
     required this.vmCatalogo,
     required this.onCrear,
     required this.onCategoriaChanged,
+    required this.onHorasChanged,
+    required this.onMinutosChanged,
     required this.onSkillTap,
+    required this.onEditarImagen,
   });
 
   final GlobalKey<FormState> formKey;
   final TextEditingController ctrlNombre;
   final TextEditingController ctrlDescripcion;
   final TextEditingController ctrlPrecio;
-  final TextEditingController ctrlDuracion;
+  final int duracionHoras;
+  final int duracionMinutos;
+  final List<int> opcionesMinutos;
   final int? categoriaSeleccionadaId;
   final Set<int> skillsSeleccionadas;
   final ViewModelAdminCatalogo vmCatalogo;
   final VoidCallback onCrear;
   final ValueChanged<int?> onCategoriaChanged;
+  final ValueChanged<int> onHorasChanged;
+  final ValueChanged<int> onMinutosChanged;
   final ValueChanged<int> onSkillTap;
+  final VoidCallback onEditarImagen;
 
   @override
   Widget build(BuildContext context) {
@@ -190,20 +219,30 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                   ],
+
+                  // ── Imagen ────────────────────────────────────────────────
                   Center(
-                    child: _PlaceholderImagen(
-                      colorScheme: colorScheme,
+                    child: _ImagenServicioEditable(
+                      imagenUrl: null,
                       espaciado: espaciado,
+                      colorScheme: colorScheme,
+                      onEditar: onEditarImagen,
                     ),
                   ),
                   const SizedBox(height: 28),
-                  _CampoFormulario(
+
+                  // ── Campos de texto ───────────────────────────────────────
+                  TextFormField(
                     controller: ctrlNombre,
-                    etiqueta: 'Nombre *',
-                    espaciado: espaciado,
-                    validador: (v) => (v == null || v.trim().isEmpty)
+                    validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'El nombre es obligatorio'
                         : null,
+                    decoration: InputDecoration(
+                      labelText: 'Nombre *',
+                      border: OutlineInputBorder(
+                        borderRadius: espaciado.radioInput,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -218,25 +257,82 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  _CampoFormulario(
+                  TextFormField(
                     controller: ctrlPrecio,
-                    etiqueta: 'Precio *',
-                    teclado: const TextInputType.numberWithOptions(
-                      decimal: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    validator: _validarPrecio,
+                    decoration: InputDecoration(
+                      labelText: 'Precio *',
+                      border: OutlineInputBorder(
+                        borderRadius: espaciado.radioInput,
+                      ),
                     ),
-                    espaciado: espaciado,
-                    validador: _validarPrecio,
                   ),
                   const SizedBox(height: 16),
-                  _CampoFormulario(
-                    controller: ctrlDuracion,
-                    etiqueta: 'Duración (minutos) *',
-                    teclado: TextInputType.number,
-                    espaciado: espaciado,
-                    validador: _validarDuracion,
+
+                  // ── Duración ──────────────────────────────────────────────
+                  Text(
+                    'Duración *',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey('horas-$duracionHoras'),
+                          initialValue: duracionHoras,
+                          decoration: InputDecoration(
+                            labelText: 'Horas',
+                            border: OutlineInputBorder(
+                              borderRadius: espaciado.radioInput,
+                            ),
+                          ),
+                          items: [
+                            for (int h = 0; h <= 8; h++)
+                              DropdownMenuItem(
+                                value: h,
+                                child: Text('$h h'),
+                              ),
+                          ],
+                          onChanged: (h) {
+                            if (h != null) onHorasChanged(h);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey('minutos-$duracionMinutos'),
+                          initialValue: duracionMinutos,
+                          decoration: InputDecoration(
+                            labelText: 'Minutos',
+                            border: OutlineInputBorder(
+                              borderRadius: espaciado.radioInput,
+                            ),
+                          ),
+                          items: [
+                            for (final m in opcionesMinutos)
+                              DropdownMenuItem(
+                                value: m,
+                                child: Text('$m min'),
+                              ),
+                          ],
+                          onChanged: (m) {
+                            if (m != null) onMinutosChanged(m);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Categoría ─────────────────────────────────────────────
                   DropdownButtonFormField<int>(
+                    key: ValueKey('categoria-$categoriaSeleccionadaId'),
                     initialValue: categoriaSeleccionadaId,
                     decoration: InputDecoration(
                       labelText: 'Categoría',
@@ -254,6 +350,8 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     onChanged: onCategoriaChanged,
                   ),
                   const SizedBox(height: 28),
+
+                  // ── Skills ────────────────────────────────────────────────
                   Text(
                     'SKILLS REQUERIDAS',
                     style: textTheme.labelSmall?.copyWith(
@@ -293,17 +391,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
   String? _validarPrecio(String? valor) {
     final String texto = valor?.trim().replaceAll(',', '.') ?? '';
     final double? precio = double.tryParse(texto);
-    if (precio == null || precio <= 0) {
-      return 'Introduce un precio válido';
-    }
-    return null;
-  }
-
-  String? _validarDuracion(String? valor) {
-    final int? duracion = int.tryParse(valor?.trim() ?? '');
-    if (duracion == null || duracion <= 0) {
-      return 'Introduce una duración válida';
-    }
+    if (precio == null || precio <= 0) return 'Introduce un precio válido';
     return null;
   }
 }
@@ -345,58 +433,81 @@ class _AvisoError extends StatelessWidget {
   }
 }
 
-class _PlaceholderImagen extends StatelessWidget {
-  const _PlaceholderImagen({
-    required this.colorScheme,
+class _ImagenServicioEditable extends StatelessWidget {
+  const _ImagenServicioEditable({
+    required this.imagenUrl,
     required this.espaciado,
+    required this.colorScheme,
+    required this.onEditar,
   });
 
-  final ColorScheme colorScheme;
+  final String? imagenUrl;
   final EspaciadoCitaria espaciado;
+  final ColorScheme colorScheme;
+  final VoidCallback onEditar;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: espaciado.radioCard,
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-          width: 2,
-          strokeAlign: BorderSide.strokeAlignOutside,
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: espaciado.radioCard,
+          child: SizedBox(
+            width: 120,
+            height: 120,
+            child: imagenUrl != null && imagenUrl!.isNotEmpty
+                ? Image.network(
+                    imagenUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        _FondoIconoServicio(colorScheme: colorScheme),
+                  )
+                : _FondoIconoServicio(colorScheme: colorScheme),
+          ),
         ),
-      ),
-      child: Icon(Icons.image_outlined, color: colorScheme.outline, size: 32),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: GestureDetector(
+            onTap: onEditar,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(8),
+                  bottomRight: Radius.circular(espaciado.radioCard.topRight.x),
+                ),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                size: 16,
+                color: colorScheme.onPrimary,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _CampoFormulario extends StatelessWidget {
-  const _CampoFormulario({
-    required this.controller,
-    required this.etiqueta,
-    required this.espaciado,
-    this.teclado,
-    this.validador,
-  });
+class _FondoIconoServicio extends StatelessWidget {
+  const _FondoIconoServicio({required this.colorScheme});
 
-  final TextEditingController controller;
-  final String etiqueta;
-  final EspaciadoCitaria espaciado;
-  final TextInputType? teclado;
-  final String? Function(String?)? validador;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: teclado,
-      validator: validador,
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        border: OutlineInputBorder(borderRadius: espaciado.radioInput),
+    return ColoredBox(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.design_services_outlined,
+          size: 48,
+          color: colorScheme.outline,
+        ),
       ),
     );
   }
