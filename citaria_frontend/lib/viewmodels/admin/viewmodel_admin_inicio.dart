@@ -58,20 +58,22 @@ class ViewModelAdminInicio extends ViewModelAdminBase {
   List<DtoEmpleadoInicioAdmin> _empleados = const <DtoEmpleadoInicioAdmin>[];
   List<DtoReservaInicioAdmin> _reservas = const <DtoReservaInicioAdmin>[];
   int _reservasPendientes = 0;
+  DateTime _fechaSeleccionada = DateTime.now();
 
   List<DtoEmpleadoInicioAdmin> get empleados => _empleados;
   List<DtoReservaInicioAdmin> get reservas => _reservas;
   int get reservasPendientes => _reservasPendientes;
+  DateTime get fechaSeleccionada => _fechaSeleccionada;
 
   Future<void> cargarInicio() async {
     iniciarCarga();
 
     try {
       final String token = leerTokenObligatorio();
-      final DateTime hoy = _soloFecha(DateTime.now());
+      final DateTime fecha = _soloFecha(_fechaSeleccionada);
       final List<Empleado> empleados = await _repoEmpleados.listarTodos(token);
       final List<Reserva> reservas = await _repoReservas.listarConFiltros(
-        hoy,
+        fecha,
         <EstadoReserva>[EstadoReserva.pendiente, EstadoReserva.confirmada],
         token,
       );
@@ -97,6 +99,11 @@ class ViewModelAdminInicio extends ViewModelAdminBase {
   }
 
   Future<void> refrescar() {
+    return cargarInicio();
+  }
+
+  Future<void> cambiarFecha(DateTime fecha) {
+    _fechaSeleccionada = _soloFecha(fecha);
     return cargarInicio();
   }
 

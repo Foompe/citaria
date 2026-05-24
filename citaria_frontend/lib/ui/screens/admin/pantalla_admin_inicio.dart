@@ -89,25 +89,18 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
     super.dispose();
   }
 
-  String _fechaHoy() {
-    const diasSemana = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-    const meses = [
-      '',
-      'ene',
-      'feb',
-      'mar',
-      'abr',
-      'may',
-      'jun',
-      'jul',
-      'ago',
-      'sep',
-      'oct',
-      'nov',
-      'dic',
-    ];
-    final hoy = DateTime.now();
-    return '${diasSemana[hoy.weekday]} ${hoy.day} ${meses[hoy.month]}';
+  void _mostrarSelectorFecha(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (ctx) => _SelectorFechaDia(
+        fechaSeleccionada: _viewModel.fechaSeleccionada,
+        onFechaSeleccionada: (fecha) {
+          Navigator.pop(ctx);
+          _viewModel.cambiarFecha(fecha);
+        },
+      ),
+    );
   }
 
   @override
@@ -142,7 +135,8 @@ class _PantallaAdminInicioState extends State<PantallaAdminInicio> {
               child: Column(
                 children: [
                   _CabeceraInicio(
-                    fecha: _fechaHoy(),
+                    fecha: vmInicio.fechaSeleccionada,
+                    onFechaTap: () => _mostrarSelectorFecha(context),
                     pendientes: vmInicio.reservasPendientes,
                     espaciado: espaciado,
                     colorScheme: colorScheme,
@@ -271,7 +265,7 @@ class _ContenidoInicio extends StatelessWidget {
             right: 16,
             bottom: 16,
             child: Material(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: Theme.of(context).extension<EspaciadoCitaria>()!.radioInput,
               color: Theme.of(context).colorScheme.errorContainer,
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -323,17 +317,30 @@ class _EstadoCentrado extends StatelessWidget {
 class _CabeceraInicio extends StatelessWidget {
   const _CabeceraInicio({
     required this.fecha,
+    required this.onFechaTap,
     required this.pendientes,
     required this.espaciado,
     required this.colorScheme,
     required this.textTheme,
   });
 
-  final String fecha;
+  final DateTime fecha;
+  final VoidCallback onFechaTap;
   final int pendientes;
   final EspaciadoCitaria espaciado;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+
+  String _formatearFecha(DateTime d) {
+    const dias = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const meses = [
+      '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+    ];
+    final hoy = DateTime.now();
+    final sufijo = d.year != hoy.year ? ' ${d.year}' : '';
+    return '${dias[d.weekday]} ${d.day} ${meses[d.month]}$sufijo';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +359,33 @@ class _CabeceraInicio extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Center(child: Text(fecha, style: textTheme.displaySmall)),
+            child: Center(
+              child: InkWell(
+                onTap: onFechaTap,
+                borderRadius: espaciado.radioPill,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatearFecha(fecha),
+                        style: textTheme.displaySmall,
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.unfold_more,
+                        size: 18,
+                        color: colorScheme.outline,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
           _BotonNotificacionesPendientes(
             pendientes: pendientes,
@@ -400,7 +433,7 @@ class _BotonNotificacionesPendientes extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: colorScheme.error,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: Theme.of(context).extension<EspaciadoCitaria>()!.radioPill,
                     border: Border.all(color: colorScheme.surface, width: 1.5),
                   ),
                   alignment: Alignment.center,
@@ -715,6 +748,206 @@ class _GridReservas extends StatelessWidget {
           );
         }),
       ],
+    );
+  }
+}
+
+// ── Selector de fecha ──────────────────────────────────────────────────────────
+
+class _SelectorFechaDia extends StatefulWidget {
+  const _SelectorFechaDia({
+    required this.fechaSeleccionada,
+    required this.onFechaSeleccionada,
+  });
+
+  final DateTime fechaSeleccionada;
+  final void Function(DateTime) onFechaSeleccionada;
+
+  @override
+  State<_SelectorFechaDia> createState() => _SelectorFechaDiaState();
+}
+
+class _SelectorFechaDiaState extends State<_SelectorFechaDia> {
+  static const int _diasAtras = 60;
+  static const int _diasAdelante = 60;
+  static const double _alturaItem = 52.0;
+
+  late final List<DateTime> _dias;
+  late final ScrollController _scroll;
+
+  @override
+  void initState() {
+    super.initState();
+    final hoy = DateTime.now();
+    final base = DateTime(hoy.year, hoy.month, hoy.day);
+    _dias = List.generate(
+      _diasAtras + _diasAdelante + 1,
+      (i) {
+        final n = i - _diasAtras;
+        final d = DateTime(base.year, base.month, base.day + n);
+        return DateTime(d.year, d.month, d.day);
+      },
+    );
+    final int idx = _dias.indexWhere(
+      (d) =>
+          d.year == widget.fechaSeleccionada.year &&
+          d.month == widget.fechaSeleccionada.month &&
+          d.day == widget.fechaSeleccionada.day,
+    );
+    final double offset = idx > 2 ? (idx - 2) * _alturaItem : 0.0;
+    _scroll = ScrollController(initialScrollOffset: offset);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final hoy = DateTime.now();
+    final hoySolo = DateTime(hoy.year, hoy.month, hoy.day);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Seleccionar día', style: textTheme.displaySmall),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: _alturaItem * 7,
+          child: ListView.builder(
+            controller: _scroll,
+            itemCount: _dias.length,
+            itemExtent: _alturaItem,
+            itemBuilder: (ctx, i) {
+              final dia = _dias[i];
+              final esSeleccionado =
+                  dia.year == widget.fechaSeleccionada.year &&
+                  dia.month == widget.fechaSeleccionada.month &&
+                  dia.day == widget.fechaSeleccionada.day;
+              final esHoy =
+                  dia.year == hoySolo.year &&
+                  dia.month == hoySolo.month &&
+                  dia.day == hoySolo.day;
+              return _ItemDia(
+                fecha: dia,
+                esSeleccionado: esSeleccionado,
+                esHoy: esHoy,
+                onTap: () => widget.onFechaSeleccionada(dia),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+class _ItemDia extends StatelessWidget {
+  const _ItemDia({
+    required this.fecha,
+    required this.esSeleccionado,
+    required this.esHoy,
+    required this.onTap,
+  });
+
+  final DateTime fecha;
+  final bool esSeleccionado;
+  final bool esHoy;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+
+    const diasSemana = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const meses = [
+      '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+    ];
+
+    final colorTexto =
+        esSeleccionado ? colorScheme.primary : colorScheme.onSurface;
+
+    return InkWell(
+      onTap: onTap,
+      child: ColoredBox(
+        color: esSeleccionado ? colorScheme.primaryContainer : Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 44,
+                child: Text(
+                  diasSemana[fecha.weekday],
+                  style: textTheme.bodySmall?.copyWith(color: colorTexto),
+                ),
+              ),
+              SizedBox(
+                width: 32,
+                child: Text(
+                  fecha.day.toString(),
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorTexto,
+                    fontWeight:
+                        esSeleccionado ? FontWeight.w700 : FontWeight.normal,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  meses[fecha.month],
+                  style: textTheme.bodySmall?.copyWith(color: colorTexto),
+                ),
+              ),
+              if (esHoy)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: espaciado.radioPill,
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    'hoy',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.primary,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
