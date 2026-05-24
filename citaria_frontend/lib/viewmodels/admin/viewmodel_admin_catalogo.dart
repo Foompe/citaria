@@ -16,6 +16,7 @@ class DtoServicioCatalogoAdmin {
     required this.duracion,
     required this.precio,
     required this.activo,
+    this.imagenUrl,
   });
 
   final int id;
@@ -24,6 +25,7 @@ class DtoServicioCatalogoAdmin {
   final String duracion;
   final String precio;
   final bool activo;
+  final String? imagenUrl;
 }
 
 @immutable
@@ -454,6 +456,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       duracion: _formatearDuracion(servicio.duracionMinutos),
       precio: _formatoPrecio.format(servicio.precio),
       activo: servicio.activo ?? true,
+      imagenUrl: _textoOpcional(servicio.imagenUrl),
     );
   }
 

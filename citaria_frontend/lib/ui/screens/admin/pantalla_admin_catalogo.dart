@@ -1,9 +1,9 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
-import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
-import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
@@ -68,13 +68,15 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
             heroTag: 'fab-catalogo-${_tabController.index}',
             onPressed: () => _manejarFab(context, vmCatalogo),
           ),
-          body: NestedScrollView(
+          body: SafeArea(
+            bottom: false,
+            child: NestedScrollView(
             headerSliverBuilder: (context, _) => [
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     espaciado.padX,
-                    16,
+                    12,
                     espaciado.padX,
                     0,
                   ),
@@ -99,6 +101,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
               vmCatalogo: vmCatalogo,
               tabController: _tabController,
             ),
+          ),
           ),
         ),
       ),
@@ -249,6 +252,7 @@ class _TarjetaServicio extends StatelessWidget {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final String? imagenUrl = servicio.imagenUrl;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -260,32 +264,32 @@ class _TarjetaServicio extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: espaciado.radioCard,
+              ClipRRect(
+                borderRadius: espaciado.radioCard,
+                child: SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: imagenUrl != null && imagenUrl.isNotEmpty
+                      ? Image.network(
+                          imagenUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _IconoServicioFallback(
+                            colorScheme: colorScheme,
+                          ),
+                        )
+                      : _IconoServicioFallback(colorScheme: colorScheme),
                 ),
-                child: Icon(Icons.car_repair, color: colorScheme.outline),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            servicio.nombre,
-                            style: textTheme.displaySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Switch(value: servicio.activo, onChanged: null),
-                      ],
+                    Text(
+                      servicio.nombre,
+                      style: textTheme.displaySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -314,11 +318,7 @@ class _TarjetaServicio extends StatelessWidget {
                             color: colorScheme.primary,
                           ),
                         ),
-                        ChipEstado(
-                          estado: servicio.activo
-                              ? EstadoReserva.confirmada
-                              : EstadoReserva.completada,
-                        ),
+                        _ChipActivoInactivo(activo: servicio.activo),
                       ],
                     ),
                   ],
@@ -327,6 +327,26 @@ class _TarjetaServicio extends StatelessWidget {
               Icon(Icons.chevron_right, color: colorScheme.outline),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _IconoServicioFallback extends StatelessWidget {
+  const _IconoServicioFallback({required this.colorScheme});
+
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(
+          Icons.design_services_outlined,
+          color: colorScheme.outline,
+          size: 28,
         ),
       ),
     );
@@ -355,6 +375,7 @@ class _TabCategorias extends StatelessWidget {
       itemCount: categorias.length,
       itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
         nombre: categorias[index].nombre,
+        activo: categorias[index].activo,
         onTap: () => onCategoriaTap(categorias[index]),
       ),
     );
@@ -381,6 +402,7 @@ class _TabSkills extends StatelessWidget {
       itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
         nombre: skills[index].nombre,
         subtitulo: skills[index].descripcion,
+        activo: skills[index].activo,
         onTap: () => onSkillTap(skills[index]),
       ),
     );
@@ -391,11 +413,13 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
   const _TarjetaSimpleCatalogo({
     required this.nombre,
     this.subtitulo,
+    this.activo,
     this.onTap,
   });
 
   final String nombre;
   final String? subtitulo;
+  final bool? activo;
   final VoidCallback? onTap;
 
   @override
@@ -403,6 +427,23 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    Widget? subtitleWidget;
+    if (activo != null) {
+      subtitleWidget = Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            if (subtitulo != null) Text(subtitulo!),
+            _ChipActivoInactivo(activo: activo!),
+          ],
+        ),
+      );
+    } else if (subtitulo != null) {
+      subtitleWidget = Text(subtitulo!);
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -413,11 +454,38 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
         child: ListTile(
           leading: Icon(Icons.label_outline, color: colorScheme.outline),
           title: Text(nombre, style: textTheme.displaySmall),
-          subtitle: subtitulo == null ? null : Text(subtitulo!),
+          subtitle: subtitleWidget,
           trailing: onTap == null
               ? null
               : Icon(Icons.chevron_right, color: colorScheme.outline),
         ),
+      ),
+    );
+  }
+}
+
+class _ChipActivoInactivo extends StatelessWidget {
+  const _ChipActivoInactivo({required this.activo});
+
+  final bool activo;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final estados = Theme.of(context).extension<EstadosReservaCitaria>()!;
+    final ColoresEstado colores =
+        activo ? estados.confirmada : estados.completada;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: colores.fondo,
+        borderRadius: espaciado.radioPill,
+      ),
+      child: Text(
+        activo ? 'Activo' : 'Inactivo',
+        style: textTheme.labelSmall?.copyWith(color: colores.texto),
       ),
     );
   }
