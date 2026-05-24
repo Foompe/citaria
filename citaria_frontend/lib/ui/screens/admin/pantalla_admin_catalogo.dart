@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
@@ -152,7 +153,7 @@ class _CuerpoCatalogo extends StatelessWidget {
         vmCatalogo.servicios.isEmpty &&
         vmCatalogo.categorias.isEmpty &&
         vmCatalogo.skills.isEmpty) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: vmCatalogo.refrescar,
@@ -440,34 +441,6 @@ class _ListaVacia extends StatelessWidget {
   }
 }
 
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   const _TabBarDelegate(this.tabBar);

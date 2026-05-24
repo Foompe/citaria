@@ -2,9 +2,12 @@ import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
+import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -169,7 +172,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (empleadoId == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado el empleado.',
         accionTexto: 'Volver',
         onAccion: () => Navigator.maybePop(context),
@@ -182,7 +185,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
 
     final String? error = vmEmpleados.error;
     if (error != null && detalle == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: () => vmEmpleados.cargarDetalleEmpleado(empleadoId!),
@@ -191,7 +194,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
 
     final DtoDetalleEmpleadoAdmin? empleado = detalle;
     if (empleado == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado el empleado.',
         accionTexto: 'Reintentar',
         onAccion: () => vmEmpleados.cargarDetalleEmpleado(empleadoId!),
@@ -204,16 +207,10 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 16),
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: colorScheme.primaryContainer,
-                child: Text(
-                  empleado.iniciales,
-                  style: textTheme.displaySmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              AvatarFallbackCitaria(
+                texto: empleado.nombreCompleto,
+                tamano: 72,
+                radio: 36,
               ),
               const SizedBox(height: 12),
               Text(
@@ -246,8 +243,6 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
               ),
               _TabHorarios(
                 horarios: horarios,
-                colorScheme: colorScheme,
-                textTheme: textTheme,
                 espaciado: espaciado,
               ),
               _TabSkills(skills: skills),
@@ -316,53 +311,27 @@ class _TabDatos extends StatelessWidget {
 }
 
 class _TabHorarios extends StatelessWidget {
-  const _TabHorarios({
-    required this.horarios,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
+  const _TabHorarios({required this.horarios, required this.espaciado});
 
   final List<DtoHorarioEmpleadoAdmin> horarios;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
 
   @override
   Widget build(BuildContext context) {
-    if (horarios.isEmpty) {
-      return const Center(child: Text('Sin horarios'));
-    }
-
     return ListView(
       padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 32),
       children: [
-        Text(
-          'HORARIO SEMANAL',
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.outline,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-          child: AbsorbPointer(
-            child: Column(
-              children: [
-                for (int i = 0; i < horarios.length; i++) ...[
-                  FilaDiaHorario(
-                    dia: horarios[i].dia,
-                    activo: horarios[i].activo,
-                    horario: horarios[i].horario,
-                    onChanged: (_) {},
-                  ),
-                  if (i < horarios.length - 1)
-                    Divider(height: 1, color: colorScheme.outlineVariant),
-                ],
-              ],
-            ),
-          ),
+        SeccionHorarioSemanal(
+          soloLectura: true,
+          filas: [
+            for (final h in horarios)
+              FilaDiaHorario(
+                dia: h.dia,
+                activo: h.activo,
+                horario: h.horario,
+                onChanged: (_) {},
+              ),
+          ],
         ),
       ],
     );
@@ -422,31 +391,3 @@ class _ChipEstadoEmpleado extends StatelessWidget {
   }
 }
 
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}

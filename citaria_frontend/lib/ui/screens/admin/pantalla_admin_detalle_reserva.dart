@@ -3,8 +3,10 @@ import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -150,7 +152,7 @@ class _CuerpoDetalleReserva extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (reservaId == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado la reserva.',
         accionTexto: 'Volver',
         onAccion: () => Navigator.maybePop(context),
@@ -163,7 +165,7 @@ class _CuerpoDetalleReserva extends StatelessWidget {
 
     final String? error = vmReservas.error;
     if (error != null && detalle == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: () => vmReservas.cargarDetalleReserva(reservaId!),
@@ -172,7 +174,7 @@ class _CuerpoDetalleReserva extends StatelessWidget {
 
     final DtoDetalleReservaAdmin? datos = detalle;
     if (datos == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado la reserva.',
         accionTexto: 'Reintentar',
         onAccion: () => vmReservas.cargarDetalleReserva(reservaId!),
@@ -386,17 +388,6 @@ class _CardCliente extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme textTheme;
 
-  String get _iniciales {
-    final List<String> partes = nombre
-        .split(' ')
-        .where((parte) => parte.trim().isNotEmpty)
-        .toList(growable: false);
-    if (partes.length >= 2) {
-      return '${partes.first[0]}${partes.last[0]}'.toUpperCase();
-    }
-    return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -415,16 +406,7 @@ class _CardCliente extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: Text(
-                    _iniciales,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                AvatarFallbackCitaria(texto: nombre, tamano: 40, radio: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -517,16 +499,7 @@ class _CardServicioEmpleado extends StatelessWidget {
             const Divider(height: 24),
             Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: colorScheme.primaryContainer,
-                  child: Text(
-                    empleado.isNotEmpty ? empleado[0].toUpperCase() : '?',
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
+                AvatarFallbackCitaria(texto: empleado, tamano: 32, radio: 16),
                 const SizedBox(width: 8),
                 Expanded(child: Text(empleado, style: textTheme.bodyLarge)),
               ],
@@ -688,34 +661,6 @@ class _CardTexto extends StatelessWidget {
   }
 }
 
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
   switch (estado) {

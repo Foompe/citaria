@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
@@ -182,14 +183,14 @@ class _CuerpoDetalleSkill extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (error != null && detalle == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error!,
         accionTexto: 'Reintentar',
         onAccion: onReintentar,
       );
     }
     if (detalle == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado la skill.',
         accionTexto: 'Reintentar',
         onAccion: onReintentar,
@@ -243,31 +244,3 @@ class _CuerpoDetalleSkill extends StatelessWidget {
   }
 }
 
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}

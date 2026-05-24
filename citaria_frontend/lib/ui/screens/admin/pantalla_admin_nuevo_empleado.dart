@@ -2,10 +2,13 @@ import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
+import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -183,7 +186,7 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                 ),
                 children: [
                   if (vmEmpleados.error != null) ...[
-                    _AvisoError(
+                    AvisoError(
                       mensaje: vmEmpleados.error!,
                       onReintentar: vmEmpleados.cargarFormularioNuevoEmpleado,
                     ),
@@ -191,44 +194,45 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                   ],
                   Center(child: _PlaceholderFoto(colorScheme: colorScheme)),
                   const SizedBox(height: 28),
-                  _CampoFormulario(
+                  CampoFormulario(
                     controller: ctrlNombre,
                     etiqueta: 'Nombre *',
-                    espaciado: espaciado,
                     validador: (v) => (v == null || v.trim().isEmpty)
                         ? 'El nombre es obligatorio'
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  _CampoFormulario(
+                  CampoFormulario(
                     controller: ctrlApellidos,
                     etiqueta: 'Apellidos *',
-                    espaciado: espaciado,
                     validador: (v) => (v == null || v.trim().isEmpty)
                         ? 'Los apellidos son obligatorios'
                         : null,
                   ),
                   const SizedBox(height: 16),
-                  _CampoFormulario(
+                  CampoFormulario(
                     controller: ctrlEmail,
                     etiqueta: 'Email',
                     teclado: TextInputType.emailAddress,
-                    espaciado: espaciado,
                   ),
                   const SizedBox(height: 16),
-                  _CampoFormulario(
+                  CampoFormulario(
                     controller: ctrlTelefono,
                     etiqueta: 'Teléfono',
                     teclado: TextInputType.phone,
-                    espaciado: espaciado,
                   ),
                   const SizedBox(height: 28),
-                  _HorariosNuevoEmpleado(
-                    horarios: vmEmpleados.horariosNuevo,
-                    vmEmpleados: vmEmpleados,
-                    colorScheme: colorScheme,
-                    textTheme: textTheme,
-                    espaciado: espaciado,
+                  SeccionHorarioSemanal(
+                    filas: [
+                      for (int i = 0; i < vmEmpleados.horariosNuevo.length; i++)
+                        FilaDiaHorario(
+                          dia: vmEmpleados.horariosNuevo[i].dia,
+                          activo: vmEmpleados.horariosNuevo[i].activo,
+                          horario: vmEmpleados.horariosNuevo[i].horario,
+                          onChanged: (v) =>
+                              vmEmpleados.alternarHorarioNuevo(i, v),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 28),
                   Text(
@@ -264,99 +268,6 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                 ],
               ),
             ),
-    );
-  }
-}
-
-class _HorariosNuevoEmpleado extends StatelessWidget {
-  const _HorariosNuevoEmpleado({
-    required this.horarios,
-    required this.vmEmpleados,
-    required this.colorScheme,
-    required this.textTheme,
-    required this.espaciado,
-  });
-
-  final List<DtoHorarioNuevoEmpleadoAdmin> horarios;
-  final ViewModelAdminEmpleados vmEmpleados;
-  final ColorScheme colorScheme;
-  final TextTheme textTheme;
-  final EspaciadoCitaria espaciado;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'HORARIO SEMANAL',
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.outline,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (horarios.isEmpty)
-          Text(
-            'Sin horario configurado',
-            style: textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-          )
-        else
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-            child: Column(
-              children: [
-                for (int i = 0; i < horarios.length; i++) ...[
-                  FilaDiaHorario(
-                    dia: horarios[i].dia,
-                    activo: horarios[i].activo,
-                    horario: horarios[i].horario,
-                    onChanged: (v) => vmEmpleados.alternarHorarioNuevo(i, v),
-                  ),
-                  if (i < horarios.length - 1)
-                    Divider(height: 1, color: colorScheme.outlineVariant),
-                ],
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _AvisoError extends StatelessWidget {
-  const _AvisoError({required this.mensaje, required this.onReintentar});
-
-  final String mensaje;
-  final VoidCallback onReintentar;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: espaciado.radioCard,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: colorScheme.onErrorContainer),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              mensaje,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onErrorContainer,
-              ),
-            ),
-          ),
-          TextButton(onPressed: onReintentar, child: const Text('Reintentar')),
-        ],
-      ),
     );
   }
 }
@@ -407,31 +318,3 @@ class _PlaceholderFoto extends StatelessWidget {
   }
 }
 
-class _CampoFormulario extends StatelessWidget {
-  const _CampoFormulario({
-    required this.controller,
-    required this.etiqueta,
-    required this.espaciado,
-    this.teclado,
-    this.validador,
-  });
-
-  final TextEditingController controller;
-  final String etiqueta;
-  final EspaciadoCitaria espaciado;
-  final TextInputType? teclado;
-  final String? Function(String?)? validador;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: teclado,
-      validator: validador,
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-      ),
-    );
-  }
-}

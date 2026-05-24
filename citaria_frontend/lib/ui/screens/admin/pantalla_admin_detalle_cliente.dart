@@ -3,8 +3,10 @@ import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -157,7 +159,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (clienteId == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado el cliente.',
         accionTexto: 'Volver',
         onAccion: () => Navigator.maybePop(context),
@@ -170,7 +172,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
 
     final String? error = vmClientes.error;
     if (error != null && detalle == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: () => vmClientes.cargarDetalleCliente(clienteId!),
@@ -179,7 +181,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
 
     final DtoDetalleClienteAdmin? cliente = detalle;
     if (cliente == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No se ha encontrado el cliente.',
         accionTexto: 'Reintentar',
         onAccion: () => vmClientes.cargarDetalleCliente(clienteId!),
@@ -192,16 +194,10 @@ class _CuerpoDetalleCliente extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 16),
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: colorScheme.primaryContainer,
-                child: Text(
-                  cliente.iniciales,
-                  style: textTheme.displaySmall?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              AvatarFallbackCitaria(
+                texto: cliente.nombreCompleto,
+                tamano: 72,
+                radio: 36,
               ),
               const SizedBox(height: 12),
               Text(
@@ -378,34 +374,6 @@ class _TabReservas extends StatelessWidget {
   }
 }
 
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
   switch (estado) {

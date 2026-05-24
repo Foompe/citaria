@@ -2,8 +2,11 @@ import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_ajustes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -205,7 +208,7 @@ class _CuerpoAjustes extends StatelessWidget {
     if (error != null &&
         vmAjustes.empresa == null &&
         vmAjustes.cuenta == null) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: vmAjustes.refrescar,
@@ -275,7 +278,7 @@ class _CuerpoAjustes extends StatelessWidget {
           ),
           if (error != null) ...[
             const SizedBox(height: 16),
-            _AvisoError(mensaje: error),
+            AvisoError(mensaje: error),
           ],
         ],
       ),
@@ -555,11 +558,11 @@ class _DialogoEditarEmpresaState extends State<_DialogoEditarEmpresa> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _CampoTexto(
+                CampoFormulario(
                   controller: _ctrlEmail,
-                  label: 'Email *',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (valor) {
+                  etiqueta: 'Email *',
+                  teclado: TextInputType.emailAddress,
+                  validador: (valor) {
                     final String limpio = valor?.trim() ?? '';
                     if (limpio.isEmpty) {
                       return 'El email es obligatorio';
@@ -571,24 +574,24 @@ class _DialogoEditarEmpresaState extends State<_DialogoEditarEmpresa> {
                   },
                 ),
                 const SizedBox(height: 12),
-                _CampoTexto(controller: _ctrlTelefono, label: 'Teléfono'),
+                CampoFormulario(controller: _ctrlTelefono, etiqueta: 'Teléfono'),
                 const SizedBox(height: 12),
-                _CampoTexto(controller: _ctrlCif, label: 'CIF'),
+                CampoFormulario(controller: _ctrlCif, etiqueta: 'CIF'),
                 const SizedBox(height: 12),
-                _CampoTexto(controller: _ctrlCalle, label: 'Calle'),
+                CampoFormulario(controller: _ctrlCalle, etiqueta: 'Calle'),
                 const SizedBox(height: 12),
-                _CampoTexto(
+                CampoFormulario(
                   controller: _ctrlCodigoPostal,
-                  label: 'Código postal',
+                  etiqueta: 'Código postal',
                 ),
                 const SizedBox(height: 12),
-                _CampoTexto(controller: _ctrlCiudad, label: 'Ciudad'),
+                CampoFormulario(controller: _ctrlCiudad, etiqueta: 'Ciudad'),
                 const SizedBox(height: 12),
-                _CampoTexto(
+                CampoFormulario(
                   controller: _ctrlPais,
-                  label: 'País *',
+                  etiqueta: 'País *',
                   textCapitalization: TextCapitalization.characters,
-                  validator: (valor) {
+                  validador: (valor) {
                     final String limpio = valor?.trim() ?? '';
                     if (limpio.isEmpty) {
                       return 'El país es obligatorio';
@@ -628,37 +631,6 @@ class _DialogoEditarEmpresaState extends State<_DialogoEditarEmpresa> {
   }
 }
 
-class _CampoTexto extends StatelessWidget {
-  const _CampoTexto({
-    required this.controller,
-    required this.label,
-    this.keyboardType,
-    this.validator,
-    this.textCapitalization = TextCapitalization.none,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final TextInputType? keyboardType;
-  final String? Function(String?)? validator;
-  final TextCapitalization textCapitalization;
-
-  @override
-  Widget build(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      textCapitalization: textCapitalization,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-      ),
-    );
-  }
-}
 
 class _FilaInfo extends StatelessWidget {
   const _FilaInfo({
@@ -796,55 +768,3 @@ class _FilaColor extends StatelessWidget {
   }
 }
 
-class _AvisoError extends StatelessWidget {
-  const _AvisoError({required this.mensaje});
-
-  final String mensaje;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: espaciado.radioCard,
-      ),
-      child: Text(
-        mensaje,
-        style: TextStyle(color: colorScheme.onErrorContainer),
-      ),
-    );
-  }
-}
-
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}

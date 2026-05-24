@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:citaria_frontend/data/repositories/repo_estadisticas.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
@@ -74,7 +76,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
 
     final String? error = vmEstadisticas.error;
     if (error != null && vmEstadisticas.sinDatos) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: vmEstadisticas.refrescar,
@@ -178,7 +180,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
           ),
           if (error != null) ...[
             const SizedBox(height: 16),
-            _AvisoError(mensaje: error),
+            AvisoError(mensaje: error),
           ],
           if (vmEstadisticas.cargando) ...[
             const SizedBox(height: 16),
@@ -747,58 +749,6 @@ class _EstadoVacioGrafico extends StatelessWidget {
   }
 }
 
-class _AvisoError extends StatelessWidget {
-  const _AvisoError({required this.mensaje});
-
-  final String mensaje;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: espaciado.radioCard,
-      ),
-      child: Text(
-        mensaje,
-        style: TextStyle(color: colorScheme.onErrorContainer),
-      ),
-    );
-  }
-}
-
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 FlTitlesData _titulosMeses(
   List<DtoSerieMesEstadisticaAdmin> datos,

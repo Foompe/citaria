@@ -1,11 +1,12 @@
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
-import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_pantalla.dart';
+import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 /// P24 — Formulario de alta de nuevo cliente en el área admin.
@@ -154,43 +155,38 @@ class _PantallaAdminNuevoClienteState
                 ),
                 const SizedBox(height: 24),
 
-                _CampoFormulario(
+                CampoFormulario(
                   controller: _ctrlNombre,
                   etiqueta: 'Nombre *',
-                  espaciado: espaciado,
                   validador: (v) => (v == null || v.trim().isEmpty)
                       ? 'El nombre es obligatorio'
                       : null,
                 ),
                 const SizedBox(height: 16),
 
-                _CampoFormulario(
+                CampoFormulario(
                   controller: _ctrlApellidos,
                   etiqueta: 'Apellidos',
-                  espaciado: espaciado,
                 ),
                 const SizedBox(height: 16),
 
-                _CampoFormulario(
+                CampoFormulario(
                   controller: _ctrlDni,
                   etiqueta: 'DNI',
-                  espaciado: espaciado,
                 ),
                 const SizedBox(height: 16),
 
-                _CampoFormulario(
+                CampoFormulario(
                   controller: _ctrlEmail,
                   etiqueta: 'Email',
                   teclado: TextInputType.emailAddress,
-                  espaciado: espaciado,
                 ),
                 const SizedBox(height: 16),
 
-                _CampoFormulario(
+                CampoFormulario(
                   controller: _ctrlTelefono,
                   etiqueta: 'Teléfono',
                   teclado: TextInputType.phone,
-                  espaciado: espaciado,
                 ),
                 const SizedBox(height: 16),
 
@@ -213,33 +209,3 @@ class _PantallaAdminNuevoClienteState
   }
 }
 
-class _CampoFormulario extends StatelessWidget {
-  const _CampoFormulario({
-    required this.controller,
-    required this.etiqueta,
-    required this.espaciado,
-    this.teclado,
-    this.validador,
-  });
-
-  final TextEditingController controller;
-  final String etiqueta;
-  final EspaciadoCitaria espaciado;
-  final TextInputType? teclado;
-  final String? Function(String?)? validador;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: teclado,
-      validator: validador,
-      decoration: InputDecoration(
-        labelText: etiqueta,
-        border: OutlineInputBorder(
-          borderRadius: espaciado.radioInput,
-        ),
-      ),
-    );
-  }
-}
