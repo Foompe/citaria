@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
+import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_pin.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
@@ -39,75 +40,16 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
     super.dispose();
   }
 
-  void _mostrarDialogoCambiarPin(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    final ctrlPinActual = TextEditingController();
-    final ctrlPinNuevo = TextEditingController();
-    final ctrlPinConfirma = TextEditingController();
-
-    showDialog<void>(
+  Future<void> _mostrarDialogoCambiarPin(BuildContext context) async {
+    final bool? guardado = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-        title: const Text('Cambiar PIN'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ctrlPinActual,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'PIN actual',
-                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrlPinNuevo,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'PIN nuevo',
-                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ctrlPinConfirma,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Confirmar PIN nuevo',
-                border: OutlineInputBorder(borderRadius: espaciado.radioInput),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Cambio de PIN pendiente de conectar.'),
-                ),
-              );
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    ).then((_) {
-      ctrlPinActual.dispose();
-      ctrlPinNuevo.dispose();
-      ctrlPinConfirma.dispose();
-    });
+      barrierDismissible: false,
+      builder: (_) => const DialogoCambiarPin(),
+    );
+    if (!context.mounted || guardado != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('PIN actualizado correctamente.')),
+    );
   }
 
   Future<void> _mostrarDialogoEditarEmpresa(

@@ -1,14 +1,14 @@
+import 'package:citaria_frontend/data/services/servicio_pin.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/teclado_pin_citaria.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 /// Diálogo modal de verificación de PIN para zonas protegidas.
 ///
 /// Muestra el nombre de la [seccion] destino en el subtítulo.
 /// Devuelve [true] si el PIN es correcto, [null] si el usuario cancela.
 /// Acepta entre 4 y 8 dígitos.
-///
-/// TODO: validar PIN contra API o almacenamiento local seguro.
-/// Por ahora cualquier entrada de 4–8 dígitos da acceso.
 class DialogoPin extends StatefulWidget {
   const DialogoPin({super.key, required this.seccion});
 
@@ -20,14 +20,17 @@ class DialogoPin extends StatefulWidget {
 
 class _DialogoPinState extends State<DialogoPin> {
   final List<int> _digitos = [];
+  bool _verificando = false;
+  bool _pinInvalido = false;
 
   static const int _minDigitos = 4;
   static const int _maxDigitos = 8;
 
-  bool get _puedeConfirmar => _digitos.length >= _minDigitos;
+  bool get _puedeConfirmar =>
+      _digitos.length >= _minDigitos && !_verificando && !_pinInvalido;
 
   void _pulsarDigito(int digito) {
-    if (_digitos.length >= _maxDigitos) return;
+    if (_digitos.length >= _maxDigitos || _pinInvalido) return;
     setState(() => _digitos.add(digito));
   }
 
@@ -36,18 +39,40 @@ class _DialogoPinState extends State<DialogoPin> {
     setState(() => _digitos.removeLast());
   }
 
-  void _continuar() {
+  Future<void> _continuar() async {
     if (!_puedeConfirmar) return;
-    Navigator.of(context).pop(true);
+
+    setState(() => _verificando = true);
+    final bool ok = await context.read<ServicioPin>().verificar(
+      _digitos.join(),
+    );
+    if (!mounted) return;
+
+    if (ok) {
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() {
+        _verificando = false;
+        _pinInvalido = true;
+      });
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {
+            _pinInvalido = false;
+            _digitos.clear();
+          });
+        }
+      });
+    }
   }
 
   void _cancelar() => Navigator.of(context).pop(null);
 
   @override
   Widget build(BuildContext context) {
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
+    final espaciado   = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final textTheme   = Theme.of(context).textTheme;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
@@ -83,16 +108,15 @@ class _DialogoPinState extends State<DialogoPin> {
                 ),
                 TextSpan(
                   text: '.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.outline,
-                  ),
+                  style: textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.outline),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          // Indicadores de puntos (máx. 8)
+          // Indicadores de punto
           Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -106,23 +130,41 @@ class _DialogoPinState extends State<DialogoPin> {
                     height: 11,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: relleno
-                          ? colorScheme.primary
-                          : colorScheme.outline.withValues(alpha: 0.25),
+                      color: _pinInvalido && relleno
+                          ? colorScheme.error
+                          : relleno
+                              ? colorScheme.primary
+                              : colorScheme.outline.withValues(alpha: 0.25),
                     ),
                   ),
                 );
               }),
             ),
           ),
-          const SizedBox(height: 20),
 
-          // Teclado numérico
-          _TecladoPin(
+          // Mensaje de error
+          AnimatedSize(
+            duration: const Duration(milliseconds: 150),
+            child: _pinInvalido
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Center(
+                      child: Text(
+                        'PIN incorrecto',
+                        style: textTheme.bodySmall
+                            ?.copyWith(color: colorScheme.error),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          const SizedBox(height: 16),
+
+          TecladoPinCitaria(
             onDigito: _pulsarDigito,
             onBorrar: _borrarDigito,
             onConfirmar: _puedeConfirmar ? _continuar : null,
-            colorScheme: colorScheme,
           ),
         ],
       ),
@@ -131,119 +173,11 @@ class _DialogoPinState extends State<DialogoPin> {
           width: double.infinity,
           height: 48,
           child: OutlinedButton(
-            onPressed: _cancelar,
+            onPressed: _verificando ? null : _cancelar,
             child: const Text('Cancelar'),
           ),
         ),
       ],
-    );
-  }
-}
-
-// ── Teclado ────────────────────────────────────────────────────────────────────
-
-class _TecladoPin extends StatelessWidget {
-  const _TecladoPin({
-    required this.onDigito,
-    required this.onBorrar,
-    required this.onConfirmar,
-    required this.colorScheme,
-  });
-
-  final ValueChanged<int> onDigito;
-  final VoidCallback onBorrar;
-  final VoidCallback? onConfirmar;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _FilaTeclas(digitos: const [1, 2, 3], onDigito: onDigito),
-        const SizedBox(height: 8),
-        _FilaTeclas(digitos: const [4, 5, 6], onDigito: onDigito),
-        const SizedBox(height: 8),
-        _FilaTeclas(digitos: const [7, 8, 9], onDigito: onDigito),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _Tecla(
-              onPressed: onBorrar,
-              child: Icon(
-                Icons.backspace_outlined,
-                size: 20,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _Tecla(
-              onPressed: () => onDigito(0),
-              child: const Text('0', style: TextStyle(fontSize: 20)),
-            ),
-            const SizedBox(width: 8),
-            _Tecla(
-              onPressed: onConfirmar,
-              child: Icon(
-                Icons.check,
-                size: 20,
-                color: onConfirmar != null
-                    ? colorScheme.primary
-                    : colorScheme.outline.withValues(alpha: 0.35),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _FilaTeclas extends StatelessWidget {
-  const _FilaTeclas({required this.digitos, required this.onDigito});
-
-  final List<int> digitos;
-  final ValueChanged<int> onDigito;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (int i = 0; i < digitos.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          _Tecla(
-            onPressed: () => onDigito(digitos[i]),
-            child: Text('${digitos[i]}', style: const TextStyle(fontSize: 20)),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Tecla extends StatelessWidget {
-  const _Tecla({required this.child, required this.onPressed});
-
-  final Widget child;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 72,
-      height: 52,
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          padding: EdgeInsets.zero,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-          ),
-        ),
-        onPressed: onPressed,
-        child: child,
-      ),
     );
   }
 }

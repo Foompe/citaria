@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:citaria_frontend/data/api/citaria_api.dart';
+import 'package:citaria_frontend/data/services/servicio_pin.dart';
 import 'package:citaria_frontend/data/repositories/repo_auth.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_chatbot.dart';
@@ -37,6 +38,11 @@ Future<void> main() async {
   final CitariaApi api = CitariaApi(clienteHttp);
   const FlutterSecureStorage almacenamientoSeguro = FlutterSecureStorage();
 
+  final ServicioPin servicioPin = ServicioPin(
+    almacenamiento: almacenamientoSeguro,
+  );
+  await servicioPin.inicializar();
+
   runApp(
     AplicacionCitaria(
       repoAuth: RepoAuth(api),
@@ -51,6 +57,7 @@ Future<void> main() async {
       repoUsuarios: RepoUsuarios(api),
       almacenamientoSeguro: almacenamientoSeguro,
       preferencias: preferencias,
+      servicioPin: servicioPin,
     ),
   );
 }
@@ -73,6 +80,7 @@ class AplicacionCitaria extends StatelessWidget {
     required this.repoUsuarios,
     required this.almacenamientoSeguro,
     required this.preferencias,
+    required this.servicioPin,
   });
 
   final RepoAuth repoAuth;
@@ -87,11 +95,13 @@ class AplicacionCitaria extends StatelessWidget {
   final RepoUsuarios repoUsuarios;
   final FlutterSecureStorage almacenamientoSeguro;
   final SharedPreferences preferencias;
+  final ServicioPin servicioPin;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<ServicioPin>.value(value: servicioPin),
         Provider<RepoCatalogo>.value(value: repoCatalogo),
         Provider<RepoReservas>.value(value: repoReservas),
         Provider<RepoDisponibilidad>.value(value: repoDisponibilidad),
