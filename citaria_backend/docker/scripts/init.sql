@@ -237,3 +237,12 @@ CREATE TABLE reserva_servicio
         REFERENCES empleado (id)
         ON DELETE RESTRICT ON UPDATE CASCADE
 );
+
+CREATE INDEX idx_reserva_org_fecha        ON reserva(organizacion_id, fecha);
+CREATE INDEX idx_reserva_org_estado_fecha ON reserva(organizacion_id, estado, fecha);
+CREATE INDEX idx_reserva_cliente_fecha    ON reserva(cliente_id, fecha);
+CREATE INDEX idx_rs_reserva              ON reserva_servicio(reserva_id);
+CREATE INDEX idx_rs_empleado_estado      ON reserva_servicio(empleado_id, estado);
+CREATE INDEX idx_servicio_org_activo     ON servicio(organizacion_id, activo);
+CREATE INDEX idx_empleado_org_activo     ON empleado(organizacion_id, activo);
+CREATE INDEX idx_cliente_org_telefono    ON cliente(organizacion_id, telefono);

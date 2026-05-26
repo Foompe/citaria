@@ -185,8 +185,35 @@ class _ContenidoAdminReservas extends StatelessWidget {
   }
 }
 
-class _ListaReservasAdmin extends StatelessWidget {
+class _ListaReservasAdmin extends StatefulWidget {
   const _ListaReservasAdmin();
+
+  @override
+  State<_ListaReservasAdmin> createState() => _ListaReservasAdminState();
+}
+
+class _ListaReservasAdminState extends State<_ListaReservasAdmin> {
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final vm = context.read<ViewModelAdminReservas>();
+    if (vm.cargando || !vm.hayMasPaginas) return;
+    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200) {
+      vm.cargarMas();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -195,7 +222,7 @@ class _ListaReservasAdmin extends StatelessWidget {
     final String? error = vmReservas.error;
     final List<DtoReservaAdmin> reservas = vmReservas.reservas;
 
-    if (vmReservas.cargando) {
+    if (vmReservas.cargando && reservas.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -231,12 +258,22 @@ class _ListaReservasAdmin extends StatelessWidget {
       );
     }
 
+    final bool mostrarLoader = vmReservas.hayMasPaginas;
+    final int itemCount = reservas.length + (mostrarLoader ? 1 : 0);
+
     return RefreshIndicator(
       onRefresh: vmReservas.refrescar,
       child: ListView.builder(
+        controller: _scroll,
         padding: const EdgeInsets.only(top: 8, bottom: 100),
-        itemCount: reservas.length,
+        itemCount: itemCount,
         itemBuilder: (context, index) {
+          if (index == reservas.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           final DtoReservaAdmin reserva = reservas[index];
           return TarjetaReservaAdmin(
             estado: _estadoVisual(reserva.estado),

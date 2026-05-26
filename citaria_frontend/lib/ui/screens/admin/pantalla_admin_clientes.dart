@@ -128,10 +128,37 @@ class _ContenidoAdminClientes extends StatelessWidget {
   }
 }
 
-class _ListaClientesAdmin extends StatelessWidget {
+class _ListaClientesAdmin extends StatefulWidget {
   const _ListaClientesAdmin({required this.modoSeleccion});
 
   final bool modoSeleccion;
+
+  @override
+  State<_ListaClientesAdmin> createState() => _ListaClientesAdminState();
+}
+
+class _ListaClientesAdminState extends State<_ListaClientesAdmin> {
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final vm = context.read<ViewModelAdminClientes>();
+    if (vm.cargando || !vm.hayMasPaginas) return;
+    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200) {
+      vm.cargarMas();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,12 +184,22 @@ class _ListaClientesAdmin extends StatelessWidget {
       return const _EstadoClientes(mensaje: 'Sin resultados');
     }
 
+    final bool mostrarLoader = vmClientes.hayMasPaginas;
+    final int itemCount = clientes.length + (mostrarLoader ? 1 : 0);
+
     return RefreshIndicator(
       onRefresh: vmClientes.refrescar,
       child: ListView.builder(
+        controller: _scroll,
         padding: const EdgeInsets.only(top: 8),
-        itemCount: clientes.length,
+        itemCount: itemCount,
         itemBuilder: (context, index) {
+          if (index == clientes.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           final DtoClienteAdmin cliente = clientes[index];
           return ListTile(
             leading: AvatarFallbackCitaria(
@@ -173,7 +210,7 @@ class _ListaClientesAdmin extends StatelessWidget {
             ),
             title: Text(cliente.nombreCompleto),
             subtitle: Text(
-              modoSeleccion ? cliente.telefono : cliente.email,
+              widget.modoSeleccion ? cliente.telefono : cliente.email,
               style: textTheme.bodySmall,
             ),
             trailing: cliente.tieneUsuario
