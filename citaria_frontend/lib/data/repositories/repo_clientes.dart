@@ -2,18 +2,29 @@ import 'dart:async';
 
 import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/cliente.dart';
+import 'package:citaria_frontend/data/models/pagina_clientes.dart';
 
 class RepoClientes {
   RepoClientes(this._api);
 
   final CitariaApi _api;
 
-  Future<List<Cliente>> listarTodos(String token) async {
+  Future<PaginaClientes> listarAdminPaginado(
+    String? busqueda,
+    int pagina,
+    String token, {
+    int tamano = 20,
+  }) async {
     try {
-      final Object? json = await _api.get('/api/clientes', token: token);
-      return (json as List)
-          .map((elemento) => Cliente.fromJson(elemento as Map<String, dynamic>))
-          .toList();
+      final List<String> params = <String>[
+        'pagina=$pagina',
+        'tamano=$tamano',
+        if (busqueda != null && busqueda.isNotEmpty)
+          'busqueda=${Uri.encodeQueryComponent(busqueda)}',
+      ];
+      final String ruta = '/api/clientes/admin?${params.join('&')}';
+      final Object? json = await _api.get(ruta, token: token);
+      return PaginaClientes.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:citaria_frontend/data/enums/estado_reserva.dart';
 import 'package:citaria_frontend/data/models/cliente.dart';
+import 'package:citaria_frontend/data/models/pagina_clientes.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
@@ -100,30 +103,64 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
   List<DtoReservaClienteAdmin> _reservasCliente =
       const <DtoReservaClienteAdmin>[];
   String _busqueda = '';
+  Timer? _debounce;
+  int _paginaActual = 0;
+  bool _hayMasPaginas = false;
 
   String get busqueda => _busqueda;
   DtoDetalleClienteAdmin? get detalle => _detalle;
   List<DtoReservaClienteAdmin> get reservasCliente => _reservasCliente;
+  bool get hayMasPaginas => _hayMasPaginas;
 
   List<DtoClienteAdmin> get clientes {
-    final String filtro = _normalizar(_busqueda);
     return _clientes
-        .where((cliente) => cliente.id != null)
-        .where((cliente) => _coincideConBusqueda(cliente, filtro))
+        .where((c) => c.id != null)
         .map(_crearDto)
         .toList(growable: false);
   }
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
   Future<void> cargarClientes() async {
+    iniciarCarga();
+    _paginaActual = 0;
+    _hayMasPaginas = false;
+
+    try {
+      final String token = leerTokenObligatorio();
+      final PaginaClientes resultado = await _repoClientes.listarAdminPaginado(
+        _busqueda.isEmpty ? null : _busqueda,
+        0,
+        token,
+      );
+      _clientes = resultado.content;
+      _hayMasPaginas = !resultado.last;
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<void> cargarMas() async {
+    if (!_hayMasPaginas) return;
     iniciarCarga();
 
     try {
       final String token = leerTokenObligatorio();
-      final List<Cliente> clientes = await _repoClientes.listarTodos(token);
-      _clientes = clientes
-          .where((cliente) => cliente.anonimizadoAt == null)
-          .toList(growable: false)
-        ..sort(_compararClientes);
+      final PaginaClientes resultado = await _repoClientes.listarAdminPaginado(
+        _busqueda.isEmpty ? null : _busqueda,
+        _paginaActual + 1,
+        token,
+      );
+      _paginaActual++;
+      _clientes = <Cliente>[..._clientes, ...resultado.content];
+      _hayMasPaginas = !resultado.last;
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -143,13 +180,14 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
 
     try {
       final String token = leerTokenObligatorio();
-      final Cliente cliente = await _repoClientes.obtenerPorId(id, token);
-      final List<Reserva> reservas = await _repoReservas.listarPorCliente(
-        id,
-        token,
-      );
+      final resultados = await Future.wait(<Future<Object>>[
+        _repoClientes.obtenerPorId(id, token),
+        _repoReservas.listarPorCliente(id, token),
+      ]);
+      final cliente = resultados[0] as Cliente;
+      final reservas = resultados[1] as List<Reserva>;
       _detalle = _crearDetalle(cliente);
-      _reservasCliente = await _crearReservasCliente(token, reservas);
+      _reservasCliente = _crearReservasCliente(reservas);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -209,42 +247,10 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
   }
 
   void buscar(String valor) {
-    if (_busqueda == valor) {
-      return;
-    }
+    if (_busqueda == valor) return;
     _busqueda = valor;
-    notifyListeners();
-  }
-
-  DtoClienteAdmin _crearDto(Cliente cliente) {
-    final String nombreCompleto = _crearNombreCompleto(cliente);
-    return DtoClienteAdmin(
-      id: cliente.id ?? 0,
-      nombreCompleto: nombreCompleto,
-      email: _textoConFallback(cliente.email, 'Sin email'),
-      telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
-      dni: _textoConFallback(cliente.dni, 'Sin DNI'),
-      iniciales: _crearIniciales(nombreCompleto),
-      fotoUrl: cliente.fotoUrl,
-      tieneUsuario: cliente.tieneUsuario,
-    );
-  }
-
-  DtoDetalleClienteAdmin _crearDetalle(Cliente cliente) {
-    final String nombreCompleto = _crearNombreCompleto(cliente);
-    return DtoDetalleClienteAdmin(
-      id: cliente.id ?? 0,
-      nombre: cliente.nombre,
-      apellidos: _textoConFallback(cliente.apellidos, 'Sin apellidos'),
-      nombreCompleto: nombreCompleto,
-      dni: _textoConFallback(cliente.dni, 'Sin DNI'),
-      email: _textoConFallback(cliente.email, 'Sin email'),
-      telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
-      notas: _textoOpcional(cliente.notas),
-      iniciales: _crearIniciales(nombreCompleto),
-      fotoUrl: cliente.fotoUrl,
-      tieneUsuario: cliente.tieneUsuario,
-    );
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), cargarClientes);
   }
 
   Future<bool> actualizarCliente({
@@ -283,39 +289,57 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
     }
   }
 
-  Future<List<DtoReservaClienteAdmin>> _crearReservasCliente(
-    String token,
-    List<Reserva> reservas,
-  ) async {
+  DtoClienteAdmin _crearDto(Cliente cliente) {
+    final String nombreCompleto = _crearNombreCompleto(cliente);
+    return DtoClienteAdmin(
+      id: cliente.id ?? 0,
+      nombreCompleto: nombreCompleto,
+      email: _textoConFallback(cliente.email, 'Sin email'),
+      telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
+      dni: _textoConFallback(cliente.dni, 'Sin DNI'),
+      iniciales: _crearIniciales(nombreCompleto),
+      fotoUrl: cliente.fotoUrl,
+      tieneUsuario: cliente.tieneUsuario,
+    );
+  }
+
+  DtoDetalleClienteAdmin _crearDetalle(Cliente cliente) {
+    final String nombreCompleto = _crearNombreCompleto(cliente);
+    return DtoDetalleClienteAdmin(
+      id: cliente.id ?? 0,
+      nombre: cliente.nombre,
+      apellidos: _textoConFallback(cliente.apellidos, 'Sin apellidos'),
+      nombreCompleto: nombreCompleto,
+      dni: _textoConFallback(cliente.dni, 'Sin DNI'),
+      email: _textoConFallback(cliente.email, 'Sin email'),
+      telefono: _textoConFallback(cliente.telefono, 'Sin teléfono'),
+      notas: _textoOpcional(cliente.notas),
+      iniciales: _crearIniciales(nombreCompleto),
+      fotoUrl: cliente.fotoUrl,
+      tieneUsuario: cliente.tieneUsuario,
+    );
+  }
+
+  List<DtoReservaClienteAdmin> _crearReservasCliente(List<Reserva> reservas) {
     final List<Reserva> ordenadas = List<Reserva>.from(reservas)
       ..sort(_compararReservas);
-    final List<DtoReservaClienteAdmin> dtos = <DtoReservaClienteAdmin>[];
-    for (final Reserva reserva in ordenadas) {
-      final int? reservaId = reserva.id;
-      if (reservaId == null) {
-        continue;
-      }
-      final List<ReservaServicio> detalles = await _repoReservas
-          .obtenerDetalles(reservaId, token);
-      dtos.add(_crearReservaDto(reserva, detalles));
-    }
-    return dtos;
+    return ordenadas
+        .where((r) => r.id != null)
+        .map((r) => _crearReservaDto(r, r.lineas))
+        .toList(growable: false);
   }
 
   DtoReservaClienteAdmin _crearReservaDto(
     Reserva reserva,
     List<ReservaServicio> detalles,
   ) {
-    final ReservaServicio? primerDetalle = detalles.isEmpty
-        ? null
-        : detalles.first;
+    final ReservaServicio? primerDetalle =
+        detalles.isEmpty ? null : detalles.first;
     return DtoReservaClienteAdmin(
       id: reserva.id.toString(),
       servicio: detalles.isEmpty
           ? _resumenServicios(reserva.servicioIds.length)
-          : detalles
-                .map((detalle) => detalle.nombreServicio ?? 'Servicio')
-                .join(', '),
+          : detalles.map((d) => d.nombreServicio ?? 'Servicio').join(', '),
       empleado: _textoConFallback(
         primerDetalle?.nombreEmpleado,
         'Sin empleado asignado',
@@ -327,29 +351,9 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
     );
   }
 
-  bool _coincideConBusqueda(Cliente cliente, String filtro) {
-    if (filtro.isEmpty) {
-      return true;
-    }
-    final List<String?> campos = <String?>[
-      cliente.nombre,
-      cliente.apellidos,
-      cliente.email,
-      cliente.telefono,
-      cliente.dni,
-    ];
-    return campos.any((campo) => _normalizar(campo ?? '').contains(filtro));
-  }
-
-  int _compararClientes(Cliente a, Cliente b) {
-    return _crearNombreCompleto(a).compareTo(_crearNombreCompleto(b));
-  }
-
   int _compararReservas(Reserva a, Reserva b) {
     final int fecha = b.fecha.compareTo(a.fecha);
-    if (fecha != 0) {
-      return fecha;
-    }
+    if (fecha != 0) return fecha;
     return b.horaInicio.compareTo(a.horaInicio);
   }
 
@@ -376,13 +380,9 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
         .split(RegExp(r'\s+'))
         .where((parte) => parte.isNotEmpty)
         .toList(growable: false);
-    if (partes.isEmpty) {
-      return 'C';
-    }
+    if (partes.isEmpty) return 'C';
     final String primera = partes.first.substring(0, 1).toUpperCase();
-    if (partes.length == 1) {
-      return primera;
-    }
+    if (partes.length == 1) return primera;
     return '$primera${partes.last.substring(0, 1).toUpperCase()}';
   }
 
@@ -393,10 +393,6 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
   String? _textoOpcional(String? texto) {
     final String? limpio = texto?.trim();
     return limpio == null || limpio.isEmpty ? null : limpio;
-  }
-
-  String _normalizar(String texto) {
-    return texto.trim().toLowerCase();
   }
 
   String _resumenServicios(int total) {

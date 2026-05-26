@@ -101,11 +101,7 @@ public class ReservaServiceImpl implements ReservaService {
             throw new RecursoNoEncontradoException("Cliente con id " + clienteId + " no encontrado");
         }
         List<Reserva> reservas = reservaDAO.findByCliente(cliente);
-        List<ReservaDTO> reservasDTO = new ArrayList<>();
-        for (Reserva reserva : reservas) {
-            reservasDTO.add(convertirReservaADTO(reserva));
-        }
-        return reservasDTO;
+        return convertirConLineas(reservas);
     }
 
     @Override

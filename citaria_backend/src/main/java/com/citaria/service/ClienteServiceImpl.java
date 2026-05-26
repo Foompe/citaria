@@ -16,6 +16,11 @@ import com.citaria.repository.ReservaServicioDAO;
 import com.citaria.repository.UsuarioDAO;
 import com.citaria.security.ContextoSeguridad;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -57,16 +62,19 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteDTO> obtenerTodos() {
+    public Page<ClienteDTO> obtenerPaginado(String busqueda, int pagina, int tamano) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Cliente> clientes = clienteDAO.findByOrganizacion(organizacion);
-
-        List<ClienteDTO> clientesDTO = new ArrayList<>();
-        Set<Integer> clientesConUsuarioIds = obtenerClientesConUsuarioIds(clientes);
+        String filtro = (busqueda == null || busqueda.isBlank()) ? null : busqueda.trim();
+        Pageable pageable = PageRequest.of(pagina, tamano,
+                Sort.by("nombre").ascending().and(Sort.by("apellidos").ascending()));
+        Page<Cliente> paginaClientes = clienteDAO.buscarPaginado(organizacion, filtro, pageable);
+        List<Cliente> clientes = paginaClientes.getContent();
+        Set<Integer> conUsuario = obtenerClientesConUsuarioIds(clientes);
+        List<ClienteDTO> dtos = new ArrayList<>();
         for (Cliente cliente : clientes) {
-            clientesDTO.add(convertirClienteADTO(cliente, clientesConUsuarioIds.contains(cliente.getId())));
+            dtos.add(convertirClienteADTO(cliente, conUsuario.contains(cliente.getId())));
         }
-        return clientesDTO;
+        return new PageImpl<>(dtos, pageable, paginaClientes.getTotalElements());
     }
 
     @Override
