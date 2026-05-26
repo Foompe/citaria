@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface HorarioEmpleadoDAO extends JpaRepository<HorarioEmpleado, Integer> {
 
     List<HorarioEmpleado> findByEmpleado(Empleado empleado);
+    List<HorarioEmpleado> findByEmpleadoIn(List<Empleado> empleados);
     Optional<HorarioEmpleado> findByEmpleadoAndDiaSemanaAndActivo(Empleado empleado, Integer diaSemana, Boolean activo);
 
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface OrganizacionHorarioCierreDAO extends JpaRepository<OrganizacionHorarioCierre, Integer> {
 
     List<OrganizacionHorarioCierre> findByOrganizacion(Organizacion organizacion);
+    List<OrganizacionHorarioCierre> findByOrganizacionAndFechaBetween(Organizacion organizacion, LocalDate fechaInicio, LocalDate fechaFin);
     Optional<OrganizacionHorarioCierre> findByOrganizacionAndFecha(Organizacion organizacion, LocalDate fecha);
 
 }

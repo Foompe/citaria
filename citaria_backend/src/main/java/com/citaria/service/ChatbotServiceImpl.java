@@ -11,15 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
 
-/**
- * Implementación del servicio del chatbot.
- * Construye el contexto de la organización y llama a Gemini API.
- */
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
 
@@ -42,7 +38,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final ServicioDAO servicioDAO;
     private final OrganizacionHorarioDAO organizacionHorarioDAO;
     private final ContextoSeguridad contextoSeguridad;
-    private final WebClient webClient;
+    private final RestClient restClient;
 
     @Value("${gemini.api.key}")
     private String apiKey;
@@ -54,11 +50,11 @@ public class ChatbotServiceImpl implements ChatbotService {
     public ChatbotServiceImpl(ServicioDAO servicioDAO,
                               OrganizacionHorarioDAO organizacionHorarioDAO,
                               ContextoSeguridad contextoSeguridad,
-                              WebClient.Builder webClientBuilder) {
+                              RestClient.Builder restClientBuilder) {
         this.servicioDAO = servicioDAO;
         this.organizacionHorarioDAO = organizacionHorarioDAO;
         this.contextoSeguridad = contextoSeguridad;
-        this.webClient = webClientBuilder.build();
+        this.restClient = restClientBuilder.build();
     }
 
     // CHATBOT
@@ -137,59 +133,54 @@ public class ChatbotServiceImpl implements ChatbotService {
         List<Map<String, Object>> parts = List.of(texto);
         Map<String, Object> content = Map.of(CLAVE_PARTS, parts);
         List<Map<String, Object>> contents = List.of(content);
-        Map<String, Object> cuerpo = Map.of(
-                CLAVE_CONTENTS, contents
-        );
+        Map<String, Object> cuerpo = Map.of(CLAVE_CONTENTS, contents);
 
-        Map<String, Object> respuesta = webClient.post()
-                .uri(apiUrl + "?key=" + apiKey)
-                .header(CABECERA_CONTENT_TYPE, MEDIA_TYPE_JSON)
-                .bodyValue(cuerpo)
-                .retrieve()
-                .bodyToMono(TIPO_RESPUESTA_GEMINI)
-                .block();
+        try {
+            Map<String, Object> respuesta = restClient.post()
+                    .uri(apiUrl + "?key=" + apiKey)
+                    .header(CABECERA_CONTENT_TYPE, MEDIA_TYPE_JSON)
+                    .body(cuerpo)
+                    .retrieve()
+                    .body(TIPO_RESPUESTA_GEMINI);
 
-        if (respuesta == null) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
+            if (respuesta == null) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
 
-        if (!(respuesta.get(CLAVE_CANDIDATES) instanceof List)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        List<Map<String, Object>> candidates =
-                (List<Map<String, Object>>) respuesta.get(CLAVE_CANDIDATES);
-        if (candidates.isEmpty()) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
+            if (!(respuesta.get(CLAVE_CANDIDATES) instanceof List)) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
+            List<Map<String, Object>> candidates =
+                    (List<Map<String, Object>>) respuesta.get(CLAVE_CANDIDATES);
+            if (candidates.isEmpty()) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
 
-        if (!(candidates.get(0) instanceof Map)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        Map<String, Object> candidate = candidates.get(0);
-        if (!(candidate.get(CLAVE_CONTENT) instanceof Map)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        Map<String, Object> responseContent =
-                (Map<String, Object>) candidate.get(CLAVE_CONTENT);
+            Map<String, Object> candidate = candidates.get(0);
+            if (!(candidate.get(CLAVE_CONTENT) instanceof Map)) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
+            Map<String, Object> responseContent =
+                    (Map<String, Object>) candidate.get(CLAVE_CONTENT);
 
-        if (!(responseContent.get(CLAVE_PARTS) instanceof List)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        List<Map<String, Object>> responseParts =
-                (List<Map<String, Object>>) responseContent.get(CLAVE_PARTS);
-        if (responseParts.isEmpty()) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
+            if (!(responseContent.get(CLAVE_PARTS) instanceof List)) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
+            List<Map<String, Object>> responseParts =
+                    (List<Map<String, Object>>) responseContent.get(CLAVE_PARTS);
+            if (responseParts.isEmpty()) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
 
-        if (!(responseParts.get(0) instanceof Map)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        Map<String, Object> part = responseParts.get(0);
-        if (!(part.get(CLAVE_TEXT) instanceof String)) {
-            return MENSAJE_FALLBACK_GEMINI;
-        }
-        String text = (String) part.get(CLAVE_TEXT);
+            Map<String, Object> part = responseParts.get(0);
+            if (!(part.get(CLAVE_TEXT) instanceof String)) {
+                return MENSAJE_FALLBACK_GEMINI;
+            }
 
-        return text;
+            return (String) part.get(CLAVE_TEXT);
+
+        } catch (Exception e) {
+            return MENSAJE_FALLBACK_GEMINI;
+        }
     }
 }

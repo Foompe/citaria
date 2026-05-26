@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/dias_disponibles.dart';
 import 'package:citaria_frontend/data/models/disponibilidad.dart';
+import 'package:citaria_frontend/data/models/periodo_disponibles.dart';
 
 class RepoDisponibilidad {
   RepoDisponibilidad(this._api);
@@ -49,6 +50,31 @@ class RepoDisponibilidad {
       final String ruta = '/api/disponibilidad/mes?${params.join('&')}';
       final Object? json = await _api.get(ruta, token: token);
       return DiasDisponibles.fromJson(json as Map<String, dynamic>);
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('$e');
+    }
+  }
+
+  Future<PeriodoDisponibles> obtenerDiasDisponiblesPeriodo(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    List<int> servicioIds,
+    String token, {
+    int? empleadoId,
+  }) async {
+    try {
+      final List<String> params = <String>[
+        'fechaInicio=${_formatearFecha(fechaInicio)}',
+        'fechaFin=${_formatearFecha(fechaFin)}',
+        'servicioIds=${servicioIds.join(',')}',
+        if (empleadoId != null) 'empleadoId=$empleadoId',
+      ];
+      final String ruta = '/api/disponibilidad/periodo?${params.join('&')}';
+      final Object? json = await _api.get(ruta, token: token);
+      return PeriodoDisponibles.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {

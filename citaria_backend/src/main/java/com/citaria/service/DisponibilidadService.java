@@ -2,6 +2,7 @@ package com.citaria.service;
 
 import com.citaria.dto.DiasDisponiblesDTO;
 import com.citaria.dto.DisponibilidadDTO;
+import com.citaria.dto.PeriodoDisponiblesDTO;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -43,4 +44,9 @@ public interface DisponibilidadService {
                                               Integer mes,
                                               List<Integer> servicioIds,
                                               Integer empleadoId);
+
+    PeriodoDisponiblesDTO obtenerDiasDisponiblesPeriodo(LocalDate fechaInicio,
+                                                        LocalDate fechaFin,
+                                                        List<Integer> servicioIds,
+                                                        Integer empleadoId);
 }

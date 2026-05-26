@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface OrganizacionHorarioDAO extends JpaRepository<OrganizacionHorario, Integer> {
 
     List<OrganizacionHorario> findByOrganizacion(Organizacion organizacion);
+    List<OrganizacionHorario> findByOrganizacionAndActivo(Organizacion organizacion, Boolean activo);
     Optional<OrganizacionHorario> findByOrganizacionAndDiaSemanaAndActivo(Organizacion organizacion, Integer diaSemana, Boolean activo);
 
 }

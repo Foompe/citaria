@@ -2,6 +2,7 @@ package com.citaria.controller;
 
 import com.citaria.dto.DiasDisponiblesDTO;
 import com.citaria.dto.DisponibilidadDTO;
+import com.citaria.dto.PeriodoDisponiblesDTO;
 import com.citaria.service.DisponibilidadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,5 +61,19 @@ public class DisponibilidadController {
             @RequestParam(required = false) Integer empleadoId) {
         return ResponseEntity.ok(
                 disponibilidadService.obtenerDiasDisponibles(anio, mes, servicioIds, empleadoId));
+    }
+
+    @Operation(summary = "Obtener días disponibles de un período",
+            description = "Devuelve las fechas del rango que tienen al menos una franja disponible. " +
+                    "Permite cargar varios meses de una sola llamada.")
+    @ApiResponse(responseCode = "200", description = "Período calculado correctamente")
+    @GetMapping("/periodo")
+    public ResponseEntity<PeriodoDisponiblesDTO> obtenerDiasDisponiblesPeriodo(
+            @RequestParam LocalDate fechaInicio,
+            @RequestParam LocalDate fechaFin,
+            @RequestParam List<Integer> servicioIds,
+            @RequestParam(required = false) Integer empleadoId) {
+        return ResponseEntity.ok(
+                disponibilidadService.obtenerDiasDisponiblesPeriodo(fechaInicio, fechaFin, servicioIds, empleadoId));
     }
 }

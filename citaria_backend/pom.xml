@@ -75,13 +75,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- WEBCLIENT (Gemini API) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-
-        <!-- CLOUDINARY -->
+<!-- CLOUDINARY -->
         <dependency>
             <groupId>com.cloudinary</groupId>
             <artifactId>cloudinary-http44</artifactId>

@@ -1,5 +1,6 @@
 package com.citaria.repository;
 
+import com.citaria.model.Empleado;
 import com.citaria.model.EstadoReservaServicio;
 import com.citaria.model.Reserva;
 import com.citaria.model.ReservaServicio;
@@ -28,6 +29,18 @@ public interface ReservaServicioDAO extends JpaRepository<ReservaServicio, Integ
             "WHERE rs.reserva = :reserva AND rs.estado = com.citaria.model.EstadoReservaServicio.activo")
     void cancelarDetallesPorReserva(@Param("reserva") Reserva reserva,
                                     @Param("estado") EstadoReservaServicio estado);
+
+    /**
+     * Trae todas las líneas activas de una lista de empleados en un rango de fechas.
+     * Usa JOIN FETCH para evitar queries adicionales al acceder a reserva y empleado.
+     */
+    @Query("SELECT rs FROM ReservaServicio rs JOIN FETCH rs.reserva JOIN FETCH rs.empleado " +
+            "WHERE rs.empleado IN :empleados " +
+            "AND rs.reserva.fecha BETWEEN :fechaInicio AND :fechaFin " +
+            "AND rs.estado = com.citaria.model.EstadoReservaServicio.activo")
+    List<ReservaServicio> findActivosByEmpleadosAndPeriodo(@Param("empleados") List<Empleado> empleados,
+                                                           @Param("fechaInicio") LocalDate fechaInicio,
+                                                           @Param("fechaFin") LocalDate fechaFin);
 
     /**
      * Detecta si un empleado tiene alguna línea activa que solape con la franja indicada.

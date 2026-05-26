@@ -1,5 +1,5 @@
-import 'package:citaria_frontend/data/models/dias_disponibles.dart';
 import 'package:citaria_frontend/data/models/disponibilidad.dart';
+import 'package:citaria_frontend/data/models/periodo_disponibles.dart';
 import 'package:citaria_frontend/data/models/franja_horaria.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/servicio.dart';
@@ -161,7 +161,7 @@ class ViewModelWizard extends ChangeNotifier {
   Set<int> _serviciosSeleccionados = const <int>{};
   int? _empleadoId;
   DateTime _mesVisible = DateTime(DateTime.now().year, DateTime.now().month);
-  Set<int> _diasDisponibles = const <int>{};
+  Set<DateTime> _diasDisponiblesCache = const <DateTime>{};
   int _versionDiasCalendario = 0;
   DateTime? _fechaSeleccionada;
   List<FranjaHoraria> _franjas = const <FranjaHoraria>[];
@@ -210,7 +210,9 @@ class ViewModelWizard extends ChangeNotifier {
       final DateTime fecha = esDelMes
           ? DateTime(_mesVisible.year, _mesVisible.month, dia)
           : DateTime(_mesVisible.year, _mesVisible.month, 1);
-      final bool disponible = esDelMes && _diasDisponibles.contains(dia);
+      final bool disponible = esDelMes &&
+          _diasDisponiblesCache.contains(
+              DateTime(_mesVisible.year, _mesVisible.month, dia));
       final DateTime? seleccionada = _fechaSeleccionada;
       return DtoDiaWizard(
         fecha: fecha,
@@ -305,7 +307,7 @@ class ViewModelWizard extends ChangeNotifier {
     _fechaSeleccionada = null;
     _horaSeleccionada = null;
     _franjas = const <FranjaHoraria>[];
-    _actualizarDiasDisponibles(const <int>{});
+    _actualizarDiasDisponiblesCache(const <DateTime>{});
     notifyListeners();
   }
 
@@ -316,7 +318,7 @@ class ViewModelWizard extends ChangeNotifier {
 
   Future<void> cargarDiasDisponibles() async {
     if (_serviciosSeleccionados.isEmpty) {
-      _actualizarDiasDisponibles(const <int>{});
+      _actualizarDiasDisponiblesCache(const <DateTime>{});
       notifyListeners();
       return;
     }
@@ -334,7 +336,7 @@ class ViewModelWizard extends ChangeNotifier {
     }
   }
 
-  Future<void> cambiarMes(int desplazamiento) async {
+  void cambiarMes(int desplazamiento) {
     _mesVisible = DateTime(
       _mesVisible.year,
       _mesVisible.month + desplazamiento,
@@ -342,15 +344,11 @@ class ViewModelWizard extends ChangeNotifier {
     _fechaSeleccionada = null;
     _horaSeleccionada = null;
     _franjas = const <FranjaHoraria>[];
-    _actualizarDiasDisponibles(const <int>{});
     notifyListeners();
-    if (_serviciosSeleccionados.isNotEmpty) {
-      await cargarDiasDisponibles();
-    }
   }
 
   Future<void> seleccionarFecha(DateTime fecha) async {
-    if (!_diasDisponibles.contains(fecha.day)) return;
+    if (!_diasDisponiblesCache.contains(_soloFecha(fecha))) return;
     _fechaSeleccionada = _soloFecha(fecha);
     _horaSeleccionada = null;
     notifyListeners();
@@ -434,26 +432,28 @@ class ViewModelWizard extends ChangeNotifier {
 
   Future<void> _cargarDiasDisponiblesInterno() async {
     if (_serviciosSeleccionados.isEmpty) {
-      _actualizarDiasDisponibles(const <int>{});
+      _actualizarDiasDisponiblesCache(const <DateTime>{});
       return;
     }
 
-    final int anio = _mesVisible.year;
-    final int mes = _mesVisible.month;
-    final DiasDisponibles dias = await _repoDisponibilidad
-        .obtenerDiasDisponibles(
-          anio,
-          mes,
+    final DateTime hoy = DateTime.now();
+    final DateTime fechaInicio = DateTime(hoy.year, hoy.month, hoy.day);
+    // Último día del mes siguiente
+    final DateTime fechaFin = DateTime(hoy.year, hoy.month + 2, 0);
+
+    final PeriodoDisponibles periodo = await _repoDisponibilidad
+        .obtenerDiasDisponiblesPeriodo(
+          fechaInicio,
+          fechaFin,
           _serviciosSeleccionados.toList(growable: false),
           _token,
           empleadoId: _empleadoId,
         );
-    if (_mesVisible.year != anio || _mesVisible.month != mes) return;
-    _actualizarDiasDisponibles(dias.diasDisponibles.toSet());
+    _actualizarDiasDisponiblesCache(periodo.fechasDisponibles.toSet());
   }
 
-  void _actualizarDiasDisponibles(Set<int> dias) {
-    _diasDisponibles = dias;
+  void _actualizarDiasDisponiblesCache(Set<DateTime> fechas) {
+    _diasDisponiblesCache = fechas;
     _versionDiasCalendario++;
   }
 
