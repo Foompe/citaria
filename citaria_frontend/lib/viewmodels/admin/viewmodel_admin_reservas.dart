@@ -1,6 +1,7 @@
 import 'package:citaria_frontend/data/enums/estado_reserva.dart';
 import 'package:citaria_frontend/data/models/cliente.dart';
 import 'package:citaria_frontend/data/models/empleado.dart';
+import 'package:citaria_frontend/data/models/pagina_reservas.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
@@ -125,15 +126,16 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
   );
 
   List<Reserva> _reservas = const <Reserva>[];
-  Map<int, List<ReservaServicio>> _detallesPorReserva =
-      const <int, List<ReservaServicio>>{};
   FiltroAdminReservas _filtroActivo;
   DtoDetalleReservaAdmin? _detalle;
   EstadoReserva? _estadoPendiente;
+  int _paginaActual = 0;
+  bool _hayMasPaginas = false;
 
   FiltroAdminReservas get filtroActivo => _filtroActivo;
   DtoDetalleReservaAdmin? get detalle => _detalle;
   EstadoReserva? get estadoPendiente => _estadoPendiente;
+  bool get hayMasPaginas => _hayMasPaginas;
 
   void seleccionarEstadoPendiente(EstadoReserva estado) {
     _estadoPendiente = estado == _detalle?.estado ? null : estado;
@@ -146,23 +148,37 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
   }
 
   List<DtoReservaAdmin> get reservas {
-    return _reservas
-        .where(_coincideConFiltro)
-        .map(_crearDto)
-        .toList(growable: false);
+    return _reservas.map(_crearDto).toList(growable: false);
   }
 
   Future<void> cargarReservas() async {
     iniciarCarga();
+    _paginaActual = 0;
+    _hayMasPaginas = false;
 
     try {
       final String token = leerTokenObligatorio();
-      final List<Reserva> reservas = await _repoReservas.listarTodas(token);
-      _reservas = reservas
-          .where((reserva) => reserva.id != null)
-          .toList(growable: false)
-        ..sort(_compararReservas);
-      _detallesPorReserva = await _cargarDetallesReservas(token, _reservas);
+      _reservas = await _cargarPorFiltro(token, numeroPagina: 0);
+      notifyListeners();
+    } catch (e) {
+      registrarError(e);
+    } finally {
+      finalizarCarga();
+    }
+  }
+
+  Future<void> cargarMas() async {
+    if (!_hayMasPaginas) return;
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      final List<Reserva> nuevas = await _cargarPorFiltro(
+        token,
+        numeroPagina: _paginaActual + 1,
+      );
+      _paginaActual++;
+      _reservas = <Reserva>[..._reservas, ...nuevas];
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -175,6 +191,12 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     return cargarReservas();
   }
 
+  void seleccionarFiltro(FiltroAdminReservas filtro) {
+    if (_filtroActivo == filtro) return;
+    _filtroActivo = filtro;
+    cargarReservas();
+  }
+
   Future<void> cargarDetalleReserva(int id) async {
     _detalle = null;
     iniciarCarga();
@@ -182,14 +204,13 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     try {
       final String token = leerTokenObligatorio();
       final Reserva reserva = await _repoReservas.obtenerPorId(id, token);
-      final resultados = await Future.wait([
-        _repoReservas.obtenerDetalles(id, token),
+      final resultados = await Future.wait(<Future<Object?>>[
         _obtenerClienteSiEsPosible(reserva, token),
+        _cargarFotosEmpleados(reserva.lineas, token),
       ]);
-      final detalles = resultados[0] as List<ReservaServicio>;
-      final cliente = resultados[1] as Cliente?;
-      final fotosEmpleados = await _cargarFotosEmpleados(detalles, token);
-      _detalle = _crearDetalle(reserva, detalles, cliente, fotosEmpleados);
+      final cliente = resultados[0] as Cliente?;
+      final fotosEmpleados = resultados[1] as Map<int, String?>;
+      _detalle = _crearDetalle(reserva, reserva.lineas, cliente, fotosEmpleados);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -234,48 +255,67 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     }
   }
 
-  void seleccionarFiltro(FiltroAdminReservas filtro) {
-    if (_filtroActivo == filtro) {
-      return;
-    }
-    _filtroActivo = filtro;
-    notifyListeners();
-  }
+  Future<List<Reserva>> _cargarPorFiltro(
+    String token, {
+    required int numeroPagina,
+  }) async {
+    final DateTime ahora = DateTime.now();
+    final DateTime hoy = DateTime(ahora.year, ahora.month, ahora.day);
 
-  bool _coincideConFiltro(Reserva reserva) {
     return switch (_filtroActivo) {
-      FiltroAdminReservas.hoy => _esHoyYNoHaPasado(reserva),
-      FiltroAdminReservas.semana => _estaEnRestoSemana(reserva.fecha),
+      FiltroAdminReservas.hoy => _repoReservas.listarAdminPorFecha(
+        hoy,
+        hoy,
+        <EstadoReserva>[EstadoReserva.pendiente, EstadoReserva.confirmada],
+        token,
+      ),
+      FiltroAdminReservas.semana => _repoReservas.listarAdminPorFecha(
+        hoy,
+        _finDeSemana(hoy),
+        <EstadoReserva>[EstadoReserva.pendiente, EstadoReserva.confirmada],
+        token,
+      ),
       FiltroAdminReservas.pendientes =>
-        reserva.estado == EstadoReserva.pendiente,
+        _cargarPaginado(EstadoReserva.pendiente, numeroPagina, token),
       FiltroAdminReservas.confirmadas =>
-        reserva.estado == EstadoReserva.confirmada,
+        _cargarPaginado(EstadoReserva.confirmada, numeroPagina, token),
       FiltroAdminReservas.canceladas =>
-        reserva.estado == EstadoReserva.cancelada,
+        _cargarPaginado(EstadoReserva.cancelada, numeroPagina, token),
     };
   }
 
+  Future<List<Reserva>> _cargarPaginado(
+    EstadoReserva estado,
+    int numeroPagina,
+    String token,
+  ) async {
+    final PaginaReservas resultado = await _repoReservas.listarAdminPorEstado(
+      estado,
+      numeroPagina,
+      token,
+    );
+    _hayMasPaginas = !resultado.last;
+    return resultado.content;
+  }
+
   DtoReservaAdmin _crearDto(Reserva reserva) {
-    final List<ReservaServicio> detalles =
-        _detallesPorReserva[reserva.id] ?? const <ReservaServicio>[];
-    final ReservaServicio? primerDetalle = detalles.isEmpty
-        ? null
-        : detalles.first;
+    final List<ReservaServicio> lineas = reserva.lineas;
+    final ReservaServicio? primeraLinea = lineas.isEmpty ? null : lineas.first;
     return DtoReservaAdmin(
       id: reserva.id.toString(),
       cliente: _textoConFallback(reserva.nombreCliente, 'Cliente sin nombre'),
-      servicio: detalles.isEmpty
+      servicio: lineas.isEmpty
           ? _resumenServicios(reserva.servicioIds.length)
-          : detalles
-                .map((detalle) => detalle.nombreServicio ?? 'Servicio')
+          : lineas
+                .map((l) => l.nombreServicio ?? 'Servicio')
                 .join(', '),
       empleado: _textoConFallback(
-        primerDetalle?.nombreEmpleado,
+        primeraLinea?.nombreEmpleado,
         'Sin empleado asignado',
       ),
       fechaHoraTexto: '${_formatoFecha.format(reserva.fecha)} · '
           '${_textoConFallback(reserva.horaInicio, '--:--')}',
-      precio: _formatoPrecio.format(_calcularTotal(detalles)),
+      precio: _formatoPrecio.format(_calcularTotal(lineas)),
       estado: reserva.estado ?? EstadoReserva.pendiente,
     );
   }
@@ -356,87 +396,35 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     List<ReservaServicio> detalles,
     String token,
   ) async {
-    final ids = detalles.map((d) => d.empleadoId).toSet();
-    final entries = await Future.wait(
-      ids.map((id) async {
-        try {
-          final Empleado emp = await _repoEmpleados.obtenerPorId(id, token);
-          return MapEntry(id, emp.fotoUrl);
-        } catch (_) {
-          return MapEntry<int, String?>(id, null);
-        }
-      }),
-    );
-    return Map.fromEntries(entries);
-  }
-
-  int _compararReservas(Reserva a, Reserva b) {
-    final int fecha = a.fecha.compareTo(b.fecha);
-    if (fecha != 0) {
-      return fecha;
-    }
-    return a.horaInicio.compareTo(b.horaInicio);
-  }
-
-  bool _esHoyYNoHaPasado(Reserva reserva) {
-    final DateTime ahora = DateTime.now();
-    if (!_esMismoDia(reserva.fecha, ahora)) return false;
-    final DateTime horaReserva = _horaEnFecha(reserva.horaInicio, ahora);
-    return !horaReserva.isBefore(ahora);
-  }
-
-  bool _estaEnRestoSemana(DateTime fecha) {
-    final DateTime ahora = DateTime.now();
-    final DateTime inicioHoy = DateTime(ahora.year, ahora.month, ahora.day);
-    final DateTime inicioSemana = inicioHoy.subtract(
-      Duration(days: ahora.weekday - 1),
-    );
-    final DateTime finSemana = inicioSemana.add(const Duration(days: 7));
-    return !fecha.isBefore(inicioHoy) && fecha.isBefore(finSemana);
-  }
-
-  bool _esMismoDia(DateTime fecha, DateTime referencia) {
-    return fecha.year == referencia.year &&
-        fecha.month == referencia.month &&
-        fecha.day == referencia.day;
-  }
-
-  DateTime _horaEnFecha(String hora, DateTime fecha) {
-    final List<String> partes = hora.split(':');
-    return DateTime(
-      fecha.year,
-      fecha.month,
-      fecha.day,
-      int.tryParse(partes.first) ?? 0,
-      partes.length > 1 ? int.tryParse(partes[1]) ?? 0 : 0,
-    );
+    final Set<int> ids = detalles.map((d) => d.empleadoId).toSet();
+    final Iterable<Future<MapEntry<int, String?>>> futures = ids.map((id) async {
+      try {
+        final Empleado emp = await _repoEmpleados.obtenerPorId(id, token);
+        return MapEntry(id, emp.fotoUrl);
+      } catch (_) {
+        return MapEntry<int, String?>(id, null);
+      }
+    });
+    return Map.fromEntries(await Future.wait(futures));
   }
 
   Future<void> _recargarDetalleTrasAccion(int id) async {
     final String token = leerTokenObligatorio();
     final Reserva reserva = await _repoReservas.obtenerPorId(id, token);
-    final resultados = await Future.wait([
-      _repoReservas.obtenerDetalles(id, token),
+    final resultados = await Future.wait(<Future<Object?>>[
       _obtenerClienteSiEsPosible(reserva, token),
+      _cargarFotosEmpleados(reserva.lineas, token),
     ]);
-    final detalles = resultados[0] as List<ReservaServicio>;
-    final cliente = resultados[1] as Cliente?;
-    final fotosEmpleados = await _cargarFotosEmpleados(detalles, token);
+    final cliente = resultados[0] as Cliente?;
+    final fotosEmpleados = resultados[1] as Map<int, String?>;
     _estadoPendiente = null;
-    _detalle = _crearDetalle(reserva, detalles, cliente, fotosEmpleados);
+    _detalle = _crearDetalle(reserva, reserva.lineas, cliente, fotosEmpleados);
     notifyListeners();
   }
 
-  Future<Map<int, List<ReservaServicio>>> _cargarDetallesReservas(
-
-    String token,
-    List<Reserva> reservas,
-  ) async {
-    final ids = reservas.map((r) => r.id).whereType<int>().toList();
-    final resultados = await Future.wait(
-      ids.map((id) async => MapEntry(id, await _repoReservas.obtenerDetalles(id, token))),
-    );
-    return Map.fromEntries(resultados);
+  DateTime _finDeSemana(DateTime hoy) {
+    final int diasHastaFinSemana = DateTime.sunday - hoy.weekday;
+    return hoy.add(Duration(days: diasHastaFinSemana));
   }
 
   double _calcularTotal(List<ReservaServicio> detalles) {
@@ -466,9 +454,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
 
   String _formatearHora(String hora) {
     final List<String> partes = hora.split(':');
-    if (partes.length < 2) {
-      return hora;
-    }
+    if (partes.length < 2) return hora;
     return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
@@ -478,9 +464,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
 
   String? _estadoDetalleTexto(ReservaServicio detalle) {
     final estado = detalle.estado;
-    if (estado == null) {
-      return null;
-    }
+    if (estado == null) return null;
     return switch (estado.name) {
       'activo' => 'Activo',
       'cancelado' => 'Cancelado',
@@ -493,9 +477,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
     String token,
   ) async {
     final int? clienteId = reserva.clienteId;
-    if (clienteId == null) {
-      return null;
-    }
+    if (clienteId == null) return null;
     try {
       return await _repoClientes.obtenerPorId(clienteId, token);
     } catch (_) {
@@ -515,9 +497,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
 
   String _unirNombre(String nombre, String? apellidos) {
     final String? apellidosLimpios = _textoOpcional(apellidos);
-    if (apellidosLimpios == null) {
-      return nombre;
-    }
+    if (apellidosLimpios == null) return nombre;
     return '$nombre $apellidosLimpios';
   }
 
@@ -532,9 +512,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
   }
 
   String _capitalizar(String texto) {
-    if (texto.isEmpty) {
-      return texto;
-    }
+    if (texto.isEmpty) return texto;
     return '${texto.substring(0, 1).toUpperCase()}${texto.substring(1)}';
   }
 }

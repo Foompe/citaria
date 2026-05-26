@@ -3,6 +3,7 @@ package com.citaria.service;
 import com.citaria.dto.ReservaDTO;
 import com.citaria.dto.ReservaServicioDTO;
 import com.citaria.model.EstadoReserva;
+import org.springframework.data.domain.Page;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,11 +12,12 @@ import java.util.List;
  */
 public interface ReservaService {
 
+    // Admin — carga con líneas incluidas
+    List<ReservaDTO> obtenerAdminPorFecha(LocalDate fechaInicio, LocalDate fechaFin, List<EstadoReserva> estados);
+    Page<ReservaDTO> obtenerAdminPorEstado(EstadoReserva estado, int pagina, int tamano);
+
     // Reserva
-    List<ReservaDTO> obtenerTodas();
     List<ReservaDTO> obtenerPorCliente(Integer clienteId);
-    List<ReservaDTO> obtenerPorFecha(LocalDate fecha);
-    List<ReservaDTO> obtenerPorEstado(EstadoReserva estado);
     List<ReservaDTO> obtenerPorFechaYEstados(LocalDate fecha, List<EstadoReserva> estados);
     ReservaDTO obtenerPorId(Integer id);
     ReservaDTO crear(Integer clienteId, ReservaDTO dto);

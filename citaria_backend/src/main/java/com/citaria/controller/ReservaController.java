@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
@@ -30,6 +31,30 @@ public class ReservaController {
         this.reservaService = reservaService;
     }
 
+    // ADMIN — reservas con líneas incluidas
+
+    @Operation(summary = "Obtener reservas admin por rango de fechas",
+            description = "Devuelve reservas con líneas incluidas. Filtro opcional por estados.")
+    @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
+    @GetMapping("/admin/fecha")
+    public ResponseEntity<List<ReservaDTO>> obtenerAdminPorFecha(
+            @RequestParam LocalDate fechaInicio,
+            @RequestParam LocalDate fechaFin,
+            @RequestParam(required = false) List<EstadoReserva> estados) {
+        return ResponseEntity.ok(reservaService.obtenerAdminPorFecha(fechaInicio, fechaFin, estados));
+    }
+
+    @Operation(summary = "Obtener reservas admin por estado paginadas",
+            description = "Devuelve reservas con líneas incluidas, paginadas, ordenadas por fecha DESC.")
+    @ApiResponse(responseCode = "200", description = "Página obtenida correctamente")
+    @GetMapping("/admin/estado")
+    public ResponseEntity<Page<ReservaDTO>> obtenerAdminPorEstado(
+            @RequestParam EstadoReserva estado,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "20") int tamano) {
+        return ResponseEntity.ok(reservaService.obtenerAdminPorEstado(estado, pagina, tamano));
+    }
+
     // RESERVA
 
     @Operation(summary = "Obtener reservas por fecha y estados",
@@ -44,15 +69,6 @@ public class ReservaController {
         return ResponseEntity.ok(reservaService.obtenerPorFechaYEstados(fecha, estados));
     }
 
-    @Operation(summary = "Obtener todas las reservas de la organización autenticada")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
-    })
-    @GetMapping
-    public ResponseEntity<List<ReservaDTO>> obtenerTodas() {
-        return ResponseEntity.ok(reservaService.obtenerTodas());
-    }
-
     @Operation(summary = "Obtener reservas de un cliente")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
@@ -60,24 +76,6 @@ public class ReservaController {
     @GetMapping("/cliente/{clienteId}")
     public ResponseEntity<List<ReservaDTO>> obtenerPorCliente(@PathVariable Integer clienteId) {
         return ResponseEntity.ok(reservaService.obtenerPorCliente(clienteId));
-    }
-
-    @Operation(summary = "Obtener reservas por fecha")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
-    })
-    @GetMapping("/fecha/{fecha}")
-    public ResponseEntity<List<ReservaDTO>> obtenerPorFecha(@PathVariable LocalDate fecha) {
-        return ResponseEntity.ok(reservaService.obtenerPorFecha(fecha));
-    }
-
-    @Operation(summary = "Obtener reservas por estado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
-    })
-    @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<ReservaDTO>> obtenerPorEstado(@PathVariable EstadoReserva estado) {
-        return ResponseEntity.ok(reservaService.obtenerPorEstado(estado));
     }
 
     @Operation(summary = "Obtener reserva por ID")

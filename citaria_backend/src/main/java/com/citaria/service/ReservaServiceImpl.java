@@ -7,12 +7,18 @@ import com.citaria.model.*;
 import com.citaria.repository.*;
 import com.citaria.security.ContextoSeguridad;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -49,19 +55,35 @@ public class ReservaServiceImpl implements ReservaService {
         this.contextoSeguridad = contextoSeguridad;
     }
 
-    // RESERVA
+    // ADMIN — carga con líneas incluidas (sin N+1)
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReservaDTO> obtenerTodas() {
+    public List<ReservaDTO> obtenerAdminPorFecha(LocalDate fechaInicio,
+                                                  LocalDate fechaFin,
+                                                  List<EstadoReserva> estados) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Reserva> reservas = reservaDAO.findByOrganizacion(organizacion);
-        List<ReservaDTO> reservasDTO = new ArrayList<>();
-        for (Reserva reserva : reservas) {
-            reservasDTO.add(convertirReservaADTO(reserva));
+        List<Reserva> reservas;
+        if (estados == null || estados.isEmpty()) {
+            reservas = reservaDAO.findAdminPorFecha(organizacion, fechaInicio, fechaFin);
+        } else {
+            reservas = reservaDAO.findAdminPorFechaYEstados(organizacion, fechaInicio, fechaFin, estados);
         }
-        return reservasDTO;
+        return convertirConLineas(reservas);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservaDTO> obtenerAdminPorEstado(EstadoReserva estado, int pagina, int tamano) {
+        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
+        Pageable pageable = PageRequest.of(pagina, tamano);
+        Page<Reserva> paginaReservas = reservaDAO
+                .findByOrganizacionAndEstadoOrderByFechaDesc(organizacion, estado, pageable);
+        List<ReservaDTO> dtos = convertirConLineas(paginaReservas.getContent());
+        return new PageImpl<>(dtos, pageable, paginaReservas.getTotalElements());
+    }
+
+    // RESERVA
 
     @Override
     @Transactional(readOnly = true)
@@ -79,30 +101,6 @@ public class ReservaServiceImpl implements ReservaService {
             throw new RecursoNoEncontradoException("Cliente con id " + clienteId + " no encontrado");
         }
         List<Reserva> reservas = reservaDAO.findByCliente(cliente);
-        List<ReservaDTO> reservasDTO = new ArrayList<>();
-        for (Reserva reserva : reservas) {
-            reservasDTO.add(convertirReservaADTO(reserva));
-        }
-        return reservasDTO;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ReservaDTO> obtenerPorFecha(LocalDate fecha) {
-        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Reserva> reservas = reservaDAO.findByOrganizacionAndFecha(organizacion, fecha);
-        List<ReservaDTO> reservasDTO = new ArrayList<>();
-        for (Reserva reserva : reservas) {
-            reservasDTO.add(convertirReservaADTO(reserva));
-        }
-        return reservasDTO;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ReservaDTO> obtenerPorEstado(EstadoReserva estado) {
-        Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Reserva> reservas = reservaDAO.findByOrganizacionAndEstado(organizacion, estado);
         List<ReservaDTO> reservasDTO = new ArrayList<>();
         for (Reserva reserva : reservas) {
             reservasDTO.add(convertirReservaADTO(reserva));
@@ -450,6 +448,57 @@ public class ReservaServiceImpl implements ReservaService {
 
     // CONVERSIONES
 
+    private List<ReservaDTO> convertirConLineas(List<Reserva> reservas) {
+        if (reservas.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<Integer, List<ReservaServicio>> lineasPorReserva = new HashMap<>();
+        for (ReservaServicio rs : reservaServicioDAO.findByReservaIn(reservas)) {
+            lineasPorReserva
+                    .computeIfAbsent(rs.getReserva().getId(), k -> new ArrayList<>())
+                    .add(rs);
+        }
+        List<ReservaDTO> dtos = new ArrayList<>();
+        for (Reserva reserva : reservas) {
+            List<ReservaServicio> lineas = lineasPorReserva
+                    .getOrDefault(reserva.getId(), new ArrayList<>());
+            dtos.add(convertirReservaADTOConLineas(reserva, lineas));
+        }
+        return dtos;
+    }
+
+    private ReservaDTO convertirReservaADTOConLineas(Reserva reserva, List<ReservaServicio> lineas) {
+        ReservaDTO dto = new ReservaDTO();
+        dto.setId(reserva.getId());
+        dto.setOrganizacionId(reserva.getOrganizacion().getId());
+        dto.setClienteId(reserva.getCliente().getId());
+        String apellidos = reserva.getCliente().getApellidos();
+        if (apellidos != null) {
+            dto.setNombreCliente(reserva.getCliente().getNombre() + " " + apellidos);
+        } else {
+            dto.setNombreCliente(reserva.getCliente().getNombre());
+        }
+        dto.setEstado(reserva.getEstado());
+        dto.setFecha(reserva.getFecha());
+        if (!lineas.isEmpty()) {
+            dto.setHoraInicio(lineas.get(0).getHoraInicio());
+            dto.setEmpleadoId(obtenerEmpleadoComun(lineas));
+        }
+        List<Integer> servicioIds = new ArrayList<>();
+        List<ReservaServicioDTO> lineasDTO = new ArrayList<>();
+        for (ReservaServicio linea : lineas) {
+            if (linea.getServicio() != null) {
+                servicioIds.add(linea.getServicio().getId());
+            }
+            lineasDTO.add(convertirLineaADTO(linea));
+        }
+        dto.setServicioIds(servicioIds);
+        dto.setLineas(lineasDTO);
+        dto.setNotas(reserva.getNotas());
+        dto.setMotivo(reserva.getMotivo());
+        return dto;
+    }
+
     private ReservaDTO convertirReservaADTO(Reserva reserva) {
         ReservaDTO dto = new ReservaDTO();
         dto.setId(reserva.getId());
@@ -469,12 +518,15 @@ public class ReservaServiceImpl implements ReservaService {
             dto.setEmpleadoId(obtenerEmpleadoComun(detalles));
         }
         List<Integer> servicioIds = new ArrayList<>();
+        List<ReservaServicioDTO> lineasDTO = new ArrayList<>();
         for (ReservaServicio detalle : detalles) {
             if (detalle.getServicio() != null) {
                 servicioIds.add(detalle.getServicio().getId());
             }
+            lineasDTO.add(convertirLineaADTO(detalle));
         }
         dto.setServicioIds(servicioIds);
+        dto.setLineas(lineasDTO);
         dto.setNotas(reserva.getNotas());
         dto.setMotivo(reserva.getMotivo());
         return dto;

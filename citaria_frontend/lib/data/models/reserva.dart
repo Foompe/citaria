@@ -1,4 +1,5 @@
 import 'package:citaria_frontend/data/enums/estado_reserva.dart';
+import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 
 class Reserva {
   final int? id;
@@ -12,6 +13,7 @@ class Reserva {
   final List<int> servicioIds;
   final String? notas;
   final String? motivo;
+  final List<ReservaServicio> lineas;
 
   const Reserva({
     this.id,
@@ -25,6 +27,7 @@ class Reserva {
     required this.servicioIds,
     this.notas,
     this.motivo,
+    this.lineas = const <ReservaServicio>[],
   }) : _horaInicio = horaInicio;
 
   String get horaInicio => _horaInicio ?? '';
@@ -54,6 +57,12 @@ class Reserva {
           .toList(),
       notas: json['notas'] as String?,
       motivo: json['motivo'] as String?,
+      lineas: (json['lineas'] as List<dynamic>?)
+              ?.map(
+                (l) => ReservaServicio.fromJson(l as Map<String, dynamic>),
+              )
+              .toList(growable: false) ??
+          const <ReservaServicio>[],
     );
   }
 

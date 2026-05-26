@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/enums/estado_reserva.dart';
+import 'package:citaria_frontend/data/models/pagina_reservas.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 
@@ -10,12 +11,44 @@ class RepoReservas {
 
   final CitariaApi _api;
 
-  Future<List<Reserva>> listarTodas(String token) async {
+  Future<List<Reserva>> listarAdminPorFecha(
+    DateTime fechaInicio,
+    DateTime fechaFin,
+    List<EstadoReserva>? estados,
+    String token,
+  ) async {
     try {
-      final Object? json = await _api.get('/api/reservas', token: token);
+      final List<String> params = <String>[
+        'fechaInicio=${_formatearFecha(fechaInicio)}',
+        'fechaFin=${_formatearFecha(fechaFin)}',
+        if (estados != null && estados.isNotEmpty)
+          'estados=${estados.map((e) => e.toJson()).join(',')}',
+      ];
+      final String ruta = '/api/reservas/admin/fecha?${params.join('&')}';
+      final Object? json = await _api.get(ruta, token: token);
       return (json as List)
-          .map((elemento) => Reserva.fromJson(elemento as Map<String, dynamic>))
+          .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
           .toList();
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('$e');
+    }
+  }
+
+  Future<PaginaReservas> listarAdminPorEstado(
+    EstadoReserva estado,
+    int pagina,
+    String token, {
+    int tamano = 20,
+  }) async {
+    try {
+      final String ruta =
+          '/api/reservas/admin/estado?estado=${estado.toJson()}'
+          '&pagina=$pagina&tamano=$tamano';
+      final Object? json = await _api.get(ruta, token: token);
+      return PaginaReservas.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -52,43 +85,6 @@ class RepoReservas {
     try {
       final Object? json = await _api.get(
         '/api/reservas/cliente/$clienteId',
-        token: token,
-      );
-      return (json as List)
-          .map((elemento) => Reserva.fromJson(elemento as Map<String, dynamic>))
-          .toList();
-    } on TimeoutException {
-      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('$e');
-    }
-  }
-
-  Future<List<Reserva>> listarPorFecha(DateTime fecha, String token) async {
-    try {
-      final Object? json = await _api.get(
-        '/api/reservas/fecha/${_formatearFecha(fecha)}',
-        token: token,
-      );
-      return (json as List)
-          .map((elemento) => Reserva.fromJson(elemento as Map<String, dynamic>))
-          .toList();
-    } on TimeoutException {
-      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('$e');
-    }
-  }
-
-  Future<List<Reserva>> listarPorEstado(
-    EstadoReserva estado,
-    String token,
-  ) async {
-    try {
-      final Object? json = await _api.get(
-        '/api/reservas/estado/${estado.toJson()}',
         token: token,
       );
       return (json as List)

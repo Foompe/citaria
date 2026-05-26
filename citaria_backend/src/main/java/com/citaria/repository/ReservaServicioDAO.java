@@ -43,6 +43,14 @@ public interface ReservaServicioDAO extends JpaRepository<ReservaServicio, Integ
                                                            @Param("fechaFin") LocalDate fechaFin);
 
     /**
+     * Carga en bloque todas las líneas de una lista de reservas.
+     * JOIN FETCH en servicio y empleado para evitar lazy loading al convertir a DTO.
+     */
+    @Query("SELECT rs FROM ReservaServicio rs JOIN FETCH rs.servicio JOIN FETCH rs.empleado " +
+            "WHERE rs.reserva IN :reservas")
+    List<ReservaServicio> findByReservaIn(@Param("reservas") List<Reserva> reservas);
+
+    /**
      * Detecta si un empleado tiene alguna línea activa que solape con la franja indicada.
      */
     @Query("SELECT COUNT(rs) FROM ReservaServicio rs WHERE rs.empleado.id = :empleadoId " +

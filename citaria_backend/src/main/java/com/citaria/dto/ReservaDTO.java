@@ -31,6 +31,7 @@ public class ReservaDTO {
 
     private String notas;
     private String motivo;
+    private List<ReservaServicioDTO> lineas;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -64,4 +65,7 @@ public class ReservaDTO {
 
     public String getMotivo() { return motivo; }
     public void setMotivo(String motivo) { this.motivo = motivo; }
+
+    public List<ReservaServicioDTO> getLineas() { return lineas; }
+    public void setLineas(List<ReservaServicioDTO> lineas) { this.lineas = lineas; }
 }
