@@ -155,6 +155,17 @@ public class ReservaServiceImpl implements ReservaService {
         if (dto.getHoraInicio() == null) {
             throw new IllegalStateException("La hora de inicio es obligatoria");
         }
+        if (dto.getFecha().isBefore(LocalDate.now())) {
+            throw new IllegalStateException("No se pueden crear reservas para fechas pasadas");
+        }
+
+        List<Reserva> reservasActivas = reservaDAO.findReservasFuturasActivasPorCliente(
+                cliente, LocalDate.now(),
+                List.of(EstadoReserva.pendiente, EstadoReserva.confirmada));
+        if (reservasActivas.size() >= 5) {
+            throw new IllegalStateException(
+                    "Has alcanzado el límite de 5 reservas activas. Cancela alguna para poder hacer una nueva");
+        }
 
         // Resolver empleado — manual o automático
         Empleado empleado = buscarEmpleadoDisponible(dto, organizacion);

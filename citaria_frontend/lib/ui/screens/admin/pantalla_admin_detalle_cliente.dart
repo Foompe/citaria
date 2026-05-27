@@ -279,6 +279,25 @@ class _TabDatosState extends State<_TabDatos> {
     });
   }
 
+  String? _validarCampo(_CampoAdmin campo, String valor) {
+    switch (campo) {
+      case _CampoAdmin.nombre:
+        if (valor.isEmpty) return 'El nombre es obligatorio';
+        if (valor.length < 2) return 'El nombre debe tener al menos 2 caracteres';
+        if (valor.length > 50) return 'El nombre no puede superar los 50 caracteres';
+      case _CampoAdmin.apellidos:
+        if (valor.length > 100) return 'Los apellidos no pueden superar los 100 caracteres';
+      case _CampoAdmin.dni:
+        if (valor.length > 9) return 'El documento no puede superar los 9 caracteres';
+      case _CampoAdmin.telefono:
+        if (valor.isNotEmpty && valor.length < 9) return 'El teléfono debe tener al menos 9 caracteres';
+        if (valor.length > 15) return 'El teléfono no puede superar los 15 caracteres';
+      case _CampoAdmin.notas:
+        if (valor.length > 500) return 'Las notas no pueden superar los 500 caracteres';
+    }
+    return null;
+  }
+
   Future<void> _guardarCampo(
     BuildContext context,
     ViewModelAdminClientes vmClientes,
@@ -287,9 +306,10 @@ class _TabDatosState extends State<_TabDatos> {
     if (campo == null) return;
 
     final String valor = _controlador.text.trim();
-    if (campo == _CampoAdmin.nombre && valor.isEmpty) {
+    final String? errorValidacion = _validarCampo(campo, valor);
+    if (errorValidacion != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre es obligatorio.')),
+        SnackBar(content: Text(errorValidacion)),
       );
       return;
     }

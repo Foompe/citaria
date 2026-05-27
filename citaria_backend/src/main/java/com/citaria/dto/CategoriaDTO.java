@@ -11,7 +11,7 @@ public class CategoriaDTO {
     private Integer organizacionId;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
+    @Size(max = 50, message = "El nombre no puede superar los 50 caracteres")
     private String nombre;
 
     private Boolean activo;

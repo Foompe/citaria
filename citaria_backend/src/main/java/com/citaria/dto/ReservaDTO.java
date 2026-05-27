@@ -27,9 +27,13 @@ public class ReservaDTO {
     private Integer empleadoId;
 
     @NotEmpty(message = "Debe seleccionar al menos un servicio")
+    @Size(max = 5, message = "No se pueden seleccionar más de 5 servicios por reserva")
     private List<Integer> servicioIds;
 
+    @Size(max = 500, message = "Las observaciones no pueden superar los 500 caracteres")
     private String notas;
+
+    @Size(max = 300, message = "El motivo no puede superar los 300 caracteres")
     private String motivo;
     private List<ReservaServicioDTO> lineas;
 

@@ -95,7 +95,7 @@ public class ManejadorGlobalExcepciones {
         if (!ex.getBindingResult().getFieldErrors().isEmpty()) {
             org.springframework.validation.FieldError error =
                     ex.getBindingResult().getFieldErrors().get(0);
-            mensaje = error.getField() + ": " + error.getDefaultMessage();
+            mensaje = error.getDefaultMessage();
         }
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)

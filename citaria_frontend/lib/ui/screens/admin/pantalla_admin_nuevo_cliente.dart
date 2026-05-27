@@ -163,21 +163,33 @@ class _PantallaAdminNuevoClienteState
                     CampoFormulario(
                       controller: _ctrlNombre,
                       etiqueta: 'Nombre *',
-                      validador: (v) => (v == null || v.trim().isEmpty)
-                          ? 'El nombre es obligatorio'
-                          : null,
+                      validador: (v) {
+                        final t = v?.trim() ?? '';
+                        if (t.isEmpty) return 'El nombre es obligatorio';
+                        if (t.length < 2) return 'El nombre debe tener al menos 2 caracteres';
+                        if (t.length > 50) return 'El nombre no puede superar los 50 caracteres';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
                     CampoFormulario(
                       controller: _ctrlApellidos,
                       etiqueta: 'Apellidos',
+                      validador: (v) {
+                        if ((v?.trim().length ?? 0) > 100) return 'Los apellidos no pueden superar los 100 caracteres';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
                     CampoFormulario(
                       controller: _ctrlDni,
-                      etiqueta: 'DNI',
+                      etiqueta: 'Documento de identidad',
+                      validador: (v) {
+                        if ((v?.trim().length ?? 0) > 9) return 'El documento no puede superar los 9 caracteres';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
@@ -192,12 +204,20 @@ class _PantallaAdminNuevoClienteState
                       controller: _ctrlTelefono,
                       etiqueta: 'Teléfono',
                       teclado: TextInputType.phone,
+                      validador: (v) {
+                        final t = v?.trim() ?? '';
+                        if (t.isEmpty) return null;
+                        if (t.length < 9) return 'El teléfono debe tener al menos 9 caracteres';
+                        if (t.length > 15) return 'El teléfono no puede superar los 15 caracteres';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
 
                     TextFormField(
                       controller: _ctrlNotas,
                       maxLines: 3,
+                      maxLength: 500,
                       decoration: InputDecoration(
                         labelText: 'Notas',
                         border: OutlineInputBorder(

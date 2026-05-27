@@ -336,11 +336,26 @@ class ViewModelWizard extends ChangeNotifier {
     }
   }
 
+  bool get puedeMesAnterior {
+    final DateTime hoy = DateTime.now();
+    return _mesVisible.isAfter(DateTime(hoy.year, hoy.month));
+  }
+
+  bool get puedeMesSiguiente {
+    final DateTime hoy = DateTime.now();
+    return _mesVisible.isBefore(DateTime(hoy.year, hoy.month + 1));
+  }
+
   void cambiarMes(int desplazamiento) {
-    _mesVisible = DateTime(
+    final DateTime nuevo = DateTime(
       _mesVisible.year,
       _mesVisible.month + desplazamiento,
     );
+    final DateTime hoy = DateTime.now();
+    final DateTime mesMin = DateTime(hoy.year, hoy.month);
+    final DateTime mesMax = DateTime(hoy.year, hoy.month + 1);
+    if (nuevo.isBefore(mesMin) || nuevo.isAfter(mesMax)) return;
+    _mesVisible = nuevo;
     _fechaSeleccionada = null;
     _horaSeleccionada = null;
     _franjas = const <FranjaHoraria>[];

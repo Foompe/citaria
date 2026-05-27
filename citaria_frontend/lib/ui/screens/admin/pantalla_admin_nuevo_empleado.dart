@@ -202,17 +202,24 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                   CampoFormulario(
                     controller: ctrlNombre,
                     etiqueta: 'Nombre *',
-                    validador: (v) => (v == null || v.trim().isEmpty)
-                        ? 'El nombre es obligatorio'
-                        : null,
+                    validador: (v) {
+                      final t = v?.trim() ?? '';
+                      if (t.isEmpty) return 'El nombre es obligatorio';
+                      if (t.length < 2) return 'El nombre debe tener al menos 2 caracteres';
+                      if (t.length > 50) return 'El nombre no puede superar los 50 caracteres';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   CampoFormulario(
                     controller: ctrlApellidos,
                     etiqueta: 'Apellidos *',
-                    validador: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Los apellidos son obligatorios'
-                        : null,
+                    validador: (v) {
+                      final t = v?.trim() ?? '';
+                      if (t.isEmpty) return 'Los apellidos son obligatorios';
+                      if (t.length > 100) return 'Los apellidos no pueden superar los 100 caracteres';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   CampoFormulario(
@@ -225,6 +232,13 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                     controller: ctrlTelefono,
                     etiqueta: 'Teléfono',
                     teclado: TextInputType.phone,
+                    validador: (v) {
+                      final t = v?.trim() ?? '';
+                      if (t.isEmpty) return null;
+                      if (t.length < 9) return 'El teléfono debe tener al menos 9 caracteres';
+                      if (t.length > 15) return 'El teléfono no puede superar los 15 caracteres';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 28),
                   SeccionHorarioSemanal(

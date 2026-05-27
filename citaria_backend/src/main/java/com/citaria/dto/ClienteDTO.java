@@ -12,22 +12,23 @@ public class ClienteDTO {
     private Integer organizacionId;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
+    @Size(min = 2, max = 50, message = "El nombre debe tener entre 2 y 50 caracteres")
     private String nombre;
 
-    @Size(max = 150, message = "Los apellidos no pueden superar los 150 caracteres")
+    @Size(max = 100, message = "Los apellidos no pueden superar los 100 caracteres")
     private String apellidos;
 
-    @Size(max = 9, message = "El DNI no puede superar los 9 caracteres")
+    @Size(max = 9, message = "El documento de identidad no puede superar los 9 caracteres")
     private String dni;
 
     @Email(message = "El email no tiene un formato válido")
     @Size(max = 255, message = "El email no puede superar los 255 caracteres")
     private String email;
 
-    @Size(max = 20, message = "El teléfono no puede superar los 20 caracteres")
+    @Size(min = 9, max = 15, message = "El teléfono debe tener entre 9 y 15 caracteres")
     private String telefono;
 
+    @Size(max = 500, message = "Las notas no pueden superar los 500 caracteres")
     private String notas;
     private String fotoUrl;
     private LocalDateTime anonimizadoAt;

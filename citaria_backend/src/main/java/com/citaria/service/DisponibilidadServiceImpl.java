@@ -74,6 +74,9 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
     public DisponibilidadDTO obtenerDisponibilidad(LocalDate fecha,
                                                    List<Integer> servicioIds,
                                                    Integer empleadoId) {
+        if (fecha.isAfter(LocalDate.now().plusDays(60))) {
+            throw new IllegalStateException("No se pueden consultar fechas con más de 60 días de antelación");
+        }
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
 
         // 1. Verificar que no es un día de cierre puntual
@@ -153,6 +156,9 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
                                                                LocalDate fechaFin,
                                                                List<Integer> servicioIds,
                                                                Integer empleadoId) {
+        if (fechaFin.isAfter(LocalDate.now().plusDays(60))) {
+            throw new IllegalStateException("No se pueden consultar fechas con más de 60 días de antelación");
+        }
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
 
         int duracionTotalMinutos = calcularDuracionTotal(servicioIds, organizacion);

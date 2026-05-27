@@ -35,6 +35,7 @@ public class ReservaServicioDTO {
     private BigDecimal precioUnitario;
 
     @Min(value = 1, message = "La cantidad debe ser al menos 1")
+    @Max(value = 10, message = "La cantidad no puede superar 10 unidades")
     private Integer cantidad;
 
     private EstadoReservaServicio estado;

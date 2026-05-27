@@ -14,9 +14,10 @@ public class ServicioDTO {
     private String nombreCategoria;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no puede superar los 100 caracteres")
+    @Size(max = 60, message = "El nombre no puede superar los 60 caracteres")
     private String nombre;
 
+    @Size(max = 500, message = "La descripción no puede superar los 500 caracteres")
     private String descripcion;
 
     @Size(max = 500, message = "La URL de la imagen no puede superar los 500 caracteres")
@@ -24,11 +25,13 @@ public class ServicioDTO {
 
     @NotNull(message = "El precio es obligatorio")
     @DecimalMin(value = "0.01", message = "El precio debe ser mayor que cero")
-    @Digits(integer = 8, fraction = 2, message = "El precio no puede tener más de 8 dígitos enteros y 2 decimales")
+    @DecimalMax(value = "9999.99", message = "El precio no puede superar los 9999,99 €")
+    @Digits(integer = 4, fraction = 2, message = "El precio no puede tener más de 4 dígitos enteros y 2 decimales")
     private BigDecimal precio;
 
     @NotNull(message = "La duración es obligatoria")
     @Min(value = 1, message = "La duración debe ser de al menos 1 minuto")
+    @Max(value = 480, message = "La duración no puede superar las 8 horas (480 minutos)")
     private Integer duracionMinutos;
 
     private Boolean activo;

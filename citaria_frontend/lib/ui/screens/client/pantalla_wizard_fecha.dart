@@ -80,8 +80,9 @@ class _PantallaWizardFechaState extends State<PantallaWizardFecha> {
                   message: 'Mes anterior',
                   child: IconButton(
                     icon: const Icon(Icons.chevron_left),
-                    onPressed: () =>
-                        context.read<ViewModelWizard>().cambiarMes(-1),
+                    onPressed: wizard.puedeMesAnterior
+                        ? () => context.read<ViewModelWizard>().cambiarMes(-1)
+                        : null,
                   ),
                 ),
                 Column(
@@ -102,8 +103,9 @@ class _PantallaWizardFechaState extends State<PantallaWizardFecha> {
                   message: 'Mes siguiente',
                   child: IconButton(
                     icon: const Icon(Icons.chevron_right),
-                    onPressed: () =>
-                        context.read<ViewModelWizard>().cambiarMes(1),
+                    onPressed: wizard.puedeMesSiguiente
+                        ? () => context.read<ViewModelWizard>().cambiarMes(1)
+                        : null,
                   ),
                 ),
               ],

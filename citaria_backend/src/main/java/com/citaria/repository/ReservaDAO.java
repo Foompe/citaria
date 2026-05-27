@@ -65,4 +65,7 @@ public interface ReservaDAO extends JpaRepository<Reserva, Integer> {
     /** Reservas admin por estado, paginadas, ordenadas por fecha DESC. */
     Page<Reserva> findByOrganizacionAndEstadoOrderByFechaDesc(
             Organizacion organizacion, EstadoReserva estado, Pageable pageable);
+
+    /** Reservas cuya fecha es anterior a la indicada y están en alguno de los estados dados. */
+    List<Reserva> findByFechaBeforeAndEstadoIn(LocalDate fecha, List<EstadoReserva> estados);
 }
