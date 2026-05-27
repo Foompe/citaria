@@ -21,6 +21,9 @@ public interface EmpleadoDAO extends JpaRepository<Empleado, Integer> {
     List<Empleado> findByOrganizacion(Organizacion organizacion);
     List<Empleado> findByOrganizacionAndActivo(Organizacion organizacion, Boolean activo);
 
+    /**
+     * Bloquea en exclusiva la fila del empleado para evitar reservas concurrentes.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Empleado e WHERE e.id = :id")
     Optional<Empleado> findByIdConLock(@Param("id") Integer id);

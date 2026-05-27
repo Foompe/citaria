@@ -180,7 +180,7 @@ public class CatalogoServiceImpl implements CatalogoService {
     @Transactional(readOnly = true)
     public List<ServicioDTO> obtenerServicios() {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Servicio> servicios = servicioDAO.findByOrganizacion(organizacion);
+        List<Servicio> servicios = servicioDAO.findByOrganizacionConCategoria(organizacion);
         List<ServicioDTO> serviciosDTO = new ArrayList<>();
         for (Servicio servicio : servicios) {
             serviciosDTO.add(convertirServicioADTO(servicio));
@@ -198,7 +198,7 @@ public class CatalogoServiceImpl implements CatalogoService {
         }
         Categoria categoria = categoriaOptional.get();
         verificarPertenenciaCategoria(categoria, organizacion);
-        List<Servicio> servicios = servicioDAO.findByCategoria(categoria);
+        List<Servicio> servicios = servicioDAO.findByCategoriaConCategoria(categoria);
         List<ServicioDTO> serviciosDTO = new ArrayList<>();
         for (Servicio servicio : servicios) {
             serviciosDTO.add(convertirServicioADTO(servicio));

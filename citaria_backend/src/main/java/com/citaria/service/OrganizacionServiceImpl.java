@@ -18,7 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -59,9 +61,14 @@ public class OrganizacionServiceImpl implements OrganizacionService {
     @Transactional(readOnly = true)
     public List<OrganizacionPublicaDTO> obtenerPublicas() {
         List<Organizacion> organizaciones = organizacionDAO.findAll();
+        Map<Integer, ConfiguracionVisual> configPorOrg = new HashMap<>();
+        for (ConfiguracionVisual config : configuracionVisualDAO.findByOrganizacionIn(organizaciones)) {
+            configPorOrg.put(config.getOrganizacion().getId(), config);
+        }
         List<OrganizacionPublicaDTO> organizacionesDTO = new ArrayList<>();
         for (Organizacion organizacion : organizaciones) {
-            Optional<ConfiguracionVisual> configuracionOptional = configuracionVisualDAO.findByOrganizacion(organizacion);
+            Optional<ConfiguracionVisual> configuracionOptional =
+                    Optional.ofNullable(configPorOrg.get(organizacion.getId()));
             organizacionesDTO.add(convertirOrganizacionAPublicaDTO(organizacion, configuracionOptional));
         }
         return organizacionesDTO;
