@@ -4,6 +4,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
+import 'package:citaria_frontend/ui/widgets/detalle_widgets.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 
 class PantallaDetalleReservaCliente extends StatefulWidget {
@@ -117,7 +118,7 @@ class _PantallaDetalleReservaClienteState
                 if (reserva.notas != null &&
                     reserva.notas!.trim().isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  _CardTexto(
+                  CardTextoCitaria(
                     titulo: 'Observaciones',
                     icono: Icons.notes,
                     texto: reserva.notas!,
@@ -126,7 +127,7 @@ class _PantallaDetalleReservaClienteState
                 if (reserva.motivo != null &&
                     reserva.motivo!.trim().isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  _CardTexto(
+                  CardTextoCitaria(
                     titulo: 'Motivo de cancelación',
                     icono: Icons.info_outline,
                     texto: reserva.motivo!,
@@ -204,19 +205,19 @@ class _CardFecha extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return _CardSeccion(
+    return CardSeccionCitaria(
       titulo: 'Fecha y hora',
       child: Column(
         children: [
-          _FilaInfo(
+          FilaInfoCitaria(
             icono: Icons.calendar_today_outlined,
             label: 'Fecha',
             valor: fecha,
           ),
           Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
-          _FilaInfo(icono: Icons.access_time, label: 'Hora', valor: hora),
+          FilaInfoCitaria(icono: Icons.access_time, label: 'Hora', valor: hora),
           Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
-          _FilaInfo(icono: Icons.timelapse, label: 'Duración', valor: duracion),
+          FilaInfoCitaria(icono: Icons.timelapse, label: 'Duración', valor: duracion),
         ],
       ),
     );
@@ -238,7 +239,7 @@ class _CardServicios extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return _CardSeccion(
+    return CardSeccionCitaria(
       titulo: 'Servicios',
       child: detalles.isEmpty
           ? Column(
@@ -297,69 +298,6 @@ class _CardTotal extends StatelessWidget {
   }
 }
 
-class _CardTexto extends StatelessWidget {
-  const _CardTexto({
-    required this.titulo,
-    required this.icono,
-    required this.texto,
-  });
-
-  final String titulo;
-  final IconData icono;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return _CardSeccion(
-      titulo: titulo,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icono, size: 18, color: colorScheme.outline),
-          const SizedBox(width: 10),
-          Expanded(child: Text(texto, style: textTheme.bodyLarge)),
-        ],
-      ),
-    );
-  }
-}
-
-class _CardSeccion extends StatelessWidget {
-  const _CardSeccion({required this.titulo, required this.child});
-
-  final String titulo;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              titulo.toUpperCase(),
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.outline,
-                letterSpacing: 1.1,
-              ),
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _FilaDetalleServicio extends StatelessWidget {
   const _FilaDetalleServicio({required this.detalle});
 
@@ -400,9 +338,9 @@ class _FilaDetalleServicio extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        _LineaIcono(icono: Icons.person_outline, texto: detalle.profesional),
+        LineaIconoCitaria(icono: Icons.person_outline, texto: detalle.profesional),
         const SizedBox(height: 6),
-        _LineaIcono(
+        LineaIconoCitaria(
           icono: Icons.access_time,
           texto: '${detalle.horaTexto} · ${detalle.duracionTexto}',
         ),
@@ -413,9 +351,9 @@ class _FilaDetalleServicio extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (detalle.cantidadTexto != null)
-                _EtiquetaDetalle(texto: detalle.cantidadTexto!),
+                EtiquetaDetalleCitaria(texto: detalle.cantidadTexto!),
               if (detalle.estadoTexto != null)
-                _EtiquetaDetalle(texto: detalle.estadoTexto!),
+                EtiquetaDetalleCitaria(texto: detalle.estadoTexto!),
             ],
           ),
         ],
@@ -424,90 +362,3 @@ class _FilaDetalleServicio extends StatelessWidget {
   }
 }
 
-class _LineaIcono extends StatelessWidget {
-  const _LineaIcono({required this.icono, required this.texto});
-
-  final IconData icono;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        Icon(icono, size: 16, color: colorScheme.outline),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            texto,
-            style: textTheme.bodySmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EtiquetaDetalle extends StatelessWidget {
-  const _EtiquetaDetalle({required this.texto});
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        texto,
-        style: textTheme.labelSmall?.copyWith(color: colorScheme.outline),
-      ),
-    );
-  }
-}
-
-class _FilaInfo extends StatelessWidget {
-  const _FilaInfo({
-    required this.icono,
-    required this.label,
-    required this.valor,
-  });
-
-  final IconData icono;
-  final String label;
-  final String valor;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        Icon(icono, size: 18, color: colorScheme.outline),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label, style: textTheme.bodySmall)),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            valor,
-            style: textTheme.bodyMedium,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.end,
-          ),
-        ),
-      ],
-    );
-  }
-}
