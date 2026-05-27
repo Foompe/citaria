@@ -109,6 +109,37 @@ class ViewModelPerfilCliente extends ChangeNotifier {
     }
   }
 
+  Future<bool> subirFoto({
+    required List<int> bytes,
+    required String nombreFichero,
+  }) async {
+    _setGuardando(true);
+    _limpiarError();
+
+    try {
+      final Sesion sesion = _leerSesionCliente();
+      await _repoClientes.subirFoto(
+        sesion.clienteId ?? 0,
+        bytes,
+        nombreFichero,
+        sesion.token,
+      );
+      final Cliente actualizado = await _repoClientes.obtenerPorId(
+        sesion.clienteId ?? 0,
+        sesion.token,
+      );
+      _cliente = actualizado;
+      _datos = _crearDto(actualizado, sesion.email);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(_mensajeError(e));
+      return false;
+    } finally {
+      _setGuardando(false);
+    }
+  }
+
   Future<bool> cerrarSesion() {
     return _autenticacion.cerrarSesion();
   }

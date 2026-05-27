@@ -354,6 +354,26 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }
   }
 
+  Future<bool> subirFoto({
+    required int id,
+    required List<int> bytes,
+    required String nombreFichero,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoEmpleados.subirFoto(id, bytes, nombreFichero, token);
+      await cargarDetalleEmpleado(id);
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   Future<bool> cambiarEstadoEmpleado(int id, {required bool activo}) async {
     try {
       final String token = leerTokenObligatorio();

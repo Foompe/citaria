@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:citaria_frontend/data/api/citaria_api.dart';
-import 'package:citaria_frontend/data/models/dias_disponibles.dart';
 import 'package:citaria_frontend/data/models/disponibilidad.dart';
 import 'package:citaria_frontend/data/models/periodo_disponibles.dart';
 

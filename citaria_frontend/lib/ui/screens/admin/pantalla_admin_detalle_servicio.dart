@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
@@ -139,10 +140,29 @@ class _PantallaAdminDetalleServicioState
     });
   }
 
-  void _mostrarImagenNoImplementada() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Función no implementada.')),
+  Future<void> _editarImagen() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
     );
+    if (imagen == null || !mounted) return;
+
+    final List<int> bytes = await imagen.readAsBytes();
+    if (!mounted) return;
+    final bool ok = await _viewModel.subirImagenServicio(
+      id: widget.id,
+      bytes: bytes,
+      nombreFichero: imagen.name,
+    );
+
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_viewModel.error ?? 'No se pudo subir la imagen.')),
+      );
+    }
   }
 
   @override
@@ -209,7 +229,7 @@ class _PantallaAdminDetalleServicioState
               onMinutosChanged: (m) => setState(() => _duracionMinutos = m),
               onReintentar: () => vmCatalogo.cargarDetalleServicio(widget.id),
               onDesactivar: detalle == null ? null : _desactivar,
-              onEditarImagen: _mostrarImagenNoImplementada,
+              onEditarImagen: _editarImagen,
             ),
                 ),
               ),

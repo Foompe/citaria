@@ -1,8 +1,9 @@
+import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
 
@@ -94,6 +95,30 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
     }
   }
 
+  Future<void> _editarFoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (imagen == null || !mounted) return;
+
+    final List<int> bytes = await imagen.readAsBytes();
+    if (!mounted) return;
+    final bool ok = await context
+        .read<ViewModelPerfilCliente>()
+        .subirFoto(bytes: bytes, nombreFichero: imagen.name);
+
+    if (!mounted) return;
+    if (!ok) {
+      _mostrarMensaje(
+        context.read<ViewModelPerfilCliente>().error ??
+            'No se pudo subir la foto.',
+      );
+    }
+  }
+
   void _mostrarMensaje(String mensaje) {
     ScaffoldMessenger.of(
       context,
@@ -129,11 +154,13 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                   Center(
                     child: Column(
                       children: [
-                        AvatarFallbackCitaria(
+                        AvatarEditable(
                           texto: perfil.nombreCompleto,
-                          imagenUrl: perfil.fotoUrl,
+                          fotoUrl: perfil.fotoUrl,
                           tamano: 88,
                           radio: 44,
+                          cargando: perfilVm.guardando,
+                          onEditar: _editarFoto,
                         ),
                         const SizedBox(height: 12),
                         Text(

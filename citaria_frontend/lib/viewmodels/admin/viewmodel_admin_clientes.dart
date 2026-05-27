@@ -228,6 +228,26 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
     }
   }
 
+  Future<bool> subirFoto({
+    required int id,
+    required List<int> bytes,
+    required String nombreFichero,
+  }) async {
+    iniciarCarga();
+
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoClientes.subirFoto(id, bytes, nombreFichero, token);
+      await cargarDetalleCliente(id);
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    } finally {
+      finalizarCarga();
+    }
+  }
+
   Future<bool> darDeBajaCliente(int id) async {
     iniciarCarga();
 

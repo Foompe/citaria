@@ -1,9 +1,10 @@
 import 'package:citaria_frontend/data/enums/estado_reserva.dart' as datos;
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
@@ -154,6 +155,31 @@ class _CuerpoDetalleCliente extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme textTheme;
 
+  Future<void> _editarFoto(BuildContext context) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (imagen == null || !context.mounted) return;
+
+    final List<int> bytes = await imagen.readAsBytes();
+    if (!context.mounted) return;
+    final bool ok = await vmClientes.subirFoto(
+      id: clienteId!,
+      bytes: bytes,
+      nombreFichero: imagen.name,
+    );
+
+    if (!context.mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vmClientes.error ?? 'No se pudo subir la foto.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (clienteId == null) {
@@ -192,11 +218,11 @@ class _CuerpoDetalleCliente extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 16),
           child: Column(
             children: [
-              AvatarFallbackCitaria(
+              AvatarEditable(
                 texto: cliente.nombreCompleto,
-                imagenUrl: cliente.fotoUrl,
-                tamano: 72,
-                radio: 36,
+                fotoUrl: cliente.fotoUrl,
+                cargando: vmClientes.cargando,
+                onEditar: () => _editarFoto(context),
               ),
               const SizedBox(height: 12),
               Text(
@@ -634,7 +660,6 @@ class _TabReservas extends StatelessWidget {
     );
   }
 }
-
 
 chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
   switch (estado) {
