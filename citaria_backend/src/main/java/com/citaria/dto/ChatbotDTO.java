@@ -1,6 +1,7 @@
 package com.citaria.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 /**
  * DTO para la comunicación con el chatbot.
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 public class ChatbotDTO {
 
     @NotBlank(message = "La pregunta no puede estar vacía")
+    @Size(max = 500, message = "La pregunta no puede superar los 500 caracteres")
     private String pregunta;
 
     private String respuesta;

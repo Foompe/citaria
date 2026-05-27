@@ -64,6 +64,12 @@ class ViewModelChatbot extends ChangeNotifier {
         enviando: false,
         error: false,
       ),
+      const DtoMensajeChatbot(
+        texto: '',
+        esUsuario: false,
+        enviando: true,
+        error: false,
+      ),
     ];
     notifyListeners();
 
@@ -74,7 +80,7 @@ class ViewModelChatbot extends ChangeNotifier {
         sesion.token,
       );
       _mensajes = <DtoMensajeChatbot>[
-        ..._mensajes,
+        ..._mensajes.sublist(0, _mensajes.length - 1),
         DtoMensajeChatbot(
           texto: respuesta.respuesta ?? 'No he podido generar una respuesta.',
           esUsuario: false,
@@ -87,7 +93,7 @@ class ViewModelChatbot extends ChangeNotifier {
       final String mensaje = _mensajeError(e);
       _error = mensaje;
       _mensajes = <DtoMensajeChatbot>[
-        ..._mensajes,
+        ..._mensajes.sublist(0, _mensajes.length - 1),
         DtoMensajeChatbot(
           texto: mensaje,
           esUsuario: false,

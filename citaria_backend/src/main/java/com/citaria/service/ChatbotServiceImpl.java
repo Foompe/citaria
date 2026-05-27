@@ -13,8 +13,10 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ChatbotServiceImpl implements ChatbotService {
@@ -34,6 +36,11 @@ public class ChatbotServiceImpl implements ChatbotService {
     private static final ParameterizedTypeReference<Map<String, Object>> TIPO_RESPUESTA_GEMINI =
             new ParameterizedTypeReference<>() {
             };
+    private static final int LIMITE_DIARIO = 5;
+
+    private final Map<Integer, ContadorDiario> contadoresDiarios = new ConcurrentHashMap<>();
+
+    private record ContadorDiario(LocalDate fecha, int consultas) {}
 
     private final ServicioDAO servicioDAO;
     private final OrganizacionHorarioDAO organizacionHorarioDAO;
@@ -61,6 +68,9 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     @Override
     public ChatbotDTO preguntar(ChatbotDTO dto) {
+        Integer usuarioId = contextoSeguridad.obtenerUsuarioActual().getId();
+        verificarYRegistrarConsulta(usuarioId);
+
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         String contexto = construirContexto(organizacion);
         String prompt = contexto + "\n\nPregunta del cliente: " + dto.getPregunta();
@@ -68,6 +78,20 @@ public class ChatbotServiceImpl implements ChatbotService {
         String respuesta = llamarGemini(prompt);
         dto.setRespuesta(respuesta);
         return dto;
+    }
+
+    private void verificarYRegistrarConsulta(Integer usuarioId) {
+        LocalDate hoy = LocalDate.now();
+        ContadorDiario actual = contadoresDiarios.get(usuarioId);
+        if (actual != null && actual.fecha().equals(hoy) && actual.consultas() >= LIMITE_DIARIO) {
+            throw new IllegalStateException(
+                    "Has alcanzado el límite de " + LIMITE_DIARIO
+                    + " consultas diarias. Mañana podrás seguir preguntando.");
+        }
+        contadoresDiarios.compute(usuarioId, (id, prev) -> {
+            if (prev == null || !prev.fecha().equals(hoy)) return new ContadorDiario(hoy, 1);
+            return new ContadorDiario(hoy, prev.consultas() + 1);
+        });
     }
 
     // CONSTRUCCIÓN DE CONTEXTO
