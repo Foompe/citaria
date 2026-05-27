@@ -158,6 +158,7 @@ public class ReservaServiceImpl implements ReservaService {
 
         // Resolver empleado — manual o automático
         Empleado empleado = buscarEmpleadoDisponible(dto, organizacion);
+        empleadoDAO.findByIdConLock(empleado.getId());
 
         List<Servicio> servicios = servicioDAO.findAllById(dto.getServicioIds());
         LocalTime horaFinReserva = dto.getHoraInicio();
