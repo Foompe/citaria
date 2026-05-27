@@ -2,6 +2,7 @@ package com.citaria.exception;
 
 import com.citaria.dto.ErrorConCampoRespuestaDTO;
 import com.citaria.dto.ErrorRespuestaDTO;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -99,6 +100,16 @@ public class ManejadorGlobalExcepciones {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorRespuestaDTO(400, mensaje));
+    }
+
+    /**
+     * Maneja violaciones de constraints de base de datos bajo concurrencia.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorRespuestaDTO> manejarIntegridad(DataIntegrityViolationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ErrorRespuestaDTO(409, "Ya existe un registro con estos datos"));
     }
 
     /**
