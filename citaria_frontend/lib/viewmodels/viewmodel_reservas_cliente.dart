@@ -137,7 +137,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
         sesion.token,
       );
       _reservas = _reservas.where(_reservaEsValida).toList(growable: false);
-      _totalesReservas = await _cargarTotalesReservas(sesion.token);
+      _totalesReservas = _calcularTotalesDesdeLineas();
       notifyListeners();
     } catch (e) {
       _setError(_mensajeError(e));
@@ -289,14 +289,12 @@ class ViewModelReservasCliente extends ChangeNotifier {
     return fin.difference(inicio).inMinutes;
   }
 
-  Future<Map<int, double>> _cargarTotalesReservas(String token) async {
+  Map<int, double> _calcularTotalesDesdeLineas() {
     final Map<int, double> totales = <int, double>{};
     for (final Reserva reserva in _reservas) {
       final int? id = reserva.id;
       if (id == null) continue;
-      final List<ReservaServicio> detalles = await _repoReservas
-          .obtenerDetalles(id, token);
-      totales[id] = _calcularTotal(detalles);
+      totales[id] = _calcularTotal(reserva.lineas);
     }
     return totales;
   }

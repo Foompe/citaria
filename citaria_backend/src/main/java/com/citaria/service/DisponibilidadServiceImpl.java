@@ -109,19 +109,43 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(servicioIds);
         List<Empleado> empleadosValidos = obtenerEmpleadosValidos(
                 organizacion, skillsRequeridas, empleadoId);
+        if (empleadosValidos.isEmpty()) {
+            return new DisponibilidadDTO(fecha, new ArrayList<>());
+        }
 
-        // 5. Calcular franjas en intervalos de 15 minutos
+        // 5. Pre-cargar horarios y reservas en batch (elimina N+1)
+        Map<Integer, List<HorarioEmpleado>> horariosPorEmpleado = new HashMap<>();
+        for (HorarioEmpleado horario : horarioEmpleadoDAO.findByEmpleadoIn(empleadosValidos)) {
+            horariosPorEmpleado
+                    .computeIfAbsent(horario.getEmpleado().getId(), k -> new ArrayList<>())
+                    .add(horario);
+        }
+
+        Map<Integer, List<ReservaServicio>> reservasPorEmpleado = new HashMap<>();
+        for (ReservaServicio rs : reservaServicioDAO
+                .findActivosByEmpleadosAndPeriodo(empleadosValidos, fecha, fecha)) {
+            reservasPorEmpleado
+                    .computeIfAbsent(rs.getEmpleado().getId(), k -> new ArrayList<>())
+                    .add(rs);
+        }
+
+        // 6. Calcular franjas en intervalos de 15 minutos
         List<FranjaHorariaDTO> franjas = new ArrayList<>();
-        LocalTime franjaInicio = apertura;
+        LocalTime franjaInicio = calcularFranjaInicio(fecha, apertura);
 
         while (!franjaInicio.plusMinutes(duracionTotalMinutos).isAfter(horaCierre)) {
             LocalTime franjaFin = franjaInicio.plusMinutes(duracionTotalMinutos);
-            int empleadosDisponibles = contarEmpleadosDisponibles(
-                    empleadosValidos, fecha, franjaInicio, franjaFin, diaSemana);
+            int disponibles = 0;
+            for (Empleado empleado : empleadosValidos) {
+                if (empleadoLibreEnFranja(empleado, diaSemana, franjaInicio, franjaFin,
+                        horariosPorEmpleado, reservasPorEmpleado)) {
+                    disponibles++;
+                }
+            }
             franjas.add(new FranjaHorariaDTO(
                     franjaInicio, franjaFin,
-                    empleadosDisponibles > 0,
-                    empleadosDisponibles));
+                    disponibles > 0,
+                    disponibles));
             franjaInicio = franjaInicio.plusMinutes(INTERVALO_MINUTOS);
         }
 
@@ -251,7 +275,7 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         Map<Integer, List<ReservaServicio>> reservasDelDia =
                 reservasPorFechaYEmpleado.getOrDefault(fecha, new HashMap<>());
 
-        LocalTime franjaInicio = horarioNegocio.getHoraApertura();
+        LocalTime franjaInicio = calcularFranjaInicio(fecha, horarioNegocio.getHoraApertura());
         LocalTime horaCierre = horarioNegocio.getHoraCierre();
 
         while (!franjaInicio.plusMinutes(duracionTotalMinutos).isAfter(horaCierre)) {
@@ -354,47 +378,16 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         return validos;
     }
 
-    /**
-     * Cuenta cuántos empleados de la lista están disponibles para la franja indicada.
-     * Un empleado está disponible si trabaja ese día en esa franja y no tiene otra cita en esa franja
-     */
-    private int contarEmpleadosDisponibles(List<Empleado> empleados,
-                                           LocalDate fecha,
-                                           LocalTime horaInicio,
-                                           LocalTime horaFin,
-                                           int diaSemana) {
-        int disponibles = 0;
-        for (Empleado empleado : empleados) {
-            if (empleadoDisponibleEnFranja(empleado, fecha, horaInicio, horaFin, diaSemana)) {
-                disponibles++;
-            }
+    private LocalTime calcularFranjaInicio(LocalDate fecha, LocalTime apertura) {
+        if (!fecha.equals(LocalDate.now())) {
+            return apertura;
         }
-        return disponibles;
-    }
-
-    /**
-     * Verifica que el empleado trabaja ese día en esa franja horaria
-     * y que no tiene ninguna reserva.
-     */
-    private boolean empleadoDisponibleEnFranja(Empleado empleado,
-                                               LocalDate fecha,
-                                               LocalTime horaInicio,
-                                               LocalTime horaFin,
-                                               int diaSemana) {
-        // Verificar horario del empleado
-        Optional<HorarioEmpleado> horario = horarioEmpleadoDAO
-                .findByEmpleadoAndDiaSemanaAndActivo(empleado, diaSemana, true);
-        if (horario.isEmpty()) {
-            return false;
+        LocalTime limite = LocalTime.now().plusHours(1);
+        int resto = limite.getMinute() % INTERVALO_MINUTOS;
+        if (resto != 0) {
+            limite = limite.plusMinutes(INTERVALO_MINUTOS - resto);
         }
-        if (horaInicio.isBefore(horario.get().getHoraInicio())
-                || horaFin.isAfter(horario.get().getHoraFin())) {
-            return false;
-        }
-
-        // Verificar solapamiento con reservas existentes
-        long solapamientos = reservaServicioDAO.contarSolapamientos(
-                empleado.getId(), fecha, horaInicio, horaFin);
-        return solapamientos == 0;
+        limite = limite.withSecond(0).withNano(0);
+        return limite.isAfter(apertura) ? limite : apertura;
     }
 }
