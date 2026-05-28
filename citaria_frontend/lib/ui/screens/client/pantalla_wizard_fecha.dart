@@ -62,14 +62,17 @@ class _PantallaWizardFechaState extends State<PantallaWizardFecha> {
     final dias = wizard.diasCalendario;
 
     return Scaffold(
-      appBar: const CabeceraWizard(
-        pasoActual: 2,
-        totalPasos: 5,
-        titulo: 'Elige la fecha',
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-        child: Column(
+      body: Column(
+        children: [
+          const CabeceraWizard(
+            pasoActual: 2,
+            totalPasos: 5,
+            titulo: 'Elige la fecha',
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
+              child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
@@ -224,6 +227,9 @@ class _PantallaWizardFechaState extends State<PantallaWizardFecha> {
             ),
           ],
         ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: BarraCtaFija(
         child: SizedBox(

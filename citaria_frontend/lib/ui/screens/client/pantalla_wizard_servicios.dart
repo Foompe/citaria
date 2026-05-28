@@ -43,12 +43,15 @@ class _PantallaWizardServiciosState extends State<PantallaWizardServicios> {
     final resumen = wizard.resumen;
 
     return Scaffold(
-      appBar: const CabeceraWizard(
-        pasoActual: 0,
-        totalPasos: 5,
-        titulo: 'Elige tus servicios',
-      ),
-      body: servicios.isEmpty
+      body: Column(
+        children: [
+          const CabeceraWizard(
+            pasoActual: 0,
+            totalPasos: 5,
+            titulo: 'Elige tus servicios',
+          ),
+          Expanded(
+            child: servicios.isEmpty
           ? Center(
               child: Text(
                 wizard.cargando
@@ -134,6 +137,9 @@ class _PantallaWizardServiciosState extends State<PantallaWizardServicios> {
                 );
               },
             ),
+          ),
+        ],
+      ),
       bottomNavigationBar: BarraCtaFija(
         child: Row(
           children: [

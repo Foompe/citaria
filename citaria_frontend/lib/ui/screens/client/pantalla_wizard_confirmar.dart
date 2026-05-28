@@ -58,12 +58,15 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
     final resumen = wizard.resumen;
 
     return Scaffold(
-      appBar: const CabeceraWizard(
-        pasoActual: 4,
-        totalPasos: 5,
-        titulo: 'Confirma tu reserva',
-      ),
-      body: SingleChildScrollView(
+      body: Column(
+        children: [
+          const CabeceraWizard(
+            pasoActual: 4,
+            totalPasos: 5,
+            titulo: 'Confirma tu reserva',
+          ),
+          Expanded(
+            child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,6 +164,9 @@ class _PantallaWizardConfirmarState extends State<PantallaWizardConfirmar> {
             ),
           ],
         ),
+      ),
+          ),
+        ],
       ),
       bottomNavigationBar: BarraCtaFija(
         child: Column(

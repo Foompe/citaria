@@ -19,12 +19,15 @@ class PantallaWizardHora extends StatelessWidget {
     final franjas = wizard.franjas;
 
     return Scaffold(
-      appBar: const CabeceraWizard(
-        pasoActual: 3,
-        totalPasos: 5,
-        titulo: 'Elige la hora',
-      ),
-      body: SingleChildScrollView(
+      body: Column(
+        children: [
+          const CabeceraWizard(
+            pasoActual: 3,
+            totalPasos: 5,
+            titulo: 'Elige la hora',
+          ),
+          Expanded(
+            child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,6 +148,9 @@ class PantallaWizardHora extends StatelessWidget {
             ),
           ],
         ),
+      ),
+          ),
+        ],
       ),
       bottomNavigationBar: BarraCtaFija(
         child: SizedBox(

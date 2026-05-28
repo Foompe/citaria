@@ -18,12 +18,15 @@ class PantallaWizardEmpleado extends StatelessWidget {
     final empleado = wizard.empleadoAutomatico;
 
     return Scaffold(
-      appBar: const CabeceraWizard(
-        pasoActual: 1,
-        totalPasos: 5,
-        titulo: 'Elige tu profesional',
-      ),
-      body: ListView(
+      body: Column(
+        children: [
+          const CabeceraWizard(
+            pasoActual: 1,
+            totalPasos: 5,
+            titulo: 'Elige tu profesional',
+          ),
+          Expanded(
+            child: ListView(
         padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 16),
         children: [
           GestureDetector(
@@ -70,6 +73,9 @@ class PantallaWizardEmpleado extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
           ),
         ],
       ),
