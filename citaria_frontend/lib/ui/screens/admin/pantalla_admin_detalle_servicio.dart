@@ -1,13 +1,14 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class PantallaAdminDetalleServicio extends StatefulWidget {
@@ -327,7 +328,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
         children: [
           // ── Imagen ────────────────────────────────────────────────────────
           Center(
-            child: _ImagenServicioEditable(
+            child: ImagenServicioEditable(
               imagenUrl: detalle!.imagenUrl,
               espaciado: espaciado,
               colorScheme: colorScheme,
@@ -507,84 +508,3 @@ class _CuerpoDetalleServicio extends StatelessWidget {
   }
 }
 
-// ── Imagen editable ───────────────────────────────────────────────────────────
-
-class _ImagenServicioEditable extends StatelessWidget {
-  const _ImagenServicioEditable({
-    required this.imagenUrl,
-    required this.espaciado,
-    required this.colorScheme,
-    required this.onEditar,
-  });
-
-  final String? imagenUrl;
-  final EspaciadoCitaria espaciado;
-  final ColorScheme colorScheme;
-  final VoidCallback onEditar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: espaciado.radioCard,
-          child: SizedBox(
-            width: 120,
-            height: 120,
-            child: imagenUrl != null && imagenUrl!.isNotEmpty
-                ? Image.network(
-                    imagenUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        _FondoIconoServicio(colorScheme: colorScheme),
-                  )
-                : _FondoIconoServicio(colorScheme: colorScheme),
-          ),
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onTap: onEditar,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(8),
-                  bottomRight: Radius.circular(espaciado.radioCard.topRight.x),
-                ),
-              ),
-              child: Icon(
-                Icons.edit_outlined,
-                size: 16,
-                color: colorScheme.onPrimary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FondoIconoServicio extends StatelessWidget {
-  const _FondoIconoServicio({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.design_services_outlined,
-          size: 48,
-          color: colorScheme.outline,
-        ),
-      ),
-    );
-  }
-}

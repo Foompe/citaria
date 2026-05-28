@@ -66,11 +66,17 @@ class _PantallaAdminDetalleEmpleadoState
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ViewModelAdminEmpleados>.value(
-      value: _viewModel,
-      child: _ContenidoDetalleEmpleado(
-        tabController: _tabController,
-        empleadoId: _empleadoId,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, true);
+      },
+      child: ChangeNotifierProvider<ViewModelAdminEmpleados>.value(
+        value: _viewModel,
+        child: _ContenidoDetalleEmpleado(
+          tabController: _tabController,
+          empleadoId: _empleadoId,
+        ),
       ),
     );
   }
@@ -340,7 +346,7 @@ class _TabDatosState extends State<_TabDatos> {
     );
     if (!context.mounted) return;
     if (ok) {
-      if (!nuevaActivo) Navigator.maybePop(context);
+      if (!nuevaActivo) Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(vm.error ?? 'No se pudo cambiar el estado.')),

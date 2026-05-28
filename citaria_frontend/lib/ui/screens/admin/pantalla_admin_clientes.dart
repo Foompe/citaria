@@ -71,7 +71,12 @@ class _ContenidoAdminClientes extends StatelessWidget {
         icono: Icons.person_add_outlined,
         tooltip: 'Nuevo cliente',
         heroTag: 'fab-admin-clientes-nuevo',
-        onPressed: () => GestorNavegacion.irAAdminNuevoCliente(context),
+        onPressed: () async {
+          final bool? creado = await GestorNavegacion.irAAdminNuevoCliente(context);
+          if (creado == true && context.mounted) {
+            context.read<ViewModelAdminClientes>().refrescar();
+          }
+        },
       ),
       body: SafeArea(
         child: Column(
@@ -93,8 +98,12 @@ class _ContenidoAdminClientes extends StatelessWidget {
                     message: 'Nuevo cliente',
                     child: IconButton(
                       icon: const Icon(Icons.person_add_outlined),
-                      onPressed: () =>
-                          GestorNavegacion.irAAdminNuevoCliente(context),
+                      onPressed: () async {
+                        final bool? creado = await GestorNavegacion.irAAdminNuevoCliente(context);
+                        if (creado == true && context.mounted) {
+                          context.read<ViewModelAdminClientes>().refrescar();
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -216,10 +225,15 @@ class _ListaClientesAdminState extends State<_ListaClientesAdmin> {
             trailing: cliente.tieneUsuario
                 ? Icon(Icons.verified, color: colorScheme.primary, size: 20)
                 : null,
-            onTap: () => GestorNavegacion.irAAdminDetalleCliente(
-              context,
-              cliente.id.toString(),
-            ),
+            onTap: () async {
+              final bool? actualizado = await GestorNavegacion.irAAdminDetalleCliente(
+                context,
+                cliente.id.toString(),
+              );
+              if (actualizado == true && context.mounted) {
+                context.read<ViewModelAdminClientes>().refrescar();
+              }
+            },
           );
         },
       ),

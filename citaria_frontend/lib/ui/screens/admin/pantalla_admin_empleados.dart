@@ -121,6 +121,7 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
                       colorScheme: colorScheme,
                       textTheme: textTheme,
                       espaciado: espaciado,
+                      onRefrescar: _viewModel.refrescar,
                     ),
               ],
             ),
@@ -141,12 +142,14 @@ class _TarjetaEmpleado extends StatelessWidget {
     required this.colorScheme,
     required this.textTheme,
     required this.espaciado,
+    required this.onRefrescar,
   });
 
   final DtoEmpleadoAdmin empleado;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final EspaciadoCitaria espaciado;
+  final VoidCallback onRefrescar;
 
   @override
   Widget build(BuildContext context) {
@@ -155,8 +158,12 @@ class _TarjetaEmpleado extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
       child: InkWell(
         borderRadius: espaciado.radioCard,
-        onTap: () =>
-            GestorNavegacion.irAAdminDetalleEmpleado(context, '${empleado.id}'),
+        onTap: () async {
+          final bool? actualizado = await GestorNavegacion.irAAdminDetalleEmpleado(context, '${empleado.id}');
+          if (actualizado == true && context.mounted) {
+            onRefrescar();
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(

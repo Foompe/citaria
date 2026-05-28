@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +8,7 @@ class AvatarEditable extends StatelessWidget {
     super.key,
     required this.texto,
     this.fotoUrl,
+    this.imagenLocalBytes,
     this.tamano = 72.0,
     this.radio = 36.0,
     required this.cargando,
@@ -14,6 +17,7 @@ class AvatarEditable extends StatelessWidget {
 
   final String texto;
   final String? fotoUrl;
+  final Uint8List? imagenLocalBytes;
   final double tamano;
   final double radio;
   final bool cargando;
@@ -25,12 +29,20 @@ class AvatarEditable extends StatelessWidget {
 
     return Stack(
       children: [
-        AvatarFallbackCitaria(
-          texto: texto,
-          imagenUrl: fotoUrl,
-          tamano: tamano,
-          radio: radio,
-        ),
+        imagenLocalBytes != null
+            ? ClipOval(
+                child: SizedBox(
+                  width: tamano,
+                  height: tamano,
+                  child: Image.memory(imagenLocalBytes!, fit: BoxFit.cover),
+                ),
+              )
+            : AvatarFallbackCitaria(
+                texto: texto,
+                imagenUrl: fotoUrl,
+                tamano: tamano,
+                radio: radio,
+              ),
         Positioned(
           right: 0,
           bottom: 0,
@@ -39,17 +51,20 @@ class AvatarEditable extends StatelessWidget {
             button: true,
             child: GestureDetector(
               onTap: cargando ? null : onEditar,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: cargando ? colorScheme.outline : colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 13,
-                  color: colorScheme.onPrimary,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10, left: 10),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: cargando ? colorScheme.outline : colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: colorScheme.onPrimary,
+                  ),
                 ),
               ),
             ),

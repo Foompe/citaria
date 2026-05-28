@@ -307,11 +307,11 @@ class GestorNavegacion {
     Navigator.pushNamed(context, Rutas.adminClientes);
   }
 
-  static void irAAdminNuevoCliente(BuildContext context) =>
-      Navigator.pushNamed(context, Rutas.adminNuevoCliente);
+  static Future<bool?> irAAdminNuevoCliente(BuildContext context) =>
+      Navigator.pushNamed<bool?>(context, Rutas.adminNuevoCliente);
 
-  static void irAAdminDetalleCliente(BuildContext context, String id) =>
-      Navigator.pushNamed(
+  static Future<bool?> irAAdminDetalleCliente(BuildContext context, String id) =>
+      Navigator.pushNamed<bool?>(
         context,
         Rutas.adminDetalleCliente,
         arguments: {'id': id},
@@ -377,10 +377,10 @@ class GestorNavegacion {
         'Empleados',
       );
 
-  static Future<void> irAAdminDetalleEmpleado(
+  static Future<bool?> irAAdminDetalleEmpleado(
     BuildContext context,
     String id,
-  ) => _irAPinConDestino(
+  ) => _irAPinConDestino<bool>(
     context,
     (_) => PantallaAdminDetalleEmpleado(id: int.tryParse(id)),
     'Empleados',

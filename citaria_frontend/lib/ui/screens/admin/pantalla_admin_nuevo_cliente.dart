@@ -1,12 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 /// P24 — Formulario de alta de nuevo cliente en el área admin.
@@ -30,6 +34,8 @@ class _PantallaAdminNuevoClienteState
   final _ctrlTelefono   = TextEditingController();
   final _ctrlNotas      = TextEditingController();
   late final ViewModelAdminClientes _viewModel;
+  Uint8List? _fotoBytes;
+  String _fotoNombre = 'foto.jpg';
 
   @override
   void initState() {
@@ -51,6 +57,22 @@ class _PantallaAdminNuevoClienteState
     _ctrlNotas.dispose();
     _viewModel.dispose();
     super.dispose();
+  }
+
+  Future<void> _seleccionarFoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (imagen == null || !mounted) return;
+    final bytes = await imagen.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _fotoBytes = bytes;
+      _fotoNombre = imagen.name;
+    });
   }
 
   Future<void> _crearCliente() async {
@@ -80,10 +102,18 @@ class _PantallaAdminNuevoClienteState
       return;
     }
 
+    if (_fotoBytes != null) {
+      await _viewModel.subirFoto(
+        id: cliente.id,
+        bytes: _fotoBytes!,
+        nombreFichero: _fotoNombre,
+      );
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Cliente creado')),
     );
-    Navigator.maybePop(context);
+    Navigator.pop(context, true);
   }
 
   @override
@@ -159,6 +189,18 @@ class _PantallaAdminNuevoClienteState
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    Center(
+                      child: AvatarEditable(
+                        texto: _ctrlNombre.text.isNotEmpty ? _ctrlNombre.text : 'N',
+                        imagenLocalBytes: _fotoBytes,
+                        tamano: 88,
+                        radio: 44,
+                        cargando: false,
+                        onEditar: _seleccionarFoto,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     CampoFormulario(
                       controller: _ctrlNombre,

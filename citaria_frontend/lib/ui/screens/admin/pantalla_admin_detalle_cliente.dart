@@ -67,11 +67,17 @@ class _PantallaAdminDetalleClienteState
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ViewModelAdminClientes>.value(
-      value: _viewModel,
-      child: _ContenidoDetalleCliente(
-        tabController: _tabController,
-        clienteId: _clienteId,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) Navigator.pop(context, true);
+      },
+      child: ChangeNotifierProvider<ViewModelAdminClientes>.value(
+        value: _viewModel,
+        child: _ContenidoDetalleCliente(
+          tabController: _tabController,
+          clienteId: _clienteId,
+        ),
       ),
     );
   }
@@ -492,7 +498,7 @@ class _TabDatosState extends State<_TabDatos> {
     final bool ok = await vmClientes.darDeBajaCliente(id);
     if (!context.mounted) return;
     if (ok) {
-      Navigator.maybePop(context);
+      Navigator.pop(context, true);
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(

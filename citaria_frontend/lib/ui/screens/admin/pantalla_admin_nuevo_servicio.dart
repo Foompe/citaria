@@ -1,11 +1,14 @@
+import 'dart:typed_data';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 /// P32 — Formulario de alta de nuevo servicio.
@@ -28,6 +31,8 @@ class _PantallaAdminNuevoServicioState
   int? _categoriaSeleccionadaId;
   int _duracionHoras = 0;
   int _duracionMinutos = 30;
+  Uint8List? _imagenBytes;
+  String _imagenNombre = 'imagen.jpg';
 
   static const List<int> _opcionesMinutos = [
     0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55,
@@ -53,10 +58,20 @@ class _PantallaAdminNuevoServicioState
     super.dispose();
   }
 
-  void _mostrarImagenNoImplementada() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Función no implementada.')),
+  Future<void> _seleccionarImagen() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
     );
+    if (imagen == null || !mounted) return;
+    final bytes = await imagen.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _imagenBytes = bytes;
+      _imagenNombre = imagen.name;
+    });
   }
 
   Future<void> _crearServicio() async {
@@ -88,6 +103,16 @@ class _PantallaAdminNuevoServicioState
       return;
     }
 
+    if (_imagenBytes != null) {
+      await _viewModel.subirImagenServicio(
+        id: servicio.id,
+        bytes: _imagenBytes!,
+        nombreFichero: _imagenNombre,
+      );
+    }
+
+    if (!mounted) return;
+
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Servicio creado')));
@@ -116,7 +141,8 @@ class _PantallaAdminNuevoServicioState
           onHorasChanged: (h) => setState(() => _duracionHoras = h),
           onMinutosChanged: (m) => setState(() => _duracionMinutos = m),
           onSkillTap: _alternarSkill,
-          onEditarImagen: _mostrarImagenNoImplementada,
+          onEditarImagen: _seleccionarImagen,
+          imagenBytes: _imagenBytes,
         ),
       ),
     );
@@ -151,6 +177,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
     required this.onMinutosChanged,
     required this.onSkillTap,
     required this.onEditarImagen,
+    required this.imagenBytes,
   });
 
   final GlobalKey<FormState> formKey;
@@ -169,6 +196,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
   final ValueChanged<int> onMinutosChanged;
   final ValueChanged<int> onSkillTap;
   final VoidCallback onEditarImagen;
+  final Uint8List? imagenBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -227,11 +255,12 @@ class _ContenidoNuevoServicio extends StatelessWidget {
 
                   // ── Imagen ────────────────────────────────────────────────
                   Center(
-                    child: _ImagenServicioEditable(
+                    child: ImagenServicioEditable(
                       imagenUrl: null,
                       espaciado: espaciado,
                       colorScheme: colorScheme,
                       onEditar: onEditarImagen,
+                      imagenLocalBytes: imagenBytes,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -435,86 +464,6 @@ class _AvisoError extends StatelessWidget {
           ),
           TextButton(onPressed: onReintentar, child: const Text('Reintentar')),
         ],
-      ),
-    );
-  }
-}
-
-class _ImagenServicioEditable extends StatelessWidget {
-  const _ImagenServicioEditable({
-    required this.imagenUrl,
-    required this.espaciado,
-    required this.colorScheme,
-    required this.onEditar,
-  });
-
-  final String? imagenUrl;
-  final EspaciadoCitaria espaciado;
-  final ColorScheme colorScheme;
-  final VoidCallback onEditar;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: espaciado.radioCard,
-          child: SizedBox(
-            width: 120,
-            height: 120,
-            child: imagenUrl != null && imagenUrl!.isNotEmpty
-                ? Image.network(
-                    imagenUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) =>
-                        _FondoIconoServicio(colorScheme: colorScheme),
-                  )
-                : _FondoIconoServicio(colorScheme: colorScheme),
-          ),
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onTap: onEditar,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(8),
-                  bottomRight: Radius.circular(espaciado.radioCard.topRight.x),
-                ),
-              ),
-              child: Icon(
-                Icons.edit_outlined,
-                size: 16,
-                color: colorScheme.onPrimary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FondoIconoServicio extends StatelessWidget {
-  const _FondoIconoServicio({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.design_services_outlined,
-          size: 48,
-          color: colorScheme.outline,
-        ),
       ),
     );
   }

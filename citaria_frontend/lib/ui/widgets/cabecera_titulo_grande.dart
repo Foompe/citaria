@@ -47,7 +47,7 @@ class CabeceraTituloGrande extends StatelessWidget {
                       tooltip: 'Volver',
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).maybePop(),
                     ),
                   const Spacer(),
                   ?accionDerecha,

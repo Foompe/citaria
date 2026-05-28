@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
 import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
@@ -12,6 +15,7 @@ import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 /// P29 — Formulario de alta de nuevo empleado.
@@ -32,6 +36,8 @@ class _PantallaAdminNuevoEmpleadoState
   final _ctrlTelefono = TextEditingController();
   final Set<int> _skillsSeleccionadas = <int>{};
   late final ViewModelAdminEmpleados _viewModel;
+  Uint8List? _fotoBytes;
+  String _fotoNombre = 'foto.jpg';
 
   @override
   void initState() {
@@ -52,6 +58,22 @@ class _PantallaAdminNuevoEmpleadoState
     _ctrlTelefono.dispose();
     _viewModel.dispose();
     super.dispose();
+  }
+
+  Future<void> _seleccionarFoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (imagen == null || !mounted) return;
+    final bytes = await imagen.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _fotoBytes = bytes;
+      _fotoNombre = imagen.name;
+    });
   }
 
   Future<void> _crearEmpleado() async {
@@ -80,6 +102,14 @@ class _PantallaAdminNuevoEmpleadoState
       return;
     }
 
+    if (_fotoBytes != null) {
+      await _viewModel.subirFoto(
+        id: empleado.id,
+        bytes: _fotoBytes!,
+        nombreFichero: _fotoNombre,
+      );
+    }
+
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Empleado creado')));
@@ -99,8 +129,10 @@ class _PantallaAdminNuevoEmpleadoState
           ctrlTelefono: _ctrlTelefono,
           skillsSeleccionadas: _skillsSeleccionadas,
           vmEmpleados: vmEmpleados,
+          fotoBytes: _fotoBytes,
           onCrear: _crearEmpleado,
           onSkillTap: _alternarSkill,
+          onSeleccionarFoto: _seleccionarFoto,
         ),
       ),
     );
@@ -126,8 +158,10 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
     required this.ctrlTelefono,
     required this.skillsSeleccionadas,
     required this.vmEmpleados,
+    required this.fotoBytes,
     required this.onCrear,
     required this.onSkillTap,
+    required this.onSeleccionarFoto,
   });
 
   final GlobalKey<FormState> formKey;
@@ -137,8 +171,10 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
   final TextEditingController ctrlTelefono;
   final Set<int> skillsSeleccionadas;
   final ViewModelAdminEmpleados vmEmpleados;
+  final Uint8List? fotoBytes;
   final VoidCallback onCrear;
   final ValueChanged<int> onSkillTap;
+  final VoidCallback onSeleccionarFoto;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +233,16 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  Center(child: _PlaceholderFoto(colorScheme: colorScheme)),
+                  Center(
+                    child: AvatarEditable(
+                      texto: ctrlNombre.text.isNotEmpty ? ctrlNombre.text : 'N',
+                      imagenLocalBytes: fotoBytes,
+                      tamano: 96,
+                      radio: 48,
+                      cargando: false,
+                      onEditar: onSeleccionarFoto,
+                    ),
+                  ),
                   const SizedBox(height: 28),
                   CampoFormulario(
                     controller: ctrlNombre,
@@ -292,50 +337,3 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
     );
   }
 }
-
-class _PlaceholderFoto extends StatelessWidget {
-  const _PlaceholderFoto({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: colorScheme.primary,
-              width: 2,
-              strokeAlign: BorderSide.strokeAlignOutside,
-            ),
-          ),
-          child: Icon(
-            Icons.camera_alt_outlined,
-            color: colorScheme.primary,
-            size: 32,
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.add, color: colorScheme.onPrimary, size: 16),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
