@@ -102,9 +102,10 @@ class _PantallaAdminNuevoEmpleadoState
       return;
     }
 
-    if (_fotoBytes != null) {
+    final int? empleadoId = empleado.id;
+    if (_fotoBytes != null && empleadoId != null) {
       await _viewModel.subirFoto(
-        id: empleado.id,
+        id: empleadoId,
         bytes: _fotoBytes!,
         nombreFichero: _fotoNombre,
       );

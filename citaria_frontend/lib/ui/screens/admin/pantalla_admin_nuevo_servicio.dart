@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
+import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
@@ -103,9 +105,10 @@ class _PantallaAdminNuevoServicioState
       return;
     }
 
-    if (_imagenBytes != null) {
+    final int? servicioId = servicio.id;
+    if (_imagenBytes != null && servicioId != null) {
       await _viewModel.subirImagenServicio(
-        id: servicio.id,
+        id: servicioId,
         bytes: _imagenBytes!,
         nombreFichero: _imagenNombre,
       );
@@ -246,7 +249,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                 ),
                 children: [
                   if (vmCatalogo.error != null) ...[
-                    _AvisoError(
+                    AvisoError(
                       mensaje: vmCatalogo.error!,
                       onReintentar: vmCatalogo.cargarFormularioNuevoServicio,
                     ),
@@ -266,17 +269,12 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   const SizedBox(height: 28),
 
                   // ── Campos de texto ───────────────────────────────────────
-                  TextFormField(
+                  CampoFormulario(
                     controller: ctrlNombre,
-                    validator: (v) => (v == null || v.trim().isEmpty)
+                    etiqueta: 'Nombre *',
+                    validador: (v) => (v == null || v.trim().isEmpty)
                         ? 'El nombre es obligatorio'
                         : null,
-                    decoration: InputDecoration(
-                      labelText: 'Nombre *',
-                      border: OutlineInputBorder(
-                        borderRadius: espaciado.radioInput,
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -291,17 +289,11 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  CampoFormulario(
                     controller: ctrlPrecio,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: _validarPrecio,
-                    decoration: InputDecoration(
-                      labelText: 'Precio *',
-                      border: OutlineInputBorder(
-                        borderRadius: espaciado.radioInput,
-                      ),
-                    ),
+                    etiqueta: 'Precio *',
+                    teclado: const TextInputType.numberWithOptions(decimal: true),
+                    validador: _validarPrecio,
                   ),
                   const SizedBox(height: 16),
 
@@ -429,42 +421,5 @@ class _ContenidoNuevoServicio extends StatelessWidget {
     final double? precio = double.tryParse(texto);
     if (precio == null || precio <= 0) return 'Introduce un precio válido';
     return null;
-  }
-}
-
-class _AvisoError extends StatelessWidget {
-  const _AvisoError({required this.mensaje, required this.onReintentar});
-
-  final String mensaje;
-  final VoidCallback onReintentar;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: espaciado.radioCard,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: colorScheme.onErrorContainer),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              mensaje,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onErrorContainer,
-              ),
-            ),
-          ),
-          TextButton(onPressed: onReintentar, child: const Text('Reintentar')),
-        ],
-      ),
-    );
   }
 }

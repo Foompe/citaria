@@ -50,7 +50,7 @@ class CabeceraTituloGrande extends StatelessWidget {
                       onPressed: () => Navigator.of(context).maybePop(),
                     ),
                   const Spacer(),
-                  ?accionDerecha,
+                  if (accionDerecha != null) accionDerecha!,
                 ],
               ),
             Text(titulo, style: textTheme.displayLarge),

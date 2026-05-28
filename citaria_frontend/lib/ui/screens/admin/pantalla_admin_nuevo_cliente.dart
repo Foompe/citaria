@@ -102,9 +102,10 @@ class _PantallaAdminNuevoClienteState
       return;
     }
 
-    if (_fotoBytes != null) {
+    final int? clienteId = cliente.id;
+    if (_fotoBytes != null && clienteId != null) {
       await _viewModel.subirFoto(
-        id: cliente.id,
+        id: clienteId,
         bytes: _fotoBytes!,
         nombreFichero: _fotoNombre,
       );
