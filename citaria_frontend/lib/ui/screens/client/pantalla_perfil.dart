@@ -1,4 +1,5 @@
 import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
+import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_contrasena.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -117,6 +118,22 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
             'No se pudo subir la foto.',
       );
     }
+  }
+
+  Future<void> _mostrarDialogoCambiarContrasena() async {
+    final bool? guardado = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => DialogoCambiarContrasena(
+        onCambiar: (actual, nueva) =>
+            context.read<ViewModelPerfilCliente>().cambiarPassword(
+              passwordActual: actual,
+              passwordNueva: nueva,
+            ),
+      ),
+    );
+    if (!mounted || guardado != true) return;
+    _mostrarMensaje('Contraseña actualizada correctamente.');
   }
 
   void _mostrarMensaje(String mensaje) {
@@ -241,6 +258,32 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                           onCancelar: _cancelarEdicion,
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Seguridad',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.outline,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.lock_reset_outlined,
+                        color: colorScheme.onSurface,
+                      ),
+                      title: Text(
+                        'Cambiar contraseña',
+                        style: textTheme.bodyLarge,
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: colorScheme.outline,
+                      ),
+                      onTap: _mostrarDialogoCambiarContrasena,
                     ),
                   ),
                   const SizedBox(height: 24),

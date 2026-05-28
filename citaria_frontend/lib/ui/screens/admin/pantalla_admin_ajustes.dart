@@ -1,5 +1,6 @@
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
+import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_contrasena.dart';
 import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_pin.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
@@ -38,6 +39,26 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
   void dispose() {
     _viewModel.dispose();
     super.dispose();
+  }
+
+  Future<void> _mostrarDialogoCambiarContrasena(
+    BuildContext context,
+    ViewModelAdminAjustes vmAjustes,
+  ) async {
+    final bool? guardado = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => DialogoCambiarContrasena(
+        onCambiar: (actual, nueva) => vmAjustes.cambiarPassword(
+          passwordActual: actual,
+          passwordNueva: nueva,
+        ),
+      ),
+    );
+    if (!context.mounted || guardado != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Contraseña actualizada correctamente.')),
+    );
   }
 
   Future<void> _mostrarDialogoCambiarPin(BuildContext context) async {
@@ -116,6 +137,8 @@ class _PantallaAdminAjustesState extends State<PantallaAdminAjustes> {
               body: _CuerpoAjustes(
             vmAjustes: vmAjustes,
             onCambiarPin: () => _mostrarDialogoCambiarPin(context),
+            onCambiarContrasena: () =>
+                _mostrarDialogoCambiarContrasena(context, vmAjustes),
             onEditarEmpresa: () =>
                 _mostrarDialogoEditarEmpresa(context, vmAjustes),
           ),
@@ -131,11 +154,13 @@ class _CuerpoAjustes extends StatelessWidget {
   const _CuerpoAjustes({
     required this.vmAjustes,
     required this.onCambiarPin,
+    required this.onCambiarContrasena,
     required this.onEditarEmpresa,
   });
 
   final ViewModelAdminAjustes vmAjustes;
   final VoidCallback onCambiarPin;
+  final VoidCallback onCambiarContrasena;
   final VoidCallback onEditarEmpresa;
 
   @override
@@ -195,11 +220,22 @@ class _CuerpoAjustes extends StatelessWidget {
           const SizedBox(height: 8),
           Card(
             shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-            child: ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Cambiar PIN'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: onCambiarPin,
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.lock_outline),
+                  title: const Text('Cambiar PIN'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: onCambiarPin,
+                ),
+                Divider(height: 1, color: colorScheme.outlineVariant),
+                ListTile(
+                  leading: const Icon(Icons.lock_reset_outlined),
+                  title: const Text('Cambiar contraseña'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: onCambiarContrasena,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 28),

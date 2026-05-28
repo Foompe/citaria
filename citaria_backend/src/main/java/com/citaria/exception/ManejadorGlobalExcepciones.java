@@ -47,6 +47,16 @@ public class ManejadorGlobalExcepciones {
     }
 
     /**
+     * Maneja argumentos inválidos, como contraseña actual incorrecta.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorRespuestaDTO> manejarArgumentoIlegal(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorRespuestaDTO(400, ex.getMessage()));
+    }
+
+    /**
      * Maneja operaciones no permitidas según el estado o el rol.
      */
     @ExceptionHandler(IllegalStateException.class)

@@ -111,4 +111,26 @@ class RepoUsuarios {
       throw Exception('$e');
     }
   }
+
+  Future<void> cambiarPassword(
+    String passwordActual,
+    String passwordNueva,
+    String token,
+  ) async {
+    try {
+      await _api.patch(
+        '/api/usuarios/me/password',
+        cuerpo: {
+          'passwordActual': passwordActual,
+          'passwordNueva': passwordNueva,
+        },
+        token: token,
+      );
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('$e');
+    }
+  }
 }

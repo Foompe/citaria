@@ -143,6 +143,7 @@ class AplicacionCitaria extends StatelessWidget {
           create: (context) => ViewModelPerfilCliente(
             autenticacion: context.read<ViewModelAutenticacion>(),
             repoClientes: repoClientes,
+            repoUsuarios: context.read<RepoUsuarios>(),
           ),
         ),
         ChangeNotifierProvider<ViewModelChatbot>(

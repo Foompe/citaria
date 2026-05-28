@@ -1,6 +1,7 @@
 import 'package:citaria_frontend/data/models/cliente.dart';
 import 'package:citaria_frontend/data/models/sesion.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
+import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/foundation.dart';
 
@@ -29,11 +30,14 @@ class ViewModelPerfilCliente extends ChangeNotifier {
   ViewModelPerfilCliente({
     required ViewModelAutenticacion autenticacion,
     required RepoClientes repoClientes,
+    required RepoUsuarios repoUsuarios,
   }) : _autenticacion = autenticacion,
-       _repoClientes = repoClientes;
+       _repoClientes = repoClientes,
+       _repoUsuarios = repoUsuarios;
 
   final ViewModelAutenticacion _autenticacion;
   final RepoClientes _repoClientes;
+  final RepoUsuarios _repoUsuarios;
 
   bool _cargando = false;
   bool _guardando = false;
@@ -131,6 +135,29 @@ class ViewModelPerfilCliente extends ChangeNotifier {
       _cliente = actualizado;
       _datos = _crearDto(actualizado, sesion.email);
       notifyListeners();
+      return true;
+    } catch (e) {
+      _setError(_mensajeError(e));
+      return false;
+    } finally {
+      _setGuardando(false);
+    }
+  }
+
+  Future<bool> cambiarPassword({
+    required String passwordActual,
+    required String passwordNueva,
+  }) async {
+    _setGuardando(true);
+    _limpiarError();
+
+    try {
+      final Sesion sesion = _leerSesionCliente();
+      await _repoUsuarios.cambiarPassword(
+        passwordActual,
+        passwordNueva,
+        sesion.token,
+      );
       return true;
     } catch (e) {
       _setError(_mensajeError(e));

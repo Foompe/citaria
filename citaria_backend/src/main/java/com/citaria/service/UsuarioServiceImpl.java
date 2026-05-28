@@ -1,5 +1,6 @@
 package com.citaria.service;
 
+import com.citaria.dto.PeticionCambioPasswordDTO;
 import com.citaria.dto.UsuarioDTO;
 import com.citaria.exception.EmpleadoConReservasActivasException;
 import com.citaria.exception.RecursoNoEncontradoException;
@@ -194,6 +195,17 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuario.getEmpleado() != null) {
             anonimizarEmpleado(usuario.getEmpleado());
         }
+    }
+
+    @Override
+    @Transactional
+    public void cambiarPassword(PeticionCambioPasswordDTO peticion) {
+        Usuario usuario = contextoSeguridad.obtenerUsuarioActual();
+        if (!passwordEncoder.matches(peticion.getPasswordActual(), usuario.getPasswordHash())) {
+            throw new IllegalArgumentException("La contraseña actual no es correcta");
+        }
+        usuario.setPasswordHash(passwordEncoder.encode(peticion.getPasswordNueva()));
+        usuarioDAO.save(usuario);
     }
 
     // ANONIMIZACIÓN

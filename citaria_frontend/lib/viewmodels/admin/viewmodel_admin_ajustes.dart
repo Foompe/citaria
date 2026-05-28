@@ -113,6 +113,20 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
     return cargarAjustes();
   }
 
+  Future<bool> cambiarPassword({
+    required String passwordActual,
+    required String passwordNueva,
+  }) async {
+    try {
+      final String token = leerTokenObligatorio();
+      await _repoUsuarios.cambiarPassword(passwordActual, passwordNueva, token);
+      return true;
+    } catch (e) {
+      registrarError(e);
+      return false;
+    }
+  }
+
   Future<bool> actualizarEmpresa({
     required String email,
     required String telefono,

@@ -1,5 +1,6 @@
 package com.citaria.controller;
 
+import com.citaria.dto.PeticionCambioPasswordDTO;
 import com.citaria.dto.UsuarioDTO;
 import com.citaria.model.RolUsuario;
 import com.citaria.service.UsuarioService;
@@ -82,6 +83,17 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioDTO> actualizar(@PathVariable Integer id, @Valid @RequestBody UsuarioDTO dto) {
         return ResponseEntity.ok(usuarioService.actualizar(id, dto));
+    }
+
+    @Operation(summary = "Cambiar la contraseña del usuario autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Contraseña cambiada correctamente"),
+            @ApiResponse(responseCode = "400", description = "Contraseña actual incorrecta")
+    })
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> cambiarPassword(@Valid @RequestBody PeticionCambioPasswordDTO peticion) {
+        usuarioService.cambiarPassword(peticion);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Anonimizar un usuario — elimina sus datos personales de forma irreversible")

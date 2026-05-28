@@ -1,5 +1,6 @@
 package com.citaria.service;
 
+import com.citaria.dto.PeticionCambioPasswordDTO;
 import com.citaria.dto.UsuarioDTO;
 import com.citaria.model.RolUsuario;
 import java.util.List;
@@ -15,6 +16,8 @@ public interface UsuarioService {
     UsuarioDTO obtenerPorId(Integer id);
     UsuarioDTO crear(UsuarioDTO dto);
     UsuarioDTO actualizar(Integer id, UsuarioDTO dto);
+
+    void cambiarPassword(PeticionCambioPasswordDTO peticion);
 
     /**
      * Elimina físicamente la cuenta de usuario y anonimiza sus entidades vinculadas (Cliente/Empleado).
