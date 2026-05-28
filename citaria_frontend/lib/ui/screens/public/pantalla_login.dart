@@ -91,120 +91,128 @@ class _PantallaLoginState extends State<PantallaLogin> {
               const CabeceraTituloGrande(titulo: 'Iniciar sesión'),
             ],
             body: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            espaciado.padX,
-            24,
-            espaciado.padX,
-            espaciado.safeBottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 24),
-              Center(
-                child: AvatarFallbackCitaria(
-                  texto: nombreEmpresa,
-                  imagenUrl: empresaActiva?.logoUrl,
-                  tamano: 96,
-                  radio: 22,
-                ),
+              padding: EdgeInsets.fromLTRB(
+                espaciado.padX,
+                24,
+                espaciado.padX,
+                espaciado.safeBottom,
               ),
-              const SizedBox(height: 10),
-              Text(
-                nombreEmpresa,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Bienvenido',
-                textAlign: TextAlign.center,
-                style: textTheme.displayMedium,
-              ),
-              const SizedBox(height: 40),
-              Text('Email', style: textTheme.bodySmall),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _controladorEmail,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(hintText: 'tu@email.com'),
-              ),
-              const SizedBox(height: 16),
-              Text('Contraseña', style: textTheme.bodySmall),
-              const SizedBox(height: 6),
-              TextField(
-                controller: _controladorPassword,
-                obscureText: !_passwordVisible,
-                decoration: InputDecoration(
-                  hintText: '••••••••',
-                  suffixIcon: IconButton(
-                    tooltip: _passwordVisible
-                        ? 'Ocultar contraseña'
-                        : 'Mostrar contraseña',
-                    icon: Icon(
-                      _passwordVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                    ),
-                    onPressed: () =>
-                        setState(() => _passwordVisible = !_passwordVisible),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _mostrarDialogoRecuperacion,
-                  child: Text(
-                    '¿Olvidaste tu contraseña?',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              ElevatedButton(
-                onPressed: vmAuth.cargando ? null : _iniciarSesion,
-                child: const Text('Entrar'),
-              ),
-              const SizedBox(height: 16),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('o', style: textTheme.bodySmall),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: AvatarFallbackCitaria(
+                      texto: nombreEmpresa,
+                      imagenUrl: empresaActiva?.logoUrl,
+                      tamano: 96,
+                      radio: 22,
+                    ),
                   ),
-                  const Expanded(child: Divider()),
+                  const SizedBox(height: 10),
+                  Text(
+                    nombreEmpresa,
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Bienvenido',
+                    textAlign: TextAlign.center,
+                    style: textTheme.displayMedium,
+                  ),
+                  const SizedBox(height: 40),
+                  Text('Email', style: textTheme.bodySmall),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _controladorEmail,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(hintText: 'tu@email.com'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Contraseña', style: textTheme.bodySmall),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: _controladorPassword,
+                    obscureText: !_passwordVisible,
+                    decoration: InputDecoration(
+                      hintText: '••••••••',
+                      suffixIcon: IconButton(
+                        tooltip: _passwordVisible
+                            ? 'Ocultar contraseña'
+                            : 'Mostrar contraseña',
+                        icon: Icon(
+                          _passwordVisible
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _passwordVisible = !_passwordVisible,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _mostrarDialogoRecuperacion,
+                      child: Text(
+                        '¿Olvidaste tu contraseña?',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ElevatedButton(
+                    onPressed: vmAuth.cargando ? null : _iniciarSesion,
+                    child: const Text('Entrar'),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: vmAuth.cargando
+                        ? null
+                        : () => GestorNavegacion.irACambiarEmpresa(context),
+                    child: const Text('Cambiar empresa'),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('o', style: textTheme.bodySmall),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: GestureDetector(
+                      onTap: () => GestorNavegacion.irARegistro(context),
+                      child: RichText(
+                        text: TextSpan(
+                          style: textTheme.bodySmall,
+                          children: [
+                            const TextSpan(text: '¿No tienes cuenta? '),
+                            TextSpan(
+                              text: 'Regístrate',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: GestureDetector(
-                  onTap: () => GestorNavegacion.irARegistro(context),
-                  child: RichText(
-                    text: TextSpan(
-                      style: textTheme.bodySmall,
-                      children: [
-                        const TextSpan(text: '¿No tienes cuenta? '),
-                        TextSpan(
-                          text: 'Regístrate',
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
           ),
         ),
       ),
