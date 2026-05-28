@@ -144,13 +144,10 @@ class ViewModelPerfilCliente extends ChangeNotifier {
     }
   }
 
-  Future<bool> cambiarPassword({
+  Future<String?> cambiarPassword({
     required String passwordActual,
     required String passwordNueva,
   }) async {
-    _setGuardando(true);
-    _limpiarError();
-
     try {
       final Sesion sesion = _leerSesionCliente();
       await _repoUsuarios.cambiarPassword(
@@ -158,12 +155,9 @@ class ViewModelPerfilCliente extends ChangeNotifier {
         passwordNueva,
         sesion.token,
       );
-      return true;
+      return null;
     } catch (e) {
-      _setError(_mensajeError(e));
-      return false;
-    } finally {
-      _setGuardando(false);
+      return _mensajeError(e);
     }
   }
 

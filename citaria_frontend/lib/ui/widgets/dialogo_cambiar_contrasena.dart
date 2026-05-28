@@ -1,13 +1,13 @@
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:flutter/material.dart';
 
-typedef _CambiarContrasena = Future<bool> Function(
+typedef _CambiarContrasena = Future<String?> Function(
   String passwordActual,
   String passwordNueva,
 );
 
 /// Diálogo de cambio de contraseña.
-/// Recibe [onCambiar] que ejecuta la llamada a la API.
+/// Recibe [onCambiar] que devuelve null si todo fue bien o el mensaje de error.
 /// Devuelve [true] al guardar correctamente, [false] si el usuario cancela.
 class DialogoCambiarContrasena extends StatefulWidget {
   const DialogoCambiarContrasena({super.key, required this.onCambiar});
@@ -26,9 +26,7 @@ class _DialogoCambiarContrasenaState extends State<DialogoCambiarContrasena> {
   final _ctrlConfirmar = TextEditingController();
 
   bool _guardando = false;
-  bool _verActual = false;
-  bool _verNueva = false;
-  bool _verConfirmar = false;
+  final List<bool> _ver = [false, false, false];
   String? _errorServidor;
 
   @override
@@ -47,17 +45,17 @@ class _DialogoCambiarContrasenaState extends State<DialogoCambiarContrasena> {
       _errorServidor = null;
     });
 
-    final bool ok =
+    final String? error =
         await widget.onCambiar(_ctrlActual.text, _ctrlNueva.text);
 
     if (!mounted) return;
 
-    if (ok) {
+    if (error == null) {
       Navigator.of(context).pop(true);
     } else {
       setState(() {
         _guardando = false;
-        _errorServidor = 'La contraseña actual no es correcta.';
+        _errorServidor = error;
       });
     }
   }
@@ -99,8 +97,8 @@ class _DialogoCambiarContrasenaState extends State<DialogoCambiarContrasena> {
               _CampoPassword(
                 controller: _ctrlActual,
                 etiqueta: 'Contraseña actual',
-                ver: _verActual,
-                onVerCambiado: (v) => setState(() => _verActual = v),
+                ver: _ver[0],
+                onVerCambiado: (v) => setState(() => _ver[0] = v),
                 validador: (valor) {
                   if (valor == null || valor.isEmpty) {
                     return 'Introduce tu contraseña actual';
@@ -112,8 +110,8 @@ class _DialogoCambiarContrasenaState extends State<DialogoCambiarContrasena> {
               _CampoPassword(
                 controller: _ctrlNueva,
                 etiqueta: 'Nueva contraseña',
-                ver: _verNueva,
-                onVerCambiado: (v) => setState(() => _verNueva = v),
+                ver: _ver[1],
+                onVerCambiado: (v) => setState(() => _ver[1] = v),
                 validador: (valor) {
                   if (valor == null || valor.length < 8) {
                     return 'Mínimo 8 caracteres';
@@ -125,8 +123,8 @@ class _DialogoCambiarContrasenaState extends State<DialogoCambiarContrasena> {
               _CampoPassword(
                 controller: _ctrlConfirmar,
                 etiqueta: 'Confirmar nueva contraseña',
-                ver: _verConfirmar,
-                onVerCambiado: (v) => setState(() => _verConfirmar = v),
+                ver: _ver[2],
+                onVerCambiado: (v) => setState(() => _ver[2] = v),
                 accionTeclado: TextInputAction.done,
                 onEnviar: (_) => _guardar(),
                 validador: (valor) {
