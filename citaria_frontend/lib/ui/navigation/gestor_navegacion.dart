@@ -13,6 +13,8 @@ import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_servicios.dar
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_empleados.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_empleado.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_cliente.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_catalogo.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_categoria.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_servicio.dart';
@@ -308,13 +310,24 @@ class GestorNavegacion {
   }
 
   static Future<bool?> irAAdminNuevoCliente(BuildContext context) =>
-      Navigator.pushNamed<bool?>(context, Rutas.adminNuevoCliente);
+      Navigator.push<bool?>(
+        context,
+        MaterialPageRoute<bool?>(
+          settings: const RouteSettings(name: Rutas.adminNuevoCliente),
+          builder: (_) => const PantallaAdminNuevoCliente(),
+        ),
+      );
 
   static Future<bool?> irAAdminDetalleCliente(BuildContext context, String id) =>
-      Navigator.pushNamed<bool?>(
+      Navigator.push<bool?>(
         context,
-        Rutas.adminDetalleCliente,
-        arguments: {'id': id},
+        MaterialPageRoute<bool?>(
+          settings: RouteSettings(
+            name: Rutas.adminDetalleCliente,
+            arguments: {'id': id},
+          ),
+          builder: (_) => const PantallaAdminDetalleCliente(),
+        ),
       );
 
   static void irAAdminCalendario(BuildContext context) {
