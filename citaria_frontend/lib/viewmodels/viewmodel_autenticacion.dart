@@ -128,6 +128,10 @@ class ViewModelAutenticacion extends ChangeNotifier {
       final String? token = await _almacenamientoSeguro.read(key: _claveToken);
       if (token == null || token.isEmpty) {
         _limpiarSesionEnMemoria();
+        final int? orgId = _preferencias.getInt(_claveOrganizacionId);
+        if (orgId != null) {
+          await _comprobarTemaSiEsPosible(tema, orgId);
+        }
         return _destinoSinSesion();
       }
 

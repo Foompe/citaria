@@ -255,7 +255,13 @@ class _CuerpoAjustes extends StatelessWidget {
                 'Cerrar sesión',
                 style: textTheme.bodyLarge?.copyWith(color: colorScheme.error),
               ),
-              onTap: () => GestorNavegacion.irACerrarSesion(context),
+              onTap: () async {
+                final bool ok = await context
+                    .read<ViewModelAutenticacion>()
+                    .cerrarSesion();
+                if (!context.mounted || !ok) return;
+                GestorNavegacion.irACerrarSesion(context);
+              },
             ),
           ),
           if (error != null) ...[

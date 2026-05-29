@@ -271,8 +271,12 @@ class _Pie extends StatelessWidget {
         ListTile(
           leading: const Icon(Icons.logout),
           title: const Text('Cerrar sesión'),
-          onTap: () {
+          onTap: () async {
             Navigator.pop(context);
+            final bool ok = await context
+                .read<ViewModelAutenticacion>()
+                .cerrarSesion();
+            if (!context.mounted || !ok) return;
             GestorNavegacion.irACerrarSesion(context);
           },
         ),
