@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/date_symbol_data_local.dart';
@@ -157,6 +158,12 @@ class AplicacionCitaria extends StatelessWidget {
         builder: (context, tema, _) => MaterialApp(
           title: 'Citaria',
           debugShowCheckedModeBanner: false,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('es', 'ES')],
           theme: tema.themeData,
           initialRoute: Rutas.splash,
           routes: Rutas.mapaDeRutas(),
