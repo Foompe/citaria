@@ -90,10 +90,7 @@ class _PantallaAdminNuevaCategoriaState
             bottom: false,
             child: NestedScrollView(
               headerSliverBuilder: (_, _) => [
-                const CabeceraTituloGrande(
-                  titulo: 'Nueva categoría',
-                  mostrarAtras: true,
-                ),
+                const CabeceraTituloGrande(titulo: 'Nueva categoría'),
               ],
               body: Form(
                 key: _formKey,

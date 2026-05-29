@@ -122,10 +122,7 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
             bottom: false,
             child: NestedScrollView(
               headerSliverBuilder: (_, _) => [
-                const CabeceraTituloGrande(
-                  titulo: 'Nuevo cierre',
-                  mostrarAtras: true,
-                ),
+                const CabeceraTituloGrande(titulo: 'Nuevo cierre'),
               ],
               body: Form(
                 key: _formKey,

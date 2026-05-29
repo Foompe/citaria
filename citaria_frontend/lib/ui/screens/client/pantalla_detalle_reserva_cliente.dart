@@ -71,10 +71,7 @@ class _PantallaDetalleReservaClienteState
         bottom: false,
         child: NestedScrollView(
           headerSliverBuilder: (_, _) => [
-            const CabeceraTituloGrande(
-              titulo: 'Reserva',
-              mostrarAtras: true,
-            ),
+            const CabeceraTituloGrande(titulo: 'Reserva'),
           ],
           body: reserva == null
               ? Center(

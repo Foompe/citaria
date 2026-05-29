@@ -116,7 +116,7 @@ class _ContenidoDetalleEmpleado extends StatelessWidget {
         bottom: false,
         child: NestedScrollView(
           headerSliverBuilder: (_, _) => [
-            const CabeceraTituloGrande(titulo: 'Empleado', mostrarAtras: true),
+            const CabeceraTituloGrande(titulo: 'Empleado'),
           ],
           body: SafeArea(
             top: false,

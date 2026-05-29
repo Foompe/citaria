@@ -94,10 +94,7 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
             bottom: false,
             child: NestedScrollView(
               headerSliverBuilder: (_, _) => [
-                const CabeceraTituloGrande(
-                  titulo: 'Nueva skill',
-                  mostrarAtras: true,
-                ),
+                const CabeceraTituloGrande(titulo: 'Nueva skill'),
               ],
               body: Form(
                 key: _formKey,

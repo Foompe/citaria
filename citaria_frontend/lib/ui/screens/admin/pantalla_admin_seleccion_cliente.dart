@@ -84,7 +84,6 @@ class _ContenidoSeleccionCliente extends StatelessWidget {
           headerSliverBuilder: (_, _) => [
             CabeceraTituloGrande(
               titulo: modoSeleccion ? 'Seleccionar cliente' : 'Clientes',
-              mostrarAtras: true,
               accionDerecha: Tooltip(
                 message: 'Nuevo cliente',
                 child: IconButton(

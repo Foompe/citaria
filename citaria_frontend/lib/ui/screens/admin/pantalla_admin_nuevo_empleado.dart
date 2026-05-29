@@ -210,10 +210,7 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
         bottom: false,
         child: NestedScrollView(
           headerSliverBuilder: (_, _) => [
-            const CabeceraTituloGrande(
-              titulo: 'Nuevo empleado',
-              mostrarAtras: true,
-            ),
+            const CabeceraTituloGrande(titulo: 'Nuevo empleado'),
           ],
           body: cargandoInicial
               ? const Center(child: CircularProgressIndicator())

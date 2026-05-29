@@ -201,10 +201,7 @@ class _PantallaAdminDetalleServicioState
               bottom: false,
               child: NestedScrollView(
                 headerSliverBuilder: (_, _) => [
-                  const CabeceraTituloGrande(
-                    titulo: 'Servicio',
-                    mostrarAtras: true,
-                  ),
+                  const CabeceraTituloGrande(titulo: 'Servicio'),
                 ],
                 body: _CuerpoDetalleServicio(
               detalle: detalle,

@@ -131,10 +131,7 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
               bottom: false,
               child: NestedScrollView(
                 headerSliverBuilder: (_, _) => [
-                  const CabeceraTituloGrande(
-                    titulo: 'Skill',
-                    mostrarAtras: true,
-                  ),
+                  const CabeceraTituloGrande(titulo: 'Skill'),
                 ],
                 body: _CuerpoDetalleSkill(
                   detalle: detalle,

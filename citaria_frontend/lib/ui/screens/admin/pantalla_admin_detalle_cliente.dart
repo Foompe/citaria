@@ -119,7 +119,7 @@ class _ContenidoDetalleCliente extends StatelessWidget {
         bottom: false,
         child: NestedScrollView(
           headerSliverBuilder: (_, _) => [
-            const CabeceraTituloGrande(titulo: 'Cliente', mostrarAtras: true),
+            const CabeceraTituloGrande(titulo: 'Cliente'),
           ],
           body: SafeArea(
             top: false,

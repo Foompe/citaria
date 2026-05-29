@@ -126,10 +126,7 @@ class _PantallaAdminDetalleCategoriaState
               bottom: false,
               child: NestedScrollView(
                 headerSliverBuilder: (_, _) => [
-                  const CabeceraTituloGrande(
-                    titulo: 'Categoría',
-                    mostrarAtras: true,
-                  ),
+                  const CabeceraTituloGrande(titulo: 'Categoría'),
                 ],
                 body: _CuerpoDetalleCategoria(
                   detalle: detalle,
