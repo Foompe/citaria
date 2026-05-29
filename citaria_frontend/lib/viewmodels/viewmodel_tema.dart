@@ -66,6 +66,7 @@ class ViewModelTema extends ChangeNotifier {
   Future<void> cargarTemaEmpresa(int organizacionId) async {
     _setCargando(true);
     _limpiarError();
+    await restaurarFallback();
 
     try {
       final ConfiguracionVisual configuracion = await _repoOrganizaciones
@@ -106,9 +107,14 @@ class ViewModelTema extends ChangeNotifier {
     }
   }
 
-  void restaurarFallback() {
+  Future<void> restaurarFallback() async {
     _datos = null;
     _themeData = temaCitaria;
+    await _guardarStringOpcional(_claveLogoUrl, null);
+    await _guardarStringOpcional(_claveColorPrimario, null);
+    await _guardarStringOpcional(_claveColorSecundario, null);
+    await _guardarStringOpcional(_claveTipografia, null);
+    await _preferencias.remove(_claveVersion);
     notifyListeners();
   }
 
