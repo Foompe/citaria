@@ -7,6 +7,7 @@ import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
@@ -333,48 +334,25 @@ class _FondoServicioDestacado extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final String? url = imagenUrl?.trim();
-
-    if (url == null || url.isEmpty) {
-      return _fondoAzul(colorScheme, child);
-    }
+    final bool tieneImagen = url != null && url.isNotEmpty;
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _fondoAzul(colorScheme, const SizedBox()),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Color(0xB3000000)],
+        ImagenServicio(imagenUrl: imagenUrl),
+        if (tieneImagen)
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xB3000000)],
+              ),
             ),
           ),
-        ),
         child,
       ],
-    );
-  }
-
-  Widget _fondoAzul(ColorScheme colorScheme, Widget contenido) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.85),
-            colorScheme.primary.withValues(alpha: 0.50),
-          ],
-        ),
-      ),
-      child: contenido,
     );
   }
 }

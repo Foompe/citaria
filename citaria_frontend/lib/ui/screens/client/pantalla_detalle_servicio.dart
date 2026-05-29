@@ -4,6 +4,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
 
 class PantallaDetalleServicio extends StatefulWidget {
@@ -189,45 +190,24 @@ class _CabeceraServicio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final String? url = imagenUrl?.trim();
-    if (url == null || url.isEmpty) {
-      return _fondoAzul(colorScheme);
-    }
+    final bool tieneImagen = url != null && url.isNotEmpty;
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _fondoAzul(colorScheme),
-        ),
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Color(0x99000000)],
+        ImagenServicio(imagenUrl: imagenUrl),
+        if (tieneImagen)
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0x99000000)],
+              ),
             ),
           ),
-        ),
       ],
-    );
-  }
-
-  Widget _fondoAzul(ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withValues(alpha: 0.6),
-          ],
-        ),
-      ),
     );
   }
 }

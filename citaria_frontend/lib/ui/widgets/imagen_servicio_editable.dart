@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 import 'package:flutter/material.dart';
 
 class ImagenServicioEditable extends StatelessWidget {
@@ -31,14 +32,7 @@ class ImagenServicioEditable extends StatelessWidget {
             height: 120,
             child: imagenLocalBytes != null
                 ? Image.memory(imagenLocalBytes!, fit: BoxFit.cover)
-                : imagenUrl != null && imagenUrl!.isNotEmpty
-                    ? Image.network(
-                        imagenUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            _FondoIconoServicio(colorScheme: colorScheme),
-                      )
-                    : _FondoIconoServicio(colorScheme: colorScheme),
+                : ImagenServicio(imagenUrl: imagenUrl),
           ),
         ),
         Positioned(
@@ -69,22 +63,3 @@ class ImagenServicioEditable extends StatelessWidget {
   }
 }
 
-class _FondoIconoServicio extends StatelessWidget {
-  const _FondoIconoServicio({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.design_services_outlined,
-          size: 48,
-          color: colorScheme.outline,
-        ),
-      ),
-    );
-  }
-}

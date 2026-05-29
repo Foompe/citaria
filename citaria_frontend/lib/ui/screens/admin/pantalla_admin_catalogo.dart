@@ -6,6 +6,7 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -257,15 +258,7 @@ class _TarjetaServicio extends StatelessWidget {
                 child: SizedBox(
                   width: 64,
                   height: 64,
-                  child: imagenUrl != null && imagenUrl.isNotEmpty
-                      ? Image.network(
-                          imagenUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _IconoServicioFallback(
-                            colorScheme: colorScheme,
-                          ),
-                        )
-                      : _IconoServicioFallback(colorScheme: colorScheme),
+                  child: ImagenServicio(imagenUrl: imagenUrl),
                 ),
               ),
               const SizedBox(width: 12),
@@ -321,25 +314,6 @@ class _TarjetaServicio extends StatelessWidget {
   }
 }
 
-class _IconoServicioFallback extends StatelessWidget {
-  const _IconoServicioFallback({required this.colorScheme});
-
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.design_services_outlined,
-          color: colorScheme.outline,
-          size: 28,
-        ),
-      ),
-    );
-  }
-}
 
 class _TabCategorias extends StatelessWidget {
   const _TabCategorias({

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
+import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 
 /// Fila de servicio para [PantallaCatalogoCliente].
 ///
@@ -36,10 +37,13 @@ class FilaServicio extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
         child: Row(
           children: [
-            _MiniaturaServicio(
-              imagenUrl: imagenUrl,
-              radio: espaciado.radioCard,
-              colorPlaceholder: colorScheme.surfaceContainerHighest,
+            ClipRRect(
+              borderRadius: espaciado.radioCard,
+              child: SizedBox(
+                width: 80,
+                height: 80,
+                child: ImagenServicio(imagenUrl: imagenUrl),
+              ),
             ),
             const SizedBox(width: 16),
             // Información del servicio
@@ -85,41 +89,3 @@ class FilaServicio extends StatelessWidget {
   }
 }
 
-class _MiniaturaServicio extends StatelessWidget {
-  const _MiniaturaServicio({
-    required this.imagenUrl,
-    required this.radio,
-    required this.colorPlaceholder,
-  });
-
-  final String? imagenUrl;
-  final BorderRadius radio;
-  final Color colorPlaceholder;
-
-  @override
-  Widget build(BuildContext context) {
-    final String? url = imagenUrl?.trim();
-    if (url == null || url.isEmpty) {
-      return _placeholder();
-    }
-
-    return ClipRRect(
-      borderRadius: radio,
-      child: Image.network(
-        url,
-        width: 80,
-        height: 80,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _placeholder(),
-      ),
-    );
-  }
-
-  Widget _placeholder() {
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(color: colorPlaceholder, borderRadius: radio),
-    );
-  }
-}
