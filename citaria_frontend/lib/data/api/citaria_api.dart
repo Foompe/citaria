@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:citaria_frontend/data/api/configuracion_api.dart';
 import 'package:http/http.dart' as http;
@@ -89,14 +90,18 @@ class CitariaApi {
     );
     final String? cuerpoJson = cuerpo == null ? null : jsonEncode(cuerpo);
 
-    final http.Response respuesta = await _ejecutarPeticion(
-      metodo: metodo,
-      uri: uri,
-      cabeceras: cabeceras,
-      cuerpoJson: cuerpoJson,
-    ).timeout(_timeout);
+    try {
+      final http.Response respuesta = await _ejecutarPeticion(
+        metodo: metodo,
+        uri: uri,
+        cabeceras: cabeceras,
+        cuerpoJson: cuerpoJson,
+      ).timeout(_timeout);
 
-    return _procesarRespuesta(respuesta);
+      return _procesarRespuesta(respuesta);
+    } on SocketException {
+      throw ExcepcionApi('Sin conexión a internet.', 0);
+    }
   }
 
   Future<http.Response> _ejecutarPeticion({

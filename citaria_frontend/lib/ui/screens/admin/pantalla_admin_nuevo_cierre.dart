@@ -69,7 +69,29 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
     final int? cantidad = await _viewModel.consultarCitasEnFecha(fecha);
     if (!mounted) return;
 
-    if (cantidad != null && cantidad > 0) {
+    if (cantidad == null) {
+      final bool? confirmado = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('No se pudo verificar'),
+          content: const Text(
+            'No se pudo comprobar si hay citas activas ese día. '
+            '¿Deseas continuar de todas formas?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmado != true) return;
+    } else if (cantidad > 0) {
       final bool? confirmado = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
