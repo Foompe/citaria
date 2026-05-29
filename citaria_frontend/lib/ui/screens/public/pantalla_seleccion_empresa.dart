@@ -6,6 +6,10 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
+import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
 
 /// P02 — Selección de empresa.
@@ -57,6 +61,12 @@ class _PantallaSeleccionEmpresaState extends State<PantallaSeleccionEmpresa> {
       ).showSnackBar(SnackBar(content: Text(mensajeError)));
       return;
     }
+
+    context.read<ViewModelCatalogoCliente>().limpiar();
+    context.read<ViewModelReservasCliente>().limpiar();
+    context.read<ViewModelPerfilCliente>().limpiar();
+    context.read<ViewModelChatbot>().limpiar();
+
     GestorNavegacion.irALogin(context);
   }
 

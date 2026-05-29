@@ -108,6 +108,13 @@ class ViewModelChatbot extends ChangeNotifier {
     }
   }
 
+  void limpiar() {
+    _mensajes = const <DtoMensajeChatbot>[];
+    _cargando = false;
+    _error = null;
+    inicializar();
+  }
+
   void limpiarConversacion() {
     _mensajes = const <DtoMensajeChatbot>[];
     inicializar();

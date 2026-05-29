@@ -126,6 +126,15 @@ class ViewModelReservasCliente extends ChangeNotifier {
     return datos.isEmpty ? null : datos.first;
   }
 
+  void limpiar() {
+    _reservas = const <Reserva>[];
+    _totalesReservas = const <int, double>{};
+    _detalle = null;
+    _cargando = false;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> cargarReservasCliente() async {
     _setCargando(true);
     _limpiarError();

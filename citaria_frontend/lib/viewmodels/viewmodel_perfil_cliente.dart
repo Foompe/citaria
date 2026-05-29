@@ -50,6 +50,15 @@ class ViewModelPerfilCliente extends ChangeNotifier {
   String? get error => _error;
   DtoPerfilCliente? get datos => _datos;
 
+  void limpiar() {
+    _datos = null;
+    _cliente = null;
+    _cargando = false;
+    _guardando = false;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> cargarPerfilDesdeSesion() async {
     _setCargando(true);
     _limpiarError();

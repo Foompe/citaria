@@ -131,6 +131,17 @@ class ViewModelCatalogoCliente extends ChangeNotifier {
     return servicios.take(3).toList(growable: false);
   }
 
+  void limpiar() {
+    _servicios = const <Servicio>[];
+    _categorias = const <Categoria>[];
+    _categoriaSeleccionadaId = null;
+    _busqueda = '';
+    _detalle = null;
+    _cargando = false;
+    _error = null;
+    notifyListeners();
+  }
+
   Future<void> cargarCatalogo() async {
     _setCargando(true);
     _limpiarError();
