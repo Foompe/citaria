@@ -204,7 +204,7 @@ class _CuerpoAjustes extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           _Seccion(
-            titulo: 'BRANDING',
+            titulo: 'TEMA',
             children: _filasVisual(vmAjustes.visual),
           ),
           const SizedBox(height: 28),
@@ -318,7 +318,7 @@ class _CuerpoAjustes extends StatelessWidget {
       return const <Widget>[
         _FilaInfo(
           icono: Icons.palette_outlined,
-          etiqueta: 'Branding',
+          etiqueta: 'Tema',
           valor: '-',
         ),
       ];
@@ -373,11 +373,6 @@ class _CuerpoAjustes extends StatelessWidget {
         icono: Icons.verified_user_outlined,
         etiqueta: 'Estado',
         valor: cuenta.estado,
-      ),
-      _FilaInfo(
-        icono: Icons.mark_email_read_outlined,
-        etiqueta: 'Email verificado',
-        valor: cuenta.emailVerificado,
       ),
     ];
   }

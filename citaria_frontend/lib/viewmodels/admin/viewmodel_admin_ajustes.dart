@@ -38,13 +38,11 @@ class DtoAjustesCuentaAdmin {
     required this.email,
     required this.rol,
     required this.estado,
-    required this.emailVerificado,
   });
 
   final String email;
   final String rol;
   final String estado;
-  final String emailVerificado;
 }
 
 @immutable
@@ -93,14 +91,21 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
 
       final resultados = await Future.wait<Object>(<Future<Object>>[
         _repoOrganizaciones.obtenerPorId(organizacionId, token),
-        _repoOrganizaciones.obtenerConfiguracion(organizacionId),
         _repoUsuarios.obtenerActual(token),
       ]);
 
       _organizacionOriginal = resultados[0] as Organizacion;
       _empresa = _crearEmpresa(_organizacionOriginal!);
-      _visual = _crearVisual(resultados[1] as ConfiguracionVisual);
-      _cuenta = _crearCuenta(resultados[2] as Usuario);
+      _cuenta = _crearCuenta(resultados[1] as Usuario);
+
+      try {
+        final ConfiguracionVisual visual =
+            await _repoOrganizaciones.obtenerConfiguracion(organizacionId);
+        _visual = _crearVisual(visual);
+      } catch (_) {
+        _visual = null;
+      }
+
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -193,9 +198,6 @@ class ViewModelAdminAjustes extends ViewModelAdminBase {
       email: _textoConFallback(usuario.email, 'Sin email'),
       rol: _textoRol(usuario.rol),
       estado: (usuario.activo ?? true) ? 'Activa' : 'Inactiva',
-      emailVerificado: (usuario.emailVerificado ?? false)
-          ? 'Verificado'
-          : 'Sin verificar',
     );
   }
 
