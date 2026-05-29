@@ -10,9 +10,10 @@ import 'package:provider/provider.dart';
 /// Devuelve [true] si el PIN es correcto, [null] si el usuario cancela.
 /// Acepta entre 4 y 8 dígitos.
 class DialogoPin extends StatefulWidget {
-  const DialogoPin({super.key, required this.seccion});
+  const DialogoPin({super.key, required this.seccion, this.mostrarAviso = false});
 
   final String seccion;
+  final bool mostrarAviso;
 
   @override
   State<DialogoPin> createState() => _DialogoPinState();
@@ -160,6 +161,29 @@ class _DialogoPinState extends State<DialogoPin> {
           ),
 
           const SizedBox(height: 16),
+
+          if (widget.mostrarAviso)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 14,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Estás usando el PIN predeterminado. Te recomendamos cambiarlo.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           TecladoPinCitaria(
             onDigito: _pulsarDigito,

@@ -29,7 +29,6 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_ajustes.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_splash.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.dart';
 import 'package:citaria_frontend/data/services/servicio_pin.dart';
-import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_pin.dart';
 import 'package:citaria_frontend/ui/widgets/dialogo_pin.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -351,26 +350,17 @@ class GestorNavegacion {
       return Navigator.push<T>(context, MaterialPageRoute(builder: builder));
     }
 
-    final navigator       = Navigator.of(context);
-    final overlayContext  = navigator.context;
-    final servicioPin     = context.read<ServicioPin>();
+    final navigator   = Navigator.of(context);
+    final servicioPin = context.read<ServicioPin>();
+    final aviso       = await servicioPin.requiereCambio();
 
     final ok = await showDialog<bool>(
-      context: context,
+      context: context, // ignore: use_build_context_synchronously
       barrierDismissible: false,
-      builder: (_) => DialogoPin(seccion: nombreSeccion),
+      builder: (_) => DialogoPin(seccion: nombreSeccion, mostrarAviso: aviso),
     );
 
     if (ok != true) return null;
-
-    if (await servicioPin.requiereCambio()) {
-      final changed = await showDialog<bool>(
-        context: overlayContext, // ignore: use_build_context_synchronously
-        barrierDismissible: false,
-        builder: (_) => const DialogoCambiarPin(),
-      );
-      if (changed != true) return null;
-    }
 
     SesionPin.activar();
     return navigator.push<T>(MaterialPageRoute(builder: builder));
