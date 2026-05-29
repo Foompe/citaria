@@ -196,6 +196,29 @@ class RepoOrganizaciones {
     }
   }
 
+  Future<int> contarReservasActivasEnFecha(
+    int id,
+    DateTime fecha,
+    String token,
+  ) async {
+    try {
+      final String fechaStr =
+          '${fecha.year.toString().padLeft(4, '0')}-'
+          '${fecha.month.toString().padLeft(2, '0')}-'
+          '${fecha.day.toString().padLeft(2, '0')}';
+      final Object? json = await _api.get(
+        '/api/organizaciones/$id/cierres/preview?fecha=$fechaStr',
+        token: token,
+      );
+      return (json as num).toInt();
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('$e');
+    }
+  }
+
   Future<CierreOrganizacion> crearCierre(
     int id,
     CierreOrganizacion cierre,

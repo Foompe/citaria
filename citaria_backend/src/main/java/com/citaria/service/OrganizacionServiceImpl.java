@@ -17,6 +17,7 @@ import com.citaria.security.ContextoSeguridad;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -247,6 +248,15 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         OrganizacionHorarioCierre cierre = cargarCierre(id);
         verificarPertenencia(cierre.getOrganizacion().getId());
         organizacionHorarioCierreDAO.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int contarReservasActivasEnFecha(Integer organizacionId, LocalDate fecha) {
+        verificarPertenencia(organizacionId);
+        Organizacion organizacion = cargarOrganizacion(organizacionId);
+        return reservaDAO.findByOrganizacionAndFechaAndEstadoIn(
+                organizacion, fecha, List.of(EstadoReserva.pendiente, EstadoReserva.confirmada)).size();
     }
 
     // VERIFICACIÓN DE PERTENENCIA

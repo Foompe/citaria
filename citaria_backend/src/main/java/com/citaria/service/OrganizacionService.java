@@ -5,6 +5,7 @@ import com.citaria.dto.OrganizacionDTO;
 import com.citaria.dto.OrganizacionHorarioCierreDTO;
 import com.citaria.dto.OrganizacionHorarioDTO;
 import com.citaria.dto.OrganizacionPublicaDTO;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -35,5 +36,6 @@ public interface OrganizacionService {
     List<OrganizacionHorarioCierreDTO> obtenerCierresPorOrganizacion(Integer organizacionId);
     OrganizacionHorarioCierreDTO crearCierre(Integer organizacionId, OrganizacionHorarioCierreDTO dto);
     void eliminarCierre(Integer id);
+    int contarReservasActivasEnFecha(Integer organizacionId, LocalDate fecha);
 
 }

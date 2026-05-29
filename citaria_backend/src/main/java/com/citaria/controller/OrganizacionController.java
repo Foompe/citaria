@@ -15,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * Controlador REST para la gestión de organizaciones, sus horarios, cierres y configuración visual.
@@ -194,6 +196,14 @@ public class OrganizacionController {
     public ResponseEntity<OrganizacionHorarioCierreDTO> crearCierre(@PathVariable Integer id,
                                                                     @Valid @RequestBody OrganizacionHorarioCierreDTO dto) {
         return ResponseEntity.status(201).body(organizacionService.crearCierre(id, dto));
+    }
+
+    @Operation(summary = "Contar reservas activas en una fecha antes de crear un cierre")
+    @GetMapping("/{id}/cierres/preview")
+    public ResponseEntity<Integer> contarReservasActivasEnFecha(
+            @PathVariable Integer id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        return ResponseEntity.ok(organizacionService.contarReservasActivasEnFecha(id, fecha));
     }
 
     @Operation(summary = "Eliminar cierre puntual de una organización")

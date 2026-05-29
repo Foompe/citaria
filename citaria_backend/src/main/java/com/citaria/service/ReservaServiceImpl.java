@@ -304,8 +304,24 @@ public class ReservaServiceImpl implements ReservaService {
         }
         Reserva reserva = reservaOptional.get();
         verificarPertenenciaReserva(reserva, organizacion);
+        validarTransicion(reserva.getEstado(), estado);
         reserva.setEstado(estado);
+        if (estado == EstadoReserva.cancelada) {
+            reservaServicioDAO.cancelarDetallesPorReserva(reserva, EstadoReservaServicio.cancelado);
+        }
         return convertirReservaADTO(reservaDAO.save(reserva));
+    }
+
+    private void validarTransicion(EstadoReserva actual, EstadoReserva nuevo) {
+        boolean valida = switch (actual) {
+            case pendiente -> nuevo == EstadoReserva.confirmada || nuevo == EstadoReserva.cancelada;
+            case confirmada -> nuevo == EstadoReserva.pendiente || nuevo == EstadoReserva.cancelada;
+            case cancelada, completada -> false;
+        };
+        if (!valida) {
+            throw new IllegalStateException(
+                "Transición de estado no permitida: " + actual + " → " + nuevo);
+        }
     }
 
     @Override

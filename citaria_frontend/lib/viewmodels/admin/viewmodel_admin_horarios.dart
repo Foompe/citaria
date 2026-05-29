@@ -83,6 +83,20 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
     return cargarHorarios();
   }
 
+  Future<int?> consultarCitasEnFecha(DateTime fecha) async {
+    try {
+      final String token = leerTokenObligatorio();
+      final int organizacionId = leerOrganizacionIdObligatoria();
+      return await _repoOrganizaciones.contarReservasActivasEnFecha(
+        organizacionId,
+        fecha,
+        token,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<DtoCierreOrganizacionAdmin?> crearCierre({
     required DateTime fecha,
     String? motivo,

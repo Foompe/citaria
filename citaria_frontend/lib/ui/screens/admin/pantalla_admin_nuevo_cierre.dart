@@ -62,23 +62,45 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
   }
 
   Future<void> _crearCierre() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final DateTime? fecha = _fechaSeleccionada;
+    if (fecha == null) return;
+
+    final int? cantidad = await _viewModel.consultarCitasEnFecha(fecha);
+    if (!mounted) return;
+
+    if (cantidad != null && cantidad > 0) {
+      final bool? confirmado = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Citas activas ese día'),
+          content: Text(
+            'Ese día hay $cantidad ${cantidad == 1 ? 'cita activa' : 'citas activas'}. '
+            'Al crear el cierre se cancelarán todas automáticamente. ¿Continuar?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmado != true) return;
     }
 
-    final DateTime? fecha = _fechaSeleccionada;
-    if (fecha == null) {
-      return;
-    }
+    if (!mounted) return;
 
     final cierre = await _viewModel.crearCierre(
       fecha: fecha,
       motivo: _ctrlMotivo.text,
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (cierre == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,9 +111,9 @@ class _PantallaAdminNuevoCierreState extends State<PantallaAdminNuevoCierre> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Cierre creado')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Cierre creado')),
+    );
     Navigator.pop(context, true);
   }
 

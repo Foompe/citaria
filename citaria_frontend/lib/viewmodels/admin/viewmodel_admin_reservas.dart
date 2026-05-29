@@ -362,7 +362,8 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       puedeCancelar:
           reserva.estado == EstadoReserva.pendiente ||
           reserva.estado == EstadoReserva.confirmada,
-      puedeCambiarEstado: reserva.estado != EstadoReserva.cancelada,
+      puedeCambiarEstado: reserva.estado == EstadoReserva.pendiente ||
+          reserva.estado == EstadoReserva.confirmada,
       lineas: detalles
           .map((d) => _crearLineaDetalle(d, fotosEmpleados))
           .toList(growable: false),

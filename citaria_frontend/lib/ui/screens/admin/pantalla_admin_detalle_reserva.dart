@@ -318,7 +318,7 @@ class _CardEstado extends StatelessWidget {
                       if (valor != null) onCambiarEstado(valor);
                     }
                   : null,
-              items: datos.EstadoReserva.values.map((e) {
+              items: _estadosPermitidos(estadoMostrado).map((e) {
                 return DropdownMenuItem(
                   value: e,
                   child: chip.ChipEstado(estado: _estadoVisual(e)),
@@ -543,4 +543,20 @@ chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
     case datos.EstadoReserva.completada:
       return chip.EstadoReserva.completada;
   }
+}
+
+List<datos.EstadoReserva> _estadosPermitidos(datos.EstadoReserva actual) {
+  return switch (actual) {
+    datos.EstadoReserva.pendiente => [
+        datos.EstadoReserva.pendiente,
+        datos.EstadoReserva.confirmada,
+        datos.EstadoReserva.cancelada,
+      ],
+    datos.EstadoReserva.confirmada => [
+        datos.EstadoReserva.confirmada,
+        datos.EstadoReserva.pendiente,
+        datos.EstadoReserva.cancelada,
+      ],
+    _ => [actual],
+  };
 }
