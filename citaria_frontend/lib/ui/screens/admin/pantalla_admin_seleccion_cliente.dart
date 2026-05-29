@@ -3,6 +3,7 @@ import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
+import 'package:citaria_frontend/ui/widgets/lista_clientes_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
@@ -114,66 +115,9 @@ class _ContenidoSeleccionCliente extends StatelessWidget {
               ),
             ),
           ],
-          body: _ListaSeleccionClientes(modoSeleccion: modoSeleccion),
-        ),
-      ),
-    );
-  }
-}
-
-class _ListaSeleccionClientes extends StatelessWidget {
-  const _ListaSeleccionClientes({required this.modoSeleccion});
-
-  final bool modoSeleccion;
-
-  @override
-  Widget build(BuildContext context) {
-    final vmClientes = context.watch<ViewModelAdminClientes>();
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final List<DtoClienteAdmin> clientes = vmClientes.clientes;
-    final String? error = vmClientes.error;
-
-    if (vmClientes.cargando && clientes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (error != null && clientes.isEmpty) {
-      return _EstadoClientes(
-        mensaje: error,
-        accionTexto: 'Reintentar',
-        onAccion: vmClientes.refrescar,
-      );
-    }
-
-    if (clientes.isEmpty) {
-      return const _EstadoClientes(mensaje: 'Sin resultados');
-    }
-
-    return RefreshIndicator(
-      onRefresh: vmClientes.refrescar,
-      child: ListView.builder(
-        padding: const EdgeInsets.only(top: 8),
-        itemCount: clientes.length,
-        itemBuilder: (context, index) {
-          final DtoClienteAdmin cliente = clientes[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: colorScheme.primaryContainer,
-              child: Text(
-                cliente.iniciales,
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            title: Text(cliente.nombreCompleto),
-            subtitle: Text(
-              modoSeleccion ? cliente.telefono : cliente.email,
-              style: textTheme.bodySmall,
-            ),
-            onTap: () {
+          body: ListaClientesAdmin(
+            modoSeleccion: modoSeleccion,
+            onTap: (cliente) {
               if (modoSeleccion) {
                 GestorNavegacion.irAWizardServicios(
                   context,
@@ -187,45 +131,10 @@ class _ListaSeleccionClientes extends StatelessWidget {
                 cliente.id.toString(),
               );
             },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _EstadoClientes extends StatelessWidget {
-  const _EstadoClientes({
-    required this.mensaje,
-    this.accionTexto,
-    this.onAccion,
-  });
-
-  final String mensaje;
-  final String? accionTexto;
-  final VoidCallback? onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              mensaje,
-              style: textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            if (accionTexto != null && onAccion != null) ...[
-              const SizedBox(height: 12),
-              FilledButton(onPressed: onAccion, child: Text(accionTexto!)),
-            ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
