@@ -131,7 +131,7 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         List<FranjaHorariaDTO> franjas = new ArrayList<>();
         LocalTime franjaInicio = calcularFranjaInicio(fecha, apertura);
 
-        while (!franjaInicio.plusMinutes(duracionTotalMinutos).isAfter(horaCierre)) {
+        while (!franjaInicio.isAfter(horaCierre.minusMinutes(duracionTotalMinutos))) {
             LocalTime franjaFin = franjaInicio.plusMinutes(duracionTotalMinutos);
             int disponibles = 0;
             for (Empleado empleado : empleadosValidos) {
@@ -242,7 +242,7 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         LocalTime franjaInicio = calcularFranjaInicio(fecha, horarioNegocio.getHoraApertura());
         LocalTime horaCierre = horarioNegocio.getHoraCierre();
 
-        while (!franjaInicio.plusMinutes(duracionTotalMinutos).isAfter(horaCierre)) {
+        while (!franjaInicio.isAfter(horaCierre.minusMinutes(duracionTotalMinutos))) {
             LocalTime franjaFin = franjaInicio.plusMinutes(duracionTotalMinutos);
             for (Empleado empleado : empleadosValidos) {
                 if (empleadoLibreEnFranja(empleado, diaSemana, franjaInicio, franjaFin,
@@ -346,10 +346,19 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         if (!fecha.equals(LocalDate.now())) {
             return apertura;
         }
-        LocalTime limite = LocalTime.now().plusHours(1);
+        LocalTime ahora = LocalTime.now();
+        LocalTime limite = ahora.plusHours(1);
+        // Si plusHours(1) da la vuelta pasada medianoche, no quedan franjas hoy
+        if (!limite.isAfter(ahora)) {
+            return LocalTime.of(23, 59);
+        }
         int resto = limite.getMinute() % INTERVALO_MINUTOS;
         if (resto != 0) {
-            limite = limite.plusMinutes(INTERVALO_MINUTOS - resto);
+            LocalTime redondeado = limite.plusMinutes(INTERVALO_MINUTOS - resto);
+            // Solo aplicar redondeo si no da la vuelta pasada medianoche
+            if (redondeado.isAfter(limite)) {
+                limite = redondeado;
+            }
         }
         limite = limite.withSecond(0).withNano(0);
         return limite.isAfter(apertura) ? limite : apertura;
