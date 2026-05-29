@@ -207,9 +207,18 @@ class ViewModelTema extends ChangeNotifier {
       temaCitaria.textTheme,
     );
 
+    final OutlineInputBorder focusedBase =
+        temaCitaria.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
+
     return temaCitaria.copyWith(
       colorScheme: colorScheme,
       textTheme: textTheme,
+      inputDecorationTheme: temaCitaria.inputDecorationTheme.copyWith(
+        focusedBorder: OutlineInputBorder(
+          borderRadius: focusedBase.borderRadius,
+          borderSide: BorderSide(color: tema.colorPrimario, width: 1.5),
+        ),
+      ),
       appBarTheme: temaCitaria.appBarTheme.copyWith(
         titleTextStyle: textTheme.displaySmall,
       ),

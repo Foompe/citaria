@@ -27,11 +27,12 @@ const Color _textMuted = Color(0xFF7A8194);
 const Color _textFaint = Color(0xFFB0B6C8);
 
 // Acento — identidad de marca (igual en claro y oscuro)
-const Color _accent = Color(0xFF2E6BFF);
-const Color _accentStrong = Color(0xFF1B57F0);
-const Color _accentSoft = Color(0x1F2E6BFF); // rgba(46,107,255,0.12)
+const Color _accent = Color(0xFFB09070);       // beis oscuro
+const Color _accentStrong = Color(0xFFA6845A); // beis oscuro reforzado
+const Color _accentSoft = Color(0x1FC4A882);   // beis oscuro suave (12%)
 // ignore: unused_element
-const Color _accentTint = Color(0x0F2E6BFF); // rgba(46,107,255,0.06)
+const Color _accentTint = Color(0x0FC4A882);   // beis oscuro muy suave (6%)
+const Color _beisClaro = Color(0xFFF2E6D0);    // beis claro
 
 // Semánticos
 const Color _danger = Color(0xFFA82828);
