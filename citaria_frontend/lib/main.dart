@@ -24,11 +24,6 @@ import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
-import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_servicio.dart';
-import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_reserva_cliente.dart';
-import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_reserva.dart';
-import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_cliente.dart';
-import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -167,46 +162,7 @@ class AplicacionCitaria extends StatelessWidget {
           theme: tema.themeData,
           initialRoute: Rutas.splash,
           routes: Rutas.mapaDeRutas(),
-          onGenerateRoute: (settings) {
-            final String? nombreRuta = settings.name;
-            if (nombreRuta == null) {
-              return null;
-            }
-            if (nombreRuta.startsWith('/servicio/')) {
-              return MaterialPageRoute(
-                settings: settings,
-                builder: (_) => const PantallaDetalleServicio(),
-              );
-            }
-            if (nombreRuta.startsWith('/reserva/')) {
-              return MaterialPageRoute(
-                settings: settings,
-                builder: (_) => const PantallaDetalleReservaCliente(),
-              );
-            }
-            if (nombreRuta.startsWith('/admin/reservas/')) {
-              return MaterialPageRoute<bool>(
-                settings: settings,
-                builder: (_) => const PantallaAdminDetalleReserva(),
-              );
-            }
-            if (nombreRuta.startsWith('/admin/clientes/') &&
-                !nombreRuta.endsWith('/nuevo')) {
-              return MaterialPageRoute(
-                settings: settings,
-                builder: (_) => const PantallaAdminDetalleCliente(),
-              );
-            }
-            if (nombreRuta.startsWith('/admin/empleados/') &&
-                !nombreRuta.endsWith('/nuevo')) {
-              final int? empleadoId = int.tryParse(nombreRuta.split('/').last);
-              return MaterialPageRoute(
-                settings: settings,
-                builder: (_) => PantallaAdminDetalleEmpleado(id: empleadoId),
-              );
-            }
-            return null;
-          },
+          onGenerateRoute: Rutas.generarRuta,
         ),
       ),
     );

@@ -1,5 +1,11 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_splash.dart';
+// ── Rutas parametrizadas (resueltas en generarRuta) ───────────────────────────
+import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_servicio.dart';
+import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_reserva_cliente.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_reserva.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_cliente.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
 // ── Bloque 4: área admin común ────────────────────────────────────────────────
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_inicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
@@ -109,5 +115,49 @@ class Rutas {
       // Las pantallas protegidas por PIN no tienen entrada aquí.
       // Ver GestorNavegacion.irAAdminEmpleados y equivalentes.
     };
+  }
+
+  /// Resuelve las rutas parametrizadas (las que llevan segmento :id) para
+  /// [MaterialApp.onGenerateRoute]. Devuelve null si la ruta no es una de
+  /// estas, dejando que [mapaDeRutas] la gestione.
+  static Route<dynamic>? generarRuta(RouteSettings settings) {
+    final String? nombreRuta = settings.name;
+    if (nombreRuta == null) {
+      return null;
+    }
+    if (nombreRuta.startsWith('/servicio/')) {
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => const PantallaDetalleServicio(),
+      );
+    }
+    if (nombreRuta.startsWith('/reserva/')) {
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => const PantallaDetalleReservaCliente(),
+      );
+    }
+    if (nombreRuta.startsWith('/admin/reservas/')) {
+      return MaterialPageRoute<bool>(
+        settings: settings,
+        builder: (_) => const PantallaAdminDetalleReserva(),
+      );
+    }
+    if (nombreRuta.startsWith('/admin/clientes/') &&
+        !nombreRuta.endsWith('/nuevo')) {
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => const PantallaAdminDetalleCliente(),
+      );
+    }
+    if (nombreRuta.startsWith('/admin/empleados/') &&
+        !nombreRuta.endsWith('/nuevo')) {
+      final int? empleadoId = int.tryParse(nombreRuta.split('/').last);
+      return MaterialPageRoute(
+        settings: settings,
+        builder: (_) => PantallaAdminDetalleEmpleado(id: empleadoId),
+      );
+    }
+    return null;
   }
 }
