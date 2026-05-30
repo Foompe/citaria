@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 class PantallaPerfil extends StatefulWidget {
   const PantallaPerfil({super.key});
@@ -218,6 +220,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                               _editarCampo(_CampoPerfil.nombre, perfil.nombre),
                           onGuardar: () => _guardarCampo(perfil),
                           onCancelar: _cancelarEdicion,
+                          formateadores: Validadores.nombrePersona,
                         ),
                         const _Divisor(),
                         _FilaDato(
@@ -234,6 +237,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                           ),
                           onGuardar: () => _guardarCampo(perfil),
                           onCancelar: _cancelarEdicion,
+                          formateadores: Validadores.nombrePersona,
                         ),
                         const _Divisor(),
                         _FilaDato(
@@ -256,6 +260,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                           ),
                           onGuardar: () => _guardarCampo(perfil),
                           onCancelar: _cancelarEdicion,
+                          formateadores: Validadores.telefono,
                         ),
                       ],
                     ),
@@ -352,6 +357,7 @@ class _FilaDato extends StatelessWidget {
     this.onEditar,
     this.onGuardar,
     this.onCancelar,
+    this.formateadores,
   });
 
   final IconData icono;
@@ -364,6 +370,7 @@ class _FilaDato extends StatelessWidget {
   final VoidCallback? onEditar;
   final VoidCallback? onGuardar;
   final VoidCallback? onCancelar;
+  final List<TextInputFormatter>? formateadores;
 
   @override
   Widget build(BuildContext context) {

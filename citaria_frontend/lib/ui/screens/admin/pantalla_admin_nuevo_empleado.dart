@@ -9,6 +9,7 @@ import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
 import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
@@ -249,43 +250,35 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                   CampoFormulario(
                     controller: ctrlNombre,
                     etiqueta: 'Nombre *',
-                    validador: (v) {
-                      final t = v?.trim() ?? '';
-                      if (t.isEmpty) return 'El nombre es obligatorio';
-                      if (t.length < 2) return 'El nombre debe tener al menos 2 caracteres';
-                      if (t.length > 50) return 'El nombre no puede superar los 50 caracteres';
-                      return null;
-                    },
+                    formateadores: Validadores.nombrePersona,
+                    validador: (v) => Validadores.nombrePersonaValidador(v),
                   ),
                   const SizedBox(height: 16),
                   CampoFormulario(
                     controller: ctrlApellidos,
                     etiqueta: 'Apellidos *',
-                    validador: (v) {
-                      final t = v?.trim() ?? '';
-                      if (t.isEmpty) return 'Los apellidos son obligatorios';
-                      if (t.length > 100) return 'Los apellidos no pueden superar los 100 caracteres';
-                      return null;
-                    },
+                    formateadores: Validadores.nombrePersona,
+                    validador: (v) => Validadores.nombrePersonaValidador(
+                      v,
+                      campo: 'Los apellidos',
+                      min: 1,
+                      max: 100,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   CampoFormulario(
                     controller: ctrlEmail,
                     etiqueta: 'Email',
                     teclado: TextInputType.emailAddress,
+                    validador: (v) => Validadores.emailValidador(v),
                   ),
                   const SizedBox(height: 16),
                   CampoFormulario(
                     controller: ctrlTelefono,
                     etiqueta: 'Teléfono',
                     teclado: TextInputType.phone,
-                    validador: (v) {
-                      final t = v?.trim() ?? '';
-                      if (t.isEmpty) return null;
-                      if (t.length < 9) return 'El teléfono debe tener al menos 9 caracteres';
-                      if (t.length > 15) return 'El teléfono no puede superar los 15 caracteres';
-                      return null;
-                    },
+                    formateadores: Validadores.telefono,
+                    validador: (v) => Validadores.telefonoValidador(v),
                   ),
                   const SizedBox(height: 28),
                   SeccionHorarioSemanal(

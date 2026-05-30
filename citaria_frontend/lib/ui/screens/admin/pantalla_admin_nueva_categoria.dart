@@ -4,6 +4,7 @@ import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -105,9 +106,9 @@ class _PantallaAdminNuevaCategoriaState
                     TextFormField(
                       controller: _ctrlNombre,
                       textInputAction: TextInputAction.done,
-                      validator: (valor) => valor == null || valor.trim().isEmpty
-                          ? 'El nombre es obligatorio'
-                          : null,
+                      inputFormatters: Validadores.nombreCatalogo,
+                      validator: (valor) =>
+                          Validadores.obligatorioValidador(valor),
                       decoration: InputDecoration(
                         labelText: 'Nombre *',
                         border: OutlineInputBorder(

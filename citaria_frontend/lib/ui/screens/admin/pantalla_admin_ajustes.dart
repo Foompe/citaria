@@ -10,6 +10,7 @@ import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_ajustes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -557,7 +558,13 @@ class _DialogoEditarEmpresaState extends State<_DialogoEditarEmpresa> {
                   },
                 ),
                 const SizedBox(height: 12),
-                CampoFormulario(controller: _ctrlTelefono, etiqueta: 'Teléfono'),
+                CampoFormulario(
+                  controller: _ctrlTelefono,
+                  etiqueta: 'Teléfono',
+                  teclado: TextInputType.phone,
+                  formateadores: Validadores.telefono,
+                  validador: (valor) => Validadores.telefonoValidador(valor),
+                ),
                 const SizedBox(height: 12),
                 CampoFormulario(controller: _ctrlCif, etiqueta: 'CIF'),
                 const SizedBox(height: 12),

@@ -7,6 +7,7 @@ import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -269,9 +270,8 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   CampoFormulario(
                     controller: ctrlNombre,
                     etiqueta: 'Nombre *',
-                    validador: (v) => (v == null || v.trim().isEmpty)
-                        ? 'El nombre es obligatorio'
-                        : null,
+                    formateadores: Validadores.nombreCatalogo,
+                    validador: (v) => Validadores.obligatorioValidador(v),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -290,7 +290,8 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     controller: ctrlPrecio,
                     etiqueta: 'Precio *',
                     teclado: const TextInputType.numberWithOptions(decimal: true),
-                    validador: _validarPrecio,
+                    formateadores: Validadores.precio,
+                    validador: Validadores.precioValidador,
                   ),
                   const SizedBox(height: 16),
 
@@ -413,10 +414,4 @@ class _ContenidoNuevoServicio extends StatelessWidget {
     );
   }
 
-  String? _validarPrecio(String? valor) {
-    final String texto = valor?.trim().replaceAll(',', '.') ?? '';
-    final double? precio = double.tryParse(texto);
-    if (precio == null || precio <= 0) return 'Introduce un precio válido';
-    return null;
-  }
 }

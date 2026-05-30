@@ -5,6 +5,7 @@ import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -337,10 +338,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           // ── Campos de texto ───────────────────────────────────────────────
           TextFormField(
             controller: ctrlNombre,
-            validator: (valor) =>
-                valor == null || valor.trim().isEmpty
-                    ? 'El nombre es obligatorio'
-                    : null,
+            inputFormatters: Validadores.nombreCatalogo,
+            validator: (valor) => Validadores.obligatorioValidador(valor),
             decoration: InputDecoration(
               labelText: 'Nombre *',
               border: OutlineInputBorder(borderRadius: espaciado.radioInput),
@@ -361,7 +360,8 @@ class _CuerpoDetalleServicio extends StatelessWidget {
             controller: ctrlPrecio,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
-            validator: _validarPrecio,
+            inputFormatters: Validadores.precio,
+            validator: Validadores.precioValidador,
             decoration: InputDecoration(
               labelText: 'Precio *',
               border: OutlineInputBorder(borderRadius: espaciado.radioInput),
@@ -497,11 +497,5 @@ class _CuerpoDetalleServicio extends StatelessWidget {
     );
   }
 
-  String? _validarPrecio(String? valor) {
-    final String texto = valor?.trim().replaceAll(',', '.') ?? '';
-    final double? precio = double.tryParse(texto);
-    if (precio == null || precio <= 0) return 'Introduce un precio válido';
-    return null;
-  }
 }
 

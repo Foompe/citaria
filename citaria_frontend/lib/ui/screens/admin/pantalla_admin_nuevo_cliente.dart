@@ -7,6 +7,7 @@ import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
@@ -207,33 +208,30 @@ class _PantallaAdminNuevoClienteState
                     CampoFormulario(
                       controller: _ctrlNombre,
                       etiqueta: 'Nombre *',
-                      validador: (v) {
-                        final t = v?.trim() ?? '';
-                        if (t.isEmpty) return 'El nombre es obligatorio';
-                        if (t.length < 2) return 'El nombre debe tener al menos 2 caracteres';
-                        if (t.length > 50) return 'El nombre no puede superar los 50 caracteres';
-                        return null;
-                      },
+                      formateadores: Validadores.nombrePersona,
+                      validador: (v) => Validadores.nombrePersonaValidador(v),
                     ),
                     const SizedBox(height: 16),
 
                     CampoFormulario(
                       controller: _ctrlApellidos,
                       etiqueta: 'Apellidos',
-                      validador: (v) {
-                        if ((v?.trim().length ?? 0) > 100) return 'Los apellidos no pueden superar los 100 caracteres';
-                        return null;
-                      },
+                      formateadores: Validadores.nombrePersona,
+                      validador: (v) => Validadores.nombrePersonaValidador(
+                        v,
+                        campo: 'Los apellidos',
+                        min: 1,
+                        max: 100,
+                        obligatorio: false,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
                     CampoFormulario(
                       controller: _ctrlDni,
                       etiqueta: 'Documento de identidad',
-                      validador: (v) {
-                        if ((v?.trim().length ?? 0) > 9) return 'El documento no puede superar los 9 caracteres';
-                        return null;
-                      },
+                      formateadores: Validadores.dni,
+                      validador: Validadores.dniValidador,
                     ),
                     const SizedBox(height: 16),
 
@@ -241,6 +239,7 @@ class _PantallaAdminNuevoClienteState
                       controller: _ctrlEmail,
                       etiqueta: 'Email',
                       teclado: TextInputType.emailAddress,
+                      validador: (v) => Validadores.emailValidador(v),
                     ),
                     const SizedBox(height: 16),
 
@@ -248,13 +247,8 @@ class _PantallaAdminNuevoClienteState
                       controller: _ctrlTelefono,
                       etiqueta: 'Teléfono',
                       teclado: TextInputType.phone,
-                      validador: (v) {
-                        final t = v?.trim() ?? '';
-                        if (t.isEmpty) return null;
-                        if (t.length < 9) return 'El teléfono debe tener al menos 9 caracteres';
-                        if (t.length > 15) return 'El teléfono no puede superar los 15 caracteres';
-                        return null;
-                      },
+                      formateadores: Validadores.telefono,
+                      validador: (v) => Validadores.telefonoValidador(v),
                     ),
                     const SizedBox(height: 16),
 

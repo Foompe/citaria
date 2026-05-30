@@ -5,6 +5,8 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/ui/utils/validadores.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 /// P05 — Registro.
 ///
@@ -116,6 +118,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 controller: _controladorNombre,
                 hint: 'Nombre',
                 inputType: TextInputType.name,
+                formateadores: Validadores.nombrePersona,
               ),
               const SizedBox(height: 14),
               _CampoFormulario(
@@ -123,6 +126,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 controller: _controladorApellidos,
                 hint: 'Apellidos',
                 inputType: TextInputType.name,
+                formateadores: Validadores.nombrePersona,
               ),
               const SizedBox(height: 14),
               _CampoFormulario(
@@ -130,6 +134,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 controller: _controladorDni,
                 hint: '00000000X',
                 inputType: TextInputType.text,
+                formateadores: Validadores.dni,
               ),
               const SizedBox(height: 14),
               _CampoFormulario(
@@ -144,6 +149,7 @@ class _PantallaRegistroState extends State<PantallaRegistro> {
                 controller: _controladorTelefono,
                 hint: '+34 600 000 000',
                 inputType: TextInputType.phone,
+                formateadores: Validadores.telefono,
               ),
               const SizedBox(height: 14),
               _CampoPassword(
@@ -229,12 +235,14 @@ class _CampoFormulario extends StatelessWidget {
     required this.controller,
     required this.hint,
     required this.inputType,
+    this.formateadores,
   });
 
   final String label;
   final TextEditingController controller;
   final String hint;
   final TextInputType inputType;
+  final List<TextInputFormatter>? formateadores;
 
   @override
   Widget build(BuildContext context) {
@@ -247,6 +255,7 @@ class _CampoFormulario extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: inputType,
+          inputFormatters: formateadores,
           decoration: InputDecoration(hintText: hint),
         ),
       ],
