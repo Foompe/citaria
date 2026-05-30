@@ -231,20 +231,29 @@ class _BarraAcciones extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: ElevatedButton(
-              onPressed: hayCambio && !cargando
-                  ? () => _confirmar(context, id)
-                  : null,
-              child: cargando
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Theme.of(context).colorScheme.onPrimary,
+            child: GestureDetector(
+              onTap: hayCambio
+                  ? null
+                  : () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('No hay cambios que confirmar'),
                       ),
-                    )
-                  : const Text('Confirmar'),
+                    ),
+              child: ElevatedButton(
+                onPressed: hayCambio && !cargando
+                    ? () => _confirmar(context, id)
+                    : null,
+                child: cargando
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      )
+                    : const Text('Confirmar'),
+              ),
             ),
           ),
           const SizedBox(width: 12),

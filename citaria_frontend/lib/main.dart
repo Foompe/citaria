@@ -185,7 +185,7 @@ class AplicacionCitaria extends StatelessWidget {
               );
             }
             if (nombreRuta.startsWith('/admin/reservas/')) {
-              return MaterialPageRoute(
+              return MaterialPageRoute<bool>(
                 settings: settings,
                 builder: (_) => const PantallaAdminDetalleReserva(),
               );
