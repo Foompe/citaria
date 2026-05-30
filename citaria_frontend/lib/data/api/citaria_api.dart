@@ -100,7 +100,7 @@ class CitariaApi {
 
       return _procesarRespuesta(respuesta);
     } on SocketException {
-      throw ExcepcionApi('Sin conexión a internet.', 0);
+      throw const ExcepcionApi('Sin conexión a internet.', 0);
     }
   }
 

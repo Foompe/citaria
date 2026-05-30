@@ -111,6 +111,10 @@ class _PantallaAdminNuevoEmpleadoState
       );
     }
 
+    if (!mounted) {
+      return;
+    }
+
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Empleado creado')));

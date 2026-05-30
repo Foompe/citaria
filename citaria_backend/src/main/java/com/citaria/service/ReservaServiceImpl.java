@@ -34,6 +34,7 @@ public class ReservaServiceImpl implements ReservaService {
     private final EmpleadoDAO empleadoDAO;
     private final EmpleadoSkillDAO empleadoSkillDAO;
     private final ServicioSkillDAO servicioSkillDAO;
+    private final HorarioEmpleadoDAO horarioEmpleadoDAO;
     private final ContextoSeguridad contextoSeguridad;
 
     @Autowired
@@ -44,6 +45,7 @@ public class ReservaServiceImpl implements ReservaService {
                               EmpleadoDAO empleadoDAO,
                               EmpleadoSkillDAO empleadoSkillDAO,
                               ServicioSkillDAO servicioSkillDAO,
+                              HorarioEmpleadoDAO horarioEmpleadoDAO,
                               ContextoSeguridad contextoSeguridad) {
         this.reservaDAO = reservaDAO;
         this.reservaServicioDAO = reservaServicioDAO;
@@ -52,6 +54,7 @@ public class ReservaServiceImpl implements ReservaService {
         this.empleadoDAO = empleadoDAO;
         this.empleadoSkillDAO = empleadoSkillDAO;
         this.servicioSkillDAO = servicioSkillDAO;
+        this.horarioEmpleadoDAO = horarioEmpleadoDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
 
@@ -167,10 +170,6 @@ public class ReservaServiceImpl implements ReservaService {
                     "Has alcanzado el límite de 5 reservas activas. Cancela alguna para poder hacer una nueva");
         }
 
-        // Resolver empleado — manual o automático
-        Empleado empleado = buscarEmpleadoDisponible(dto, organizacion);
-        empleadoDAO.findByIdConLock(empleado.getId());
-
         List<Servicio> servicios = servicioDAO.findAllById(dto.getServicioIds());
         LocalTime horaFinReserva = dto.getHoraInicio();
         for (Servicio servicio : servicios) {
@@ -180,6 +179,10 @@ public class ReservaServiceImpl implements ReservaService {
             }
             horaFinReserva = horaFinReserva.plusMinutes(servicio.getDuracionMinutos());
         }
+
+        // Resolver empleado — manual o automático
+        Empleado empleado = buscarEmpleadoDisponible(dto, organizacion, horaFinReserva);
+        empleadoDAO.findByIdConLock(empleado.getId());
 
         long solapamientos = reservaServicioDAO.contarSolapamientos(
                 empleado.getId(), dto.getFecha(), dto.getHoraInicio(), horaFinReserva);
@@ -208,7 +211,7 @@ public class ReservaServiceImpl implements ReservaService {
     /**
      * Busca el empleado para la reserva.
      */
-    private Empleado buscarEmpleadoDisponible(ReservaDTO dto, Organizacion organizacion) {
+    private Empleado buscarEmpleadoDisponible(ReservaDTO dto, Organizacion organizacion, LocalTime horaFinReserva) {
         if (dto.getEmpleadoId() != null) {
             Optional<Empleado> empleadoOptional = empleadoDAO.findById(dto.getEmpleadoId());
             if (empleadoOptional.isEmpty()) {
@@ -219,9 +222,10 @@ public class ReservaServiceImpl implements ReservaService {
             return empleado;
         }
 
-        // Asignación automática — menor carga entre empleados válidos
+        // Asignación automática — menor carga entre empleados realmente disponibles
         List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(dto.getServicioIds());
         List<Empleado> candidatos = empleadoDAO.findByOrganizacionAndActivo(organizacion, true);
+        int diaSemana = dto.getFecha().getDayOfWeek().getValue();
 
         Empleado seleccionado = null;
         long menorCarga = Long.MAX_VALUE;
@@ -234,6 +238,14 @@ public class ReservaServiceImpl implements ReservaService {
                     continue;
                 }
             }
+            if (!trabajaEnFranja(candidato, diaSemana, dto.getHoraInicio(), horaFinReserva)) {
+                continue;
+            }
+            long solapamientos = reservaServicioDAO.contarSolapamientos(
+                    candidato.getId(), dto.getFecha(), dto.getHoraInicio(), horaFinReserva);
+            if (solapamientos > 0) {
+                continue;
+            }
             long carga = reservaServicioDAO.contarReservasPorEmpleadoYFecha(candidato.getId(), dto.getFecha());
             if (carga < menorCarga) {
                 menorCarga = carga;
@@ -245,6 +257,21 @@ public class ReservaServiceImpl implements ReservaService {
             throw new IllegalStateException("No hay ningún empleado disponible con las skills requeridas para esa fecha");
         }
         return seleccionado;
+    }
+
+    /**
+     * Comprueba que el empleado trabaja ese día de la semana y que la franja
+     * solicitada cabe dentro de su jornada activa.
+     */
+    private boolean trabajaEnFranja(Empleado empleado, int diaSemana, LocalTime horaInicio, LocalTime horaFin) {
+        Optional<HorarioEmpleado> horarioOptional = horarioEmpleadoDAO
+                .findByEmpleadoAndDiaSemanaAndActivo(empleado, diaSemana, true);
+        if (horarioOptional.isEmpty()) {
+            return false;
+        }
+        HorarioEmpleado horario = horarioOptional.get();
+        return !horaInicio.isBefore(horario.getHoraInicio())
+                && !horaFin.isAfter(horario.getHoraFin());
     }
 
     /**

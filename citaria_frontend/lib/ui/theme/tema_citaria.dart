@@ -32,7 +32,6 @@ const Color _accentStrong = Color(0xFFA6845A); // beis oscuro reforzado
 const Color _accentSoft = Color(0x1FC4A882);   // beis oscuro suave (12%)
 // ignore: unused_element
 const Color _accentTint = Color(0x0FC4A882);   // beis oscuro muy suave (6%)
-const Color _beisClaro = Color(0xFFF2E6D0);    // beis claro
 
 // Semánticos
 const Color _danger = Color(0xFFA82828);

@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:flutter/material.dart';
 
-typedef _CambiarContrasena = Future<String?> Function(
+typedef CambiarContrasena = Future<String?> Function(
   String passwordActual,
   String passwordNueva,
 );
@@ -12,7 +12,7 @@ typedef _CambiarContrasena = Future<String?> Function(
 class DialogoCambiarContrasena extends StatefulWidget {
   const DialogoCambiarContrasena({super.key, required this.onCambiar});
 
-  final _CambiarContrasena onCambiar;
+  final CambiarContrasena onCambiar;
 
   @override
   State<DialogoCambiarContrasena> createState() =>

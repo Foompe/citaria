@@ -405,7 +405,7 @@ class _Seccion extends StatelessWidget {
                 ),
               ),
             ),
-            if (accion != null) accion!,
+            ?accion,
           ],
         ),
         SizedBox(height: accion == null ? 8 : 4),
