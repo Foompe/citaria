@@ -439,8 +439,13 @@ class _PanelReservasDia extends StatelessWidget {
               empleado: r.empleado,
               hora: r.hora,
               precio: r.precio,
-              onTap: () =>
-                  GestorNavegacion.irAAdminDetalleReserva(context, r.id),
+              onTap: () async {
+                final cambiado =
+                    await GestorNavegacion.irAAdminDetalleReserva(context, r.id);
+                if (cambiado == true && context.mounted) {
+                  context.read<ViewModelAdminCalendario>().refrescar();
+                }
+              },
             );
           },
         ),

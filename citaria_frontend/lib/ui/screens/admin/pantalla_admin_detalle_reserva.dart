@@ -270,7 +270,7 @@ class _BarraAcciones extends StatelessWidget {
     final bool ok = await vm.cambiarEstadoReserva(id, estado);
     if (!context.mounted) return;
     if (ok) {
-      Navigator.maybePop(context);
+      Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Estado actualizado')),
       );

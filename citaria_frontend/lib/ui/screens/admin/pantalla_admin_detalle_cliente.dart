@@ -260,6 +260,7 @@ class _CuerpoDetalleCliente extends StatelessWidget {
             children: [
               _TabDatos(cliente: cliente),
               _TabReservas(
+                clienteId: clienteId!,
                 reservas: reservas,
                 clienteNombre: cliente.nombreCompleto,
               ),
@@ -617,10 +618,12 @@ class _FilaDatoAdmin extends StatelessWidget {
 
 class _TabReservas extends StatelessWidget {
   const _TabReservas({
+    required this.clienteId,
     required this.reservas,
     required this.clienteNombre,
   });
 
+  final int clienteId;
   final List<DtoReservaClienteAdmin> reservas;
   final String clienteNombre;
 
@@ -647,8 +650,15 @@ class _TabReservas extends StatelessWidget {
           empleado: reserva.empleado,
           hora: reserva.hora,
           precio: reserva.precio,
-          onTap: () =>
-              GestorNavegacion.irAAdminDetalleReserva(context, reserva.id),
+          onTap: () async {
+            final cambiado =
+                await GestorNavegacion.irAAdminDetalleReserva(context, reserva.id);
+            if (cambiado == true && context.mounted) {
+              context.read<ViewModelAdminClientes>().cargarDetalleCliente(
+                clienteId,
+              );
+            }
+          },
         );
       },
     );

@@ -282,10 +282,15 @@ class _ListaReservasAdminState extends State<_ListaReservasAdmin> {
             empleado: reserva.empleado,
             hora: reserva.fechaHoraTexto,
             precio: reserva.precio,
-            onTap: () => GestorNavegacion.irAAdminDetalleReserva(
-              context,
-              reserva.id,
-            ),
+            onTap: () async {
+              final cambiado = await GestorNavegacion.irAAdminDetalleReserva(
+                context,
+                reserva.id,
+              );
+              if (cambiado == true && context.mounted) {
+                context.read<ViewModelAdminReservas>().refrescar();
+              }
+            },
           );
         },
       ),

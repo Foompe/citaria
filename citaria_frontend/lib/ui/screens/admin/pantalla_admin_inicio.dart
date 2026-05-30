@@ -697,10 +697,15 @@ class _GridReservas extends StatelessWidget {
               clipBehavior: Clip.hardEdge,
               child: InkWell(
                 borderRadius: espaciado.radioInput,
-                onTap: () => GestorNavegacion.irAAdminDetalleReserva(
-                  context,
-                  reserva.id.toString(),
-                ),
+                onTap: () async {
+                  final cambiado = await GestorNavegacion.irAAdminDetalleReserva(
+                    context,
+                    reserva.id.toString(),
+                  );
+                  if (cambiado == true && context.mounted) {
+                    context.read<ViewModelAdminInicio>().refrescar();
+                  }
+                },
                 child: Ink(
                   decoration: BoxDecoration(
                     color: colores.fondo,

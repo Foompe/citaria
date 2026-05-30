@@ -293,8 +293,8 @@ class GestorNavegacion {
     );
   }
 
-  static void irAAdminDetalleReserva(BuildContext context, String id) =>
-      Navigator.pushNamed(
+  static Future<bool?> irAAdminDetalleReserva(BuildContext context, String id) =>
+      Navigator.pushNamed<bool>(
         context,
         Rutas.adminDetalleReserva,
         arguments: {'id': id},
