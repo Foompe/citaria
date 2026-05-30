@@ -1,14 +1,14 @@
 package com.citaria.service;
 
 import com.citaria.dto.EmpleadoDTO;
-import com.citaria.dto.EmpleadoSkillDTO;
+import com.citaria.dto.EmpleadoHabilidadDTO;
 import com.citaria.dto.HorarioEmpleadoDTO;
 import com.citaria.dto.ReservaDTO;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Servicio de gestión de empleados: horarios y skills.
+ * Servicio de gestión de empleados: horarios y habilidades.
  */
 public interface EmpleadoService {
 
@@ -26,9 +26,9 @@ public interface EmpleadoService {
     HorarioEmpleadoDTO actualizarHorario(Integer empleadoId, Integer id, HorarioEmpleadoDTO dto);
     void eliminarHorario(Integer empleadoId, Integer id);
 
-    // Skills empleado
-    List<EmpleadoSkillDTO> obtenerSkillsPorEmpleado(Integer empleadoId);
-    EmpleadoSkillDTO asignarSkill(Integer empleadoId, Integer skillId);
-    void eliminarSkill(Integer empleadoId, Integer skillId);
+    // Habilidades empleado
+    List<EmpleadoHabilidadDTO> obtenerHabilidadesPorEmpleado(Integer empleadoId);
+    EmpleadoHabilidadDTO asignarHabilidad(Integer empleadoId, Integer habilidadId);
+    void eliminarHabilidad(Integer empleadoId, Integer habilidadId);
 
 }

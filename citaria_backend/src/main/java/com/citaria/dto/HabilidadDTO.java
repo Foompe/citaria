@@ -3,9 +3,9 @@ package com.citaria.dto;
 import jakarta.validation.constraints.*;
 
 /**
- * DTO de datos de skill.
+ * DTO de datos de habilidad.
  */
-public class SkillDTO {
+public class HabilidadDTO {
 
     private Integer id;
     private Integer organizacionId;

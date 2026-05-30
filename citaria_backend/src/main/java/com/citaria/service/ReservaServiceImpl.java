@@ -32,8 +32,8 @@ public class ReservaServiceImpl implements ReservaService {
     private final ClienteDAO clienteDAO;
     private final ServicioDAO servicioDAO;
     private final EmpleadoDAO empleadoDAO;
-    private final EmpleadoSkillDAO empleadoSkillDAO;
-    private final ServicioSkillDAO servicioSkillDAO;
+    private final EmpleadoHabilidadDAO empleadoHabilidadDAO;
+    private final ServicioHabilidadDAO servicioHabilidadDAO;
     private final HorarioEmpleadoDAO horarioEmpleadoDAO;
     private final ContextoSeguridad contextoSeguridad;
 
@@ -43,8 +43,8 @@ public class ReservaServiceImpl implements ReservaService {
                               ClienteDAO clienteDAO,
                               ServicioDAO servicioDAO,
                               EmpleadoDAO empleadoDAO,
-                              EmpleadoSkillDAO empleadoSkillDAO,
-                              ServicioSkillDAO servicioSkillDAO,
+                              EmpleadoHabilidadDAO empleadoHabilidadDAO,
+                              ServicioHabilidadDAO servicioHabilidadDAO,
                               HorarioEmpleadoDAO horarioEmpleadoDAO,
                               ContextoSeguridad contextoSeguridad) {
         this.reservaDAO = reservaDAO;
@@ -52,8 +52,8 @@ public class ReservaServiceImpl implements ReservaService {
         this.clienteDAO = clienteDAO;
         this.servicioDAO = servicioDAO;
         this.empleadoDAO = empleadoDAO;
-        this.empleadoSkillDAO = empleadoSkillDAO;
-        this.servicioSkillDAO = servicioSkillDAO;
+        this.empleadoHabilidadDAO = empleadoHabilidadDAO;
+        this.servicioHabilidadDAO = servicioHabilidadDAO;
         this.horarioEmpleadoDAO = horarioEmpleadoDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
@@ -139,7 +139,7 @@ public class ReservaServiceImpl implements ReservaService {
 
     /**
      * Si no se indica empleadoId en el DTO, el sistema asigna automáticamente
-     * al empleado con menos reservas ese día que cumpla los requisitos de skill.
+     * al empleado con menos reservas ese día que cumpla los requisitos de habilidad.
      */
     @Override
     @Transactional
@@ -223,7 +223,7 @@ public class ReservaServiceImpl implements ReservaService {
         }
 
         // Asignación automática — menor carga entre empleados realmente disponibles
-        List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(dto.getServicioIds());
+        List<Integer> habilidadesRequeridas = servicioHabilidadDAO.obtenerHabilidadIdsRequeridas(dto.getServicioIds());
         List<Empleado> candidatos = empleadoDAO.findByOrganizacionAndActivo(organizacion, true);
         int diaSemana = dto.getFecha().getDayOfWeek().getValue();
 
@@ -231,10 +231,10 @@ public class ReservaServiceImpl implements ReservaService {
         long menorCarga = Long.MAX_VALUE;
 
         for (Empleado candidato : candidatos) {
-            if (!skillsRequeridas.isEmpty()) {
-                long skillsQueElEmpleadoTiene = empleadoSkillDAO
-                        .contarSkillsQueCoinciden(candidato, skillsRequeridas);
-                if (skillsQueElEmpleadoTiene < skillsRequeridas.size()) {
+            if (!habilidadesRequeridas.isEmpty()) {
+                long habilidadesQueElEmpleadoTiene = empleadoHabilidadDAO
+                        .contarHabilidadesQueCoinciden(candidato, habilidadesRequeridas);
+                if (habilidadesQueElEmpleadoTiene < habilidadesRequeridas.size()) {
                     continue;
                 }
             }
@@ -254,7 +254,7 @@ public class ReservaServiceImpl implements ReservaService {
         }
 
         if (seleccionado == null) {
-            throw new IllegalStateException("No hay ningún empleado disponible con las skills requeridas para esa fecha");
+            throw new IllegalStateException("No hay ningún empleado disponible con las habilidades requeridas para esa fecha");
         }
         return seleccionado;
     }

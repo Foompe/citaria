@@ -8,17 +8,17 @@ import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class PantallaAdminDetalleSkill extends StatefulWidget {
-  const PantallaAdminDetalleSkill({super.key, required this.id});
+class PantallaAdminDetalleHabilidad extends StatefulWidget {
+  const PantallaAdminDetalleHabilidad({super.key, required this.id});
 
   final int id;
 
   @override
-  State<PantallaAdminDetalleSkill> createState() =>
-      _PantallaAdminDetalleSkillState();
+  State<PantallaAdminDetalleHabilidad> createState() =>
+      _PantallaAdminDetalleHabilidadState();
 }
 
-class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
+class _PantallaAdminDetalleHabilidadState extends State<PantallaAdminDetalleHabilidad> {
   final _formKey = GlobalKey<FormState>();
   final _ctrlNombre = TextEditingController();
   final _ctrlDescripcion = TextEditingController();
@@ -32,7 +32,7 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
     _viewModel = ViewModelAdminCatalogo(
       repoCatalogo: context.read<RepoCatalogo>(),
       autenticacion: context.read<ViewModelAutenticacion>(),
-    )..cargarDetalleSkill(widget.id);
+    )..cargarDetalleHabilidad(widget.id);
   }
 
   @override
@@ -48,7 +48,7 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
       return;
     }
 
-    final skill = await _viewModel.actualizarSkill(
+    final habilidad = await _viewModel.actualizarHabilidad(
       id: widget.id,
       nombre: _ctrlNombre.text,
       descripcion: _ctrlDescripcion.text,
@@ -59,29 +59,29 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
       return;
     }
 
-    if (skill == null) {
-      _mostrarError('No se pudo guardar la skill.');
+    if (habilidad == null) {
+      _mostrarError('No se pudo guardar la habilidad.');
       return;
     }
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Skill guardada')));
+    ).showSnackBar(const SnackBar(content: Text('Habilidad guardada')));
     Navigator.pop(context, true);
   }
 
   Future<void> _desactivar() async {
-    final bool ok = await _viewModel.desactivarSkill(widget.id);
+    final bool ok = await _viewModel.desactivarHabilidad(widget.id);
     if (!mounted) {
       return;
     }
     if (!ok) {
-      _mostrarError('No se pudo desactivar la skill.');
+      _mostrarError('No se pudo desactivar la habilidad.');
       return;
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Skill desactivada')));
+    ).showSnackBar(const SnackBar(content: Text('Habilidad desactivada')));
     Navigator.pop(context, true);
   }
 
@@ -99,7 +99,7 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
       value: _viewModel,
       child: Consumer<ViewModelAdminCatalogo>(
         builder: (context, vmCatalogo, _) {
-          final detalle = vmCatalogo.detalleSkill;
+          final detalle = vmCatalogo.detalleHabilidad;
           if (detalle != null && !_sincronizado) {
             _ctrlNombre.text = detalle.nombre;
             _ctrlDescripcion.text = detalle.descripcion == 'Sin descripción'
@@ -131,9 +131,9 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
               bottom: false,
               child: NestedScrollView(
                 headerSliverBuilder: (_, _) => [
-                  const CabeceraTituloGrande(titulo: 'Skill'),
+                  const CabeceraTituloGrande(titulo: 'Habilidad'),
                 ],
-                body: _CuerpoDetalleSkill(
+                body: _CuerpoDetalleHabilidad(
                   detalle: detalle,
                   cargando: vmCatalogo.cargando,
                   error: vmCatalogo.error,
@@ -143,7 +143,7 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
                   ctrlDescripcion: _ctrlDescripcion,
                   activo: _activo,
                   onActivoChanged: (valor) => setState(() => _activo = valor),
-                  onReintentar: () => vmCatalogo.cargarDetalleSkill(widget.id),
+                  onReintentar: () => vmCatalogo.cargarDetalleHabilidad(widget.id),
                   onDesactivar: detalle == null ? null : _desactivar,
                 ),
               ),
@@ -155,8 +155,8 @@ class _PantallaAdminDetalleSkillState extends State<PantallaAdminDetalleSkill> {
   }
 }
 
-class _CuerpoDetalleSkill extends StatelessWidget {
-  const _CuerpoDetalleSkill({
+class _CuerpoDetalleHabilidad extends StatelessWidget {
+  const _CuerpoDetalleHabilidad({
     required this.detalle,
     required this.cargando,
     required this.error,
@@ -170,7 +170,7 @@ class _CuerpoDetalleSkill extends StatelessWidget {
     required this.onDesactivar,
   });
 
-  final DtoSkillCatalogoAdmin? detalle;
+  final DtoHabilidadCatalogoAdmin? detalle;
   final bool cargando;
   final String? error;
   final EspaciadoCitaria espaciado;
@@ -198,7 +198,7 @@ class _CuerpoDetalleSkill extends StatelessWidget {
     }
     if (detalle == null) {
       return EstadoCentrado(
-        mensaje: 'No se ha encontrado la skill.',
+        mensaje: 'No se ha encontrado la habilidad.',
         accionTexto: 'Reintentar',
         onAccion: onReintentar,
       );
@@ -243,7 +243,7 @@ class _CuerpoDetalleSkill extends StatelessWidget {
               side: BorderSide(color: colorScheme.error),
             ),
             onPressed: onDesactivar,
-            child: const Text('Desactivar skill'),
+            child: const Text('Desactivar habilidad'),
           ),
         ],
       ),

@@ -7,15 +7,15 @@ import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class PantallaAdminNuevaSkill extends StatefulWidget {
-  const PantallaAdminNuevaSkill({super.key});
+class PantallaAdminNuevaHabilidad extends StatefulWidget {
+  const PantallaAdminNuevaHabilidad({super.key});
 
   @override
-  State<PantallaAdminNuevaSkill> createState() =>
-      _PantallaAdminNuevaSkillState();
+  State<PantallaAdminNuevaHabilidad> createState() =>
+      _PantallaAdminNuevaHabilidadState();
 }
 
-class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
+class _PantallaAdminNuevaHabilidadState extends State<PantallaAdminNuevaHabilidad> {
   final _formKey = GlobalKey<FormState>();
   final _ctrlNombre = TextEditingController();
   final _ctrlDescripcion = TextEditingController();
@@ -38,12 +38,12 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
     super.dispose();
   }
 
-  Future<void> _crearSkill() async {
+  Future<void> _crearHabilidad() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
-    final skill = await _viewModel.crearSkill(
+    final habilidad = await _viewModel.crearHabilidad(
       nombre: _ctrlNombre.text,
       descripcion: _ctrlDescripcion.text,
     );
@@ -52,10 +52,10 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
       return;
     }
 
-    if (skill == null) {
+    if (habilidad == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_viewModel.error ?? 'No se pudo crear la skill.'),
+          content: Text(_viewModel.error ?? 'No se pudo crear la habilidad.'),
         ),
       );
       return;
@@ -63,7 +63,7 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
 
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Skill creada')));
+    ).showSnackBar(const SnackBar(content: Text('Habilidad creada')));
     Navigator.pop(context, true);
   }
 
@@ -79,14 +79,14 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: vmCatalogo.cargando ? null : _crearSkill,
+                onPressed: vmCatalogo.cargando ? null : _crearHabilidad,
                 child: vmCatalogo.cargando
                     ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Crear skill'),
+                    : const Text('Crear habilidad'),
               ),
             ),
           ),
@@ -94,7 +94,7 @@ class _PantallaAdminNuevaSkillState extends State<PantallaAdminNuevaSkill> {
             bottom: false,
             child: NestedScrollView(
               headerSliverBuilder: (_, _) => [
-                const CabeceraTituloGrande(titulo: 'Nueva skill'),
+                const CabeceraTituloGrande(titulo: 'Nueva habilidad'),
               ],
               body: Form(
                 key: _formKey,

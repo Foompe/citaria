@@ -141,19 +141,19 @@ class _PantallaDetalleServicioState extends State<PantallaDetalleServicio> {
                             ),
                           ),
                           if (widget.modoAdmin &&
-                              servicio.skills.isNotEmpty) ...[
+                              servicio.habilidades.isNotEmpty) ...[
                             const SizedBox(height: 20),
                             Text(
-                              'Skills requeridas',
+                              'Habilidades requeridas',
                               style: textTheme.labelSmall,
                             ),
                             const SizedBox(height: 8),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: servicio.skills
+                              children: servicio.habilidades
                                   .map(
-                                    (skill) => EtiquetaWizard(etiqueta: skill),
+                                    (habilidad) => EtiquetaWizard(etiqueta: habilidad),
                                   )
                                   .toList(),
                             ),

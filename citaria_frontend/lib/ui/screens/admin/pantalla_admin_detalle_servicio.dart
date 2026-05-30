@@ -2,7 +2,7 @@ import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
-import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
+import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
@@ -27,7 +27,7 @@ class _PantallaAdminDetalleServicioState
   final _ctrlNombre = TextEditingController();
   final _ctrlDescripcion = TextEditingController();
   final _ctrlPrecio = TextEditingController();
-  final Set<int> _skillsSeleccionadas = <int>{};
+  final Set<int> _habilidadesSeleccionadas = <int>{};
   late final ViewModelAdminCatalogo _viewModel;
   int? _categoriaSeleccionadaId;
   bool _activo = true;
@@ -67,9 +67,9 @@ class _PantallaAdminDetalleServicioState
     _ctrlPrecio.text = detalle.precio.toStringAsFixed(2);
     _categoriaSeleccionadaId = detalle.categoriaId;
     _activo = detalle.activo;
-    _skillsSeleccionadas
+    _habilidadesSeleccionadas
       ..clear()
-      ..addAll(detalle.skillIds);
+      ..addAll(detalle.habilidadIds);
     // Descomponer minutos totales en horas + minutos redondeados a 5
     final int total = detalle.duracionMinutos;
     _duracionHoras = total ~/ 60;
@@ -98,7 +98,7 @@ class _PantallaAdminDetalleServicioState
       duracion: _duracionTotalMinutos.toString(),
       categoriaId: _categoriaSeleccionadaId,
       activo: _activo,
-      skillIds: _skillsSeleccionadas,
+      habilidadIds: _habilidadesSeleccionadas,
     );
 
     if (!mounted) return;
@@ -131,12 +131,12 @@ class _PantallaAdminDetalleServicioState
     Navigator.pop(context, true);
   }
 
-  void _alternarSkill(int id) {
+  void _alternarHabilidad(int id) {
     setState(() {
-      if (_skillsSeleccionadas.contains(id)) {
-        _skillsSeleccionadas.remove(id);
+      if (_habilidadesSeleccionadas.contains(id)) {
+        _habilidadesSeleccionadas.remove(id);
       } else {
-        _skillsSeleccionadas.add(id);
+        _habilidadesSeleccionadas.add(id);
       }
     });
   }
@@ -215,13 +215,13 @@ class _PantallaAdminDetalleServicioState
               duracionHoras: _duracionHoras,
               duracionMinutos: _duracionMinutos,
               categorias: vmCatalogo.categorias,
-              skills: vmCatalogo.skills,
+              habilidades: vmCatalogo.habilidades,
               categoriaSeleccionadaId: _categoriaSeleccionadaId,
-              skillsSeleccionadas: _skillsSeleccionadas,
+              habilidadesSeleccionadas: _habilidadesSeleccionadas,
               activo: _activo,
               onCategoriaChanged: (id) =>
                   setState(() => _categoriaSeleccionadaId = id),
-              onSkillTap: _alternarSkill,
+              onHabilidadTap: _alternarHabilidad,
               onActivoChanged: (valor) => setState(() => _activo = valor),
               onHorasChanged: (h) => setState(() => _duracionHoras = h),
               onMinutosChanged: (m) => setState(() => _duracionMinutos = m),
@@ -253,12 +253,12 @@ class _CuerpoDetalleServicio extends StatelessWidget {
     required this.duracionHoras,
     required this.duracionMinutos,
     required this.categorias,
-    required this.skills,
+    required this.habilidades,
     required this.categoriaSeleccionadaId,
-    required this.skillsSeleccionadas,
+    required this.habilidadesSeleccionadas,
     required this.activo,
     required this.onCategoriaChanged,
-    required this.onSkillTap,
+    required this.onHabilidadTap,
     required this.onActivoChanged,
     required this.onHorasChanged,
     required this.onMinutosChanged,
@@ -278,12 +278,12 @@ class _CuerpoDetalleServicio extends StatelessWidget {
   final int duracionHoras;
   final int duracionMinutos;
   final List<DtoCategoriaCatalogoAdmin> categorias;
-  final List<DtoSkillCatalogoAdmin> skills;
+  final List<DtoHabilidadCatalogoAdmin> habilidades;
   final int? categoriaSeleccionadaId;
-  final Set<int> skillsSeleccionadas;
+  final Set<int> habilidadesSeleccionadas;
   final bool activo;
   final ValueChanged<int?> onCategoriaChanged;
-  final ValueChanged<int> onSkillTap;
+  final ValueChanged<int> onHabilidadTap;
   final ValueChanged<bool> onActivoChanged;
   final ValueChanged<int> onHorasChanged;
   final ValueChanged<int> onMinutosChanged;
@@ -451,19 +451,19 @@ class _CuerpoDetalleServicio extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
 
-          // ── Skills ────────────────────────────────────────────────────────
+          // ── Habilidades ────────────────────────────────────────────────────────
           const SizedBox(height: 24),
           Text(
-            'SKILLS REQUERIDAS',
+            'HABILIDADES REQUERIDAS',
             style: textTheme.labelSmall?.copyWith(
               color: colorScheme.outline,
               letterSpacing: 1.2,
             ),
           ),
           const SizedBox(height: 8),
-          if (skills.isEmpty)
+          if (habilidades.isEmpty)
             Text(
-              'Sin skills disponibles',
+              'Sin habilidades disponibles',
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.outline,
               ),
@@ -473,11 +473,11 @@ class _CuerpoDetalleServicio extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final skill in skills)
-                  ChipSkill(
-                    etiqueta: skill.nombre,
-                    seleccionado: skillsSeleccionadas.contains(skill.id),
-                    onTap: () => onSkillTap(skill.id),
+                for (final habilidad in habilidades)
+                  ChipHabilidad(
+                    etiqueta: habilidad.nombre,
+                    seleccionado: habilidadesSeleccionadas.contains(habilidad.id),
+                    onTap: () => onHabilidadTap(habilidad.id),
                   ),
               ],
             ),

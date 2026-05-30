@@ -1,7 +1,7 @@
 import 'package:citaria_frontend/data/models/categoria.dart';
 import 'package:citaria_frontend/data/models/servicio.dart';
-import 'package:citaria_frontend/data/models/servicio_skill.dart';
-import 'package:citaria_frontend/data/models/skill.dart';
+import 'package:citaria_frontend/data/models/servicio_habilidad.dart';
+import 'package:citaria_frontend/data/models/habilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
@@ -42,8 +42,8 @@ class DtoCategoriaCatalogoAdmin {
 }
 
 @immutable
-class DtoSkillCatalogoAdmin {
-  const DtoSkillCatalogoAdmin({
+class DtoHabilidadCatalogoAdmin {
+  const DtoHabilidadCatalogoAdmin({
     required this.id,
     required this.nombre,
     required this.descripcion,
@@ -66,7 +66,7 @@ class DtoDetalleServicioCatalogoAdmin {
     required this.duracionMinutos,
     required this.categoriaId,
     required this.activo,
-    required this.skillIds,
+    required this.habilidadIds,
     this.imagenUrl,
   });
 
@@ -77,7 +77,7 @@ class DtoDetalleServicioCatalogoAdmin {
   final int duracionMinutos;
   final int? categoriaId;
   final bool activo;
-  final Set<int> skillIds;
+  final Set<int> habilidadIds;
   final String? imagenUrl;
 }
 
@@ -95,14 +95,14 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
 
   List<Servicio> _servicios = const <Servicio>[];
   List<Categoria> _categorias = const <Categoria>[];
-  List<Skill> _skills = const <Skill>[];
+  List<Habilidad> _habilidades = const <Habilidad>[];
   DtoDetalleServicioCatalogoAdmin? _detalleServicio;
   DtoCategoriaCatalogoAdmin? _detalleCategoria;
-  DtoSkillCatalogoAdmin? _detalleSkill;
+  DtoHabilidadCatalogoAdmin? _detalleHabilidad;
 
   DtoDetalleServicioCatalogoAdmin? get detalleServicio => _detalleServicio;
   DtoCategoriaCatalogoAdmin? get detalleCategoria => _detalleCategoria;
-  DtoSkillCatalogoAdmin? get detalleSkill => _detalleSkill;
+  DtoHabilidadCatalogoAdmin? get detalleHabilidad => _detalleHabilidad;
 
   List<DtoServicioCatalogoAdmin> get servicios => _servicios
       .where((servicio) => servicio.id != null)
@@ -114,9 +114,9 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       .map(_crearDtoCategoria)
       .toList(growable: false);
 
-  List<DtoSkillCatalogoAdmin> get skills => _skills
-      .where((skill) => skill.id != null)
-      .map(_crearDtoSkill)
+  List<DtoHabilidadCatalogoAdmin> get habilidades => _habilidades
+      .where((habilidad) => habilidad.id != null)
+      .map(_crearDtoHabilidad)
       .toList(growable: false);
 
   Future<void> cargarCatalogo() async {
@@ -130,10 +130,10 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       final List<Categoria> categorias = await _repoCatalogo.listarCategorias(
         token,
       );
-      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      final List<Habilidad> habilidades = await _repoCatalogo.listarHabilidades(token);
       _servicios = List<Servicio>.from(servicios)..sort(_compararServicios);
       _categorias = List<Categoria>.from(categorias)..sort(_compararCategorias);
-      _skills = List<Skill>.from(skills)..sort(_compararSkills);
+      _habilidades = List<Habilidad>.from(habilidades)..sort(_compararHabilidades);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -154,9 +154,9 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       final List<Categoria> categorias = await _repoCatalogo.listarCategorias(
         token,
       );
-      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      final List<Habilidad> habilidades = await _repoCatalogo.listarHabilidades(token);
       _categorias = List<Categoria>.from(categorias)..sort(_compararCategorias);
-      _skills = List<Skill>.from(skills)..sort(_compararSkills);
+      _habilidades = List<Habilidad>.from(habilidades)..sort(_compararHabilidades);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -171,7 +171,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     required String precio,
     required String duracion,
     required int? categoriaId,
-    required Set<int> skillIds,
+    required Set<int> habilidadIds,
   }) async {
     iniciarCarga();
 
@@ -192,8 +192,8 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       if (servicioId == null) {
         return creado;
       }
-      for (final int skillId in skillIds) {
-        await _repoCatalogo.asignarSkillServicio(servicioId, skillId, token);
+      for (final int habilidadId in habilidadIds) {
+        await _repoCatalogo.asignarHabilidadServicio(servicioId, habilidadId, token);
       }
       return creado;
     } catch (e) {
@@ -221,7 +221,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
-  Future<Skill?> crearSkill({
+  Future<Habilidad?> crearHabilidad({
     required String nombre,
     required String descripcion,
   }) async {
@@ -229,8 +229,8 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
 
     try {
       final String token = leerTokenObligatorio();
-      return _repoCatalogo.crearSkill(
-        Skill(
+      return _repoCatalogo.crearHabilidad(
+        Habilidad(
           nombre: nombre.trim(),
           descripcion: _valorOpcional(descripcion),
           activo: true,
@@ -306,14 +306,14 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
-  Future<void> cargarDetalleSkill(int id) async {
-    _detalleSkill = null;
+  Future<void> cargarDetalleHabilidad(int id) async {
+    _detalleHabilidad = null;
     iniciarCarga();
 
     try {
       final String token = leerTokenObligatorio();
-      final Skill skill = await _repoCatalogo.obtenerSkillPorId(id, token);
-      _detalleSkill = _crearDtoSkill(skill);
+      final Habilidad habilidad = await _repoCatalogo.obtenerHabilidadPorId(id, token);
+      _detalleHabilidad = _crearDtoHabilidad(habilidad);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -322,7 +322,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
-  Future<Skill?> actualizarSkill({
+  Future<Habilidad?> actualizarHabilidad({
     required int id,
     required String nombre,
     required String descripcion,
@@ -332,16 +332,16 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
 
     try {
       final String token = leerTokenObligatorio();
-      final Skill actualizada = await _repoCatalogo.actualizarSkill(
+      final Habilidad actualizada = await _repoCatalogo.actualizarHabilidad(
         id,
-        Skill(
+        Habilidad(
           nombre: nombre.trim(),
           descripcion: _valorOpcional(descripcion),
           activo: activo,
         ),
         token,
       );
-      _detalleSkill = _crearDtoSkill(actualizada);
+      _detalleHabilidad = _crearDtoHabilidad(actualizada);
       notifyListeners();
       return actualizada;
     } catch (e) {
@@ -352,13 +352,13 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     }
   }
 
-  Future<bool> desactivarSkill(int id) async {
+  Future<bool> desactivarHabilidad(int id) async {
     iniciarCarga();
 
     try {
       final String token = leerTokenObligatorio();
-      await _repoCatalogo.desactivarSkill(id, token);
-      _detalleSkill = null;
+      await _repoCatalogo.desactivarHabilidad(id, token);
+      _detalleHabilidad = null;
       notifyListeners();
       return true;
     } catch (e) {
@@ -379,15 +379,15 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
         id,
         token,
       );
-      final List<ServicioSkill> skillsServicio = await _repoCatalogo
-          .obtenerSkillsServicio(id, token);
+      final List<ServicioHabilidad> habilidadesServicio = await _repoCatalogo
+          .obtenerHabilidadesServicio(id, token);
       final List<Categoria> categorias = await _repoCatalogo.listarCategorias(
         token,
       );
-      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      final List<Habilidad> habilidades = await _repoCatalogo.listarHabilidades(token);
       _categorias = List<Categoria>.from(categorias)..sort(_compararCategorias);
-      _skills = List<Skill>.from(skills)..sort(_compararSkills);
-      _detalleServicio = _crearDetalleServicio(servicio, skillsServicio);
+      _habilidades = List<Habilidad>.from(habilidades)..sort(_compararHabilidades);
+      _detalleServicio = _crearDetalleServicio(servicio, habilidadesServicio);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -404,7 +404,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     required String duracion,
     required int? categoriaId,
     required bool activo,
-    required Set<int> skillIds,
+    required Set<int> habilidadIds,
   }) async {
     iniciarCarga();
 
@@ -422,7 +422,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
         ),
         token,
       );
-      await _sincronizarSkillsServicio(id, skillIds, token);
+      await _sincronizarHabilidadesServicio(id, habilidadIds, token);
       await cargarDetalleServicio(id);
       return actualizado;
     } catch (e) {
@@ -490,21 +490,21 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     );
   }
 
-  DtoSkillCatalogoAdmin _crearDtoSkill(Skill skill) {
-    return DtoSkillCatalogoAdmin(
-      id: skill.id ?? 0,
-      nombre: skill.nombre,
-      descripcion: _textoConFallback(skill.descripcion, 'Sin descripción'),
-      activo: skill.activo ?? true,
+  DtoHabilidadCatalogoAdmin _crearDtoHabilidad(Habilidad habilidad) {
+    return DtoHabilidadCatalogoAdmin(
+      id: habilidad.id ?? 0,
+      nombre: habilidad.nombre,
+      descripcion: _textoConFallback(habilidad.descripcion, 'Sin descripción'),
+      activo: habilidad.activo ?? true,
     );
   }
 
   DtoDetalleServicioCatalogoAdmin _crearDetalleServicio(
     Servicio servicio,
-    List<ServicioSkill> skillsServicio,
+    List<ServicioHabilidad> habilidadesServicio,
   ) {
-    final Set<int> skillIds = skillsServicio
-        .map((skill) => skill.skillId)
+    final Set<int> habilidadIds = habilidadesServicio
+        .map((habilidad) => habilidad.habilidadId)
         .whereType<int>()
         .toSet();
     return DtoDetalleServicioCatalogoAdmin(
@@ -516,27 +516,27 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
       categoriaId: servicio.categoriaId,
       activo: servicio.activo ?? true,
       imagenUrl: _textoOpcional(servicio.imagenUrl),
-      skillIds: skillIds,
+      habilidadIds: habilidadIds,
     );
   }
 
-  Future<void> _sincronizarSkillsServicio(
+  Future<void> _sincronizarHabilidadesServicio(
     int servicioId,
-    Set<int> skillIdsDeseadas,
+    Set<int> habilidadIdsDeseadas,
     String token,
   ) async {
-    final List<ServicioSkill> actuales = await _repoCatalogo
-        .obtenerSkillsServicio(servicioId, token);
+    final List<ServicioHabilidad> actuales = await _repoCatalogo
+        .obtenerHabilidadesServicio(servicioId, token);
     final Set<int> actualesIds = actuales
-        .map((skill) => skill.skillId)
+        .map((habilidad) => habilidad.habilidadId)
         .whereType<int>()
         .toSet();
 
-    for (final int skillId in actualesIds.difference(skillIdsDeseadas)) {
-      await _repoCatalogo.eliminarSkillServicio(servicioId, skillId, token);
+    for (final int habilidadId in actualesIds.difference(habilidadIdsDeseadas)) {
+      await _repoCatalogo.eliminarHabilidadServicio(servicioId, habilidadId, token);
     }
-    for (final int skillId in skillIdsDeseadas.difference(actualesIds)) {
-      await _repoCatalogo.asignarSkillServicio(servicioId, skillId, token);
+    for (final int habilidadId in habilidadIdsDeseadas.difference(actualesIds)) {
+      await _repoCatalogo.asignarHabilidadServicio(servicioId, habilidadId, token);
     }
   }
 
@@ -548,7 +548,7 @@ class ViewModelAdminCatalogo extends ViewModelAdminBase {
     return a.nombre.compareTo(b.nombre);
   }
 
-  int _compararSkills(Skill a, Skill b) {
+  int _compararHabilidades(Habilidad a, Habilidad b) {
     return a.nombre.compareTo(b.nombre);
   }
 

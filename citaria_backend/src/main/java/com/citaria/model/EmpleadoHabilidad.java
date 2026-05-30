@@ -10,10 +10,10 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "empleado_skill")
-public class EmpleadoSkill {
+public class EmpleadoHabilidad {
 
     @EmbeddedId
-    private EmpleadoSkillId id;
+    private EmpleadoHabilidadId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("empleadoId")
@@ -21,24 +21,24 @@ public class EmpleadoSkill {
     private Empleado empleado;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("skillId")
+    @MapsId("habilidadId")
     @JoinColumn(name = "skill_id", nullable = false)
-    private Skill skill;
+    private Habilidad habilidad;
 
-    public EmpleadoSkill() {
+    public EmpleadoHabilidad() {
     }
 
-    public EmpleadoSkill(Empleado empleado, Skill skill) {
+    public EmpleadoHabilidad(Empleado empleado, Habilidad habilidad) {
         this.empleado = empleado;
-        this.skill = skill;
-        this.id = new EmpleadoSkillId(empleado.getId(), skill.getId());
+        this.habilidad = habilidad;
+        this.id = new EmpleadoHabilidadId(empleado.getId(), habilidad.getId());
     }
 
-    public EmpleadoSkillId getId() {
+    public EmpleadoHabilidadId getId() {
         return id;
     }
 
-    public void setId(EmpleadoSkillId id) {
+    public void setId(EmpleadoHabilidadId id) {
         this.id = id;
     }
 
@@ -50,30 +50,30 @@ public class EmpleadoSkill {
         this.empleado = empleado;
     }
 
-    public Skill getSkill() {
-        return skill;
+    public Habilidad getHabilidad() {
+        return habilidad;
     }
 
-    public void setSkill(Skill skill) {
-        this.skill = skill;
+    public void setHabilidad(Habilidad habilidad) {
+        this.habilidad = habilidad;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof EmpleadoSkill that)) return false;
-        return Objects.equals(id, that.id) && Objects.equals(empleado, that.empleado) && Objects.equals(skill, that.skill);
+        if (!(o instanceof EmpleadoHabilidad that)) return false;
+        return Objects.equals(id, that.id) && Objects.equals(empleado, that.empleado) && Objects.equals(habilidad, that.habilidad);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, empleado, skill);
+        return Objects.hash(id, empleado, habilidad);
     }
 
     @Override
     public String toString() {
-        return "EmpleadoSkill{" +
+        return "EmpleadoHabilidad{" +
                 "empleadoId=" + (empleado != null ? empleado.getId() : null) +
-                ", skillId=" + (skill != null ? skill.getId() : null) +
+                ", habilidadId=" + (habilidad != null ? habilidad.getId() : null) +
                 '}';
     }
 }

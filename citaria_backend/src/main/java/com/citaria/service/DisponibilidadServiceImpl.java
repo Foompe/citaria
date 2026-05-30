@@ -28,7 +28,7 @@ import java.util.Set;
  * 1. Verificar que la fecha no es un cierre puntual.
  * 2. Obtener el horario de apertura/cierre del negocio para ese día.
  * 3. Calcular la duración total de los servicios seleccionados.
- * 4. Obtener los empleados que tienen todas las skills requeridas.
+ * 4. Obtener los empleados que tienen todas las habilidades requeridas.
  * 5. Para cada franja desde apertura hasta (cierre - duración):
  *    - Para cada empleado válido, verificar que trabaja ese día y que no tiene solapamiento.
  *    - Si al menos uno pasa los checks, la franja es disponible.
@@ -43,8 +43,8 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
     private final EmpleadoDAO empleadoDAO;
     private final HorarioEmpleadoDAO horarioEmpleadoDAO;
     private final ServicioDAO servicioDAO;
-    private final ServicioSkillDAO servicioSkillDAO;
-    private final EmpleadoSkillDAO empleadoSkillDAO;
+    private final ServicioHabilidadDAO servicioHabilidadDAO;
+    private final EmpleadoHabilidadDAO empleadoHabilidadDAO;
     private final ReservaServicioDAO reservaServicioDAO;
     private final ContextoSeguridad contextoSeguridad;
 
@@ -54,8 +54,8 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
                                      EmpleadoDAO empleadoDAO,
                                      HorarioEmpleadoDAO horarioEmpleadoDAO,
                                      ServicioDAO servicioDAO,
-                                     ServicioSkillDAO servicioSkillDAO,
-                                     EmpleadoSkillDAO empleadoSkillDAO,
+                                     ServicioHabilidadDAO servicioHabilidadDAO,
+                                     EmpleadoHabilidadDAO empleadoHabilidadDAO,
                                      ReservaServicioDAO reservaServicioDAO,
                                      ContextoSeguridad contextoSeguridad) {
         this.organizacionHorarioDAO = organizacionHorarioDAO;
@@ -63,8 +63,8 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         this.empleadoDAO = empleadoDAO;
         this.horarioEmpleadoDAO = horarioEmpleadoDAO;
         this.servicioDAO = servicioDAO;
-        this.servicioSkillDAO = servicioSkillDAO;
-        this.empleadoSkillDAO = empleadoSkillDAO;
+        this.servicioHabilidadDAO = servicioHabilidadDAO;
+        this.empleadoHabilidadDAO = empleadoHabilidadDAO;
         this.reservaServicioDAO = reservaServicioDAO;
         this.contextoSeguridad = contextoSeguridad;
     }
@@ -103,10 +103,10 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
             return new DisponibilidadDTO(fecha, new ArrayList<>());
         }
 
-        // 4. Obtener empleados válidos (con todas las skills requeridas)
-        List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(servicioIds);
+        // 4. Obtener empleados válidos (con todas las habilidades requeridas)
+        List<Integer> habilidadesRequeridas = servicioHabilidadDAO.obtenerHabilidadIdsRequeridas(servicioIds);
         List<Empleado> empleadosValidos = obtenerEmpleadosValidos(
-                organizacion, skillsRequeridas, empleadoId);
+                organizacion, habilidadesRequeridas, empleadoId);
         if (empleadosValidos.isEmpty()) {
             return new DisponibilidadDTO(fecha, new ArrayList<>());
         }
@@ -166,8 +166,8 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
             return new PeriodoDisponiblesDTO(new ArrayList<>());
         }
 
-        List<Integer> skillsRequeridas = servicioSkillDAO.obtenerSkillIdsRequeridas(servicioIds);
-        List<Empleado> empleadosValidos = obtenerEmpleadosValidos(organizacion, skillsRequeridas, empleadoId);
+        List<Integer> habilidadesRequeridas = servicioHabilidadDAO.obtenerHabilidadIdsRequeridas(servicioIds);
+        List<Empleado> empleadosValidos = obtenerEmpleadosValidos(organizacion, habilidadesRequeridas, empleadoId);
         if (empleadosValidos.isEmpty()) {
             return new PeriodoDisponiblesDTO(new ArrayList<>());
         }
@@ -306,10 +306,10 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
     }
 
     /**
-     * Devuelve los empleados/empleado activos de la organización que tienen todas las skills requeridas.
+     * Devuelve los empleados/empleado activos de la organización que tienen todas las habilidades requeridas.
      */
     private List<Empleado> obtenerEmpleadosValidos(Organizacion organizacion,
-                                                   List<Integer> skillsRequeridas,
+                                                   List<Integer> habilidadesRequeridas,
                                                    Integer empleadoId) {
         List<Empleado> candidatos;
         if (empleadoId != null) {
@@ -327,15 +327,15 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
             candidatos = empleadoDAO.findByOrganizacionAndActivo(organizacion, true);
         }
 
-        if (skillsRequeridas.isEmpty()) {
+        if (habilidadesRequeridas.isEmpty()) {
             return candidatos;
         }
 
         List<Empleado> validos = new ArrayList<>();
         for (Empleado empleado : candidatos) {
-            long skillsQueElEmpleadoTiene = empleadoSkillDAO
-                    .contarSkillsQueCoinciden(empleado, skillsRequeridas);
-            if (skillsQueElEmpleadoTiene >= skillsRequeridas.size()) {
+            long habilidadesQueElEmpleadoTiene = empleadoHabilidadDAO
+                    .contarHabilidadesQueCoinciden(empleado, habilidadesRequeridas);
+            if (habilidadesQueElEmpleadoTiene >= habilidadesRequeridas.size()) {
                 validos.add(empleado);
             }
         }

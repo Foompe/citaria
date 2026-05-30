@@ -1,7 +1,7 @@
 package com.citaria.controller;
 
 import com.citaria.dto.EmpleadoDTO;
-import com.citaria.dto.EmpleadoSkillDTO;
+import com.citaria.dto.EmpleadoHabilidadDTO;
 import com.citaria.dto.HorarioEmpleadoDTO;
 import com.citaria.dto.ReservaDTO;
 import com.citaria.service.EmpleadoService;
@@ -17,9 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Controlador REST para la gestión de empleados, sus horarios y skills.
+ * Controlador REST para la gestión de empleados, sus horarios y habilidades.
  */
-@Tag(name = "Empleados", description = "Gestión de empleados, horarios y skills")
+@Tag(name = "Empleados", description = "Gestión de empleados, horarios y habilidades")
 @RestController
 @RequestMapping("/api/empleados")
 public class EmpleadoController {
@@ -140,34 +140,34 @@ public class EmpleadoController {
         return ResponseEntity.noContent().build();
     }
 
-    // SKILLS
+    // HABILIDADES
 
-    @Operation(summary = "Obtener skills de un empleado")
+    @Operation(summary = "Obtener habilidades de un empleado")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de skills obtenida correctamente")
+            @ApiResponse(responseCode = "200", description = "Lista de habilidades obtenida correctamente")
     })
-    @GetMapping("/{id}/skills")
-    public ResponseEntity<List<EmpleadoSkillDTO>> obtenerSkills(@PathVariable Integer id) {
-        return ResponseEntity.ok(empleadoService.obtenerSkillsPorEmpleado(id));
+    @GetMapping("/{id}/habilidades")
+    public ResponseEntity<List<EmpleadoHabilidadDTO>> obtenerHabilidades(@PathVariable Integer id) {
+        return ResponseEntity.ok(empleadoService.obtenerHabilidadesPorEmpleado(id));
     }
 
-    @Operation(summary = "Asignar skill a un empleado")
+    @Operation(summary = "Asignar habilidad a un empleado")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Skill asignada correctamente")
+            @ApiResponse(responseCode = "201", description = "Habilidad asignada correctamente")
     })
-    @PostMapping("/{id}/skills/{skillId}")
-    public ResponseEntity<EmpleadoSkillDTO> asignarSkill(@PathVariable Integer id, @PathVariable Integer skillId) {
-        return ResponseEntity.status(201).body(empleadoService.asignarSkill(id, skillId));
+    @PostMapping("/{id}/habilidades/{habilidadId}")
+    public ResponseEntity<EmpleadoHabilidadDTO> asignarHabilidad(@PathVariable Integer id, @PathVariable Integer habilidadId) {
+        return ResponseEntity.status(201).body(empleadoService.asignarHabilidad(id, habilidadId));
     }
 
-    @Operation(summary = "Eliminar skill de un empleado")
+    @Operation(summary = "Eliminar habilidad de un empleado")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Skill eliminada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Skill no encontrada")
+            @ApiResponse(responseCode = "204", description = "Habilidad eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Habilidad no encontrada")
     })
-    @DeleteMapping("/{id}/skills/{skillId}")
-    public ResponseEntity<Void> eliminarSkill(@PathVariable Integer id, @PathVariable Integer skillId) {
-        empleadoService.eliminarSkill(id, skillId);
+    @DeleteMapping("/{id}/habilidades/{habilidadId}")
+    public ResponseEntity<Void> eliminarHabilidad(@PathVariable Integer id, @PathVariable Integer habilidadId) {
+        empleadoService.eliminarHabilidad(id, habilidadId);
         return ResponseEntity.noContent().build();
     }
 }

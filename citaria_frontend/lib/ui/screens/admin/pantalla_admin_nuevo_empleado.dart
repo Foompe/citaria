@@ -9,7 +9,7 @@ import 'package:citaria_frontend/ui/widgets/aviso_error.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
-import 'package:citaria_frontend/ui/widgets/chip_skill.dart';
+import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
 import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
@@ -34,7 +34,7 @@ class _PantallaAdminNuevoEmpleadoState
   final _ctrlApellidos = TextEditingController();
   final _ctrlEmail = TextEditingController();
   final _ctrlTelefono = TextEditingController();
-  final Set<int> _skillsSeleccionadas = <int>{};
+  final Set<int> _habilidadesSeleccionadas = <int>{};
   late final ViewModelAdminEmpleados _viewModel;
   Uint8List? _fotoBytes;
   String _fotoNombre = 'foto.jpg';
@@ -86,7 +86,7 @@ class _PantallaAdminNuevoEmpleadoState
       apellidos: _ctrlApellidos.text,
       email: _ctrlEmail.text,
       telefono: _ctrlTelefono.text,
-      skillIds: _skillsSeleccionadas,
+      habilidadIds: _habilidadesSeleccionadas,
     );
 
     if (!mounted) {
@@ -132,23 +132,23 @@ class _PantallaAdminNuevoEmpleadoState
           ctrlApellidos: _ctrlApellidos,
           ctrlEmail: _ctrlEmail,
           ctrlTelefono: _ctrlTelefono,
-          skillsSeleccionadas: _skillsSeleccionadas,
+          habilidadesSeleccionadas: _habilidadesSeleccionadas,
           vmEmpleados: vmEmpleados,
           fotoBytes: _fotoBytes,
           onCrear: _crearEmpleado,
-          onSkillTap: _alternarSkill,
+          onHabilidadTap: _alternarHabilidad,
           onSeleccionarFoto: _seleccionarFoto,
         ),
       ),
     );
   }
 
-  void _alternarSkill(int id) {
+  void _alternarHabilidad(int id) {
     setState(() {
-      if (_skillsSeleccionadas.contains(id)) {
-        _skillsSeleccionadas.remove(id);
+      if (_habilidadesSeleccionadas.contains(id)) {
+        _habilidadesSeleccionadas.remove(id);
       } else {
-        _skillsSeleccionadas.add(id);
+        _habilidadesSeleccionadas.add(id);
       }
     });
   }
@@ -161,11 +161,11 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
     required this.ctrlApellidos,
     required this.ctrlEmail,
     required this.ctrlTelefono,
-    required this.skillsSeleccionadas,
+    required this.habilidadesSeleccionadas,
     required this.vmEmpleados,
     required this.fotoBytes,
     required this.onCrear,
-    required this.onSkillTap,
+    required this.onHabilidadTap,
     required this.onSeleccionarFoto,
   });
 
@@ -174,11 +174,11 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
   final TextEditingController ctrlApellidos;
   final TextEditingController ctrlEmail;
   final TextEditingController ctrlTelefono;
-  final Set<int> skillsSeleccionadas;
+  final Set<int> habilidadesSeleccionadas;
   final ViewModelAdminEmpleados vmEmpleados;
   final Uint8List? fotoBytes;
   final VoidCallback onCrear;
-  final ValueChanged<int> onSkillTap;
+  final ValueChanged<int> onHabilidadTap;
   final VoidCallback onSeleccionarFoto;
 
   @override
@@ -188,7 +188,7 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final bool cargandoInicial =
         vmEmpleados.cargando &&
-        vmEmpleados.skillsDisponibles.isEmpty &&
+        vmEmpleados.habilidadesDisponibles.isEmpty &&
         vmEmpleados.horariosNuevo.isEmpty;
     final bool formularioListo = vmEmpleados.horariosNuevo.isNotEmpty;
 
@@ -302,16 +302,16 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
                   Text(
-                    'SKILLS',
+                    'HABILIDADES',
                     style: textTheme.labelSmall?.copyWith(
                       color: colorScheme.outline,
                       letterSpacing: 1.2,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (vmEmpleados.skillsDisponibles.isEmpty)
+                  if (vmEmpleados.habilidadesDisponibles.isEmpty)
                     Text(
-                      'Sin skills disponibles',
+                      'Sin habilidades disponibles',
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.outline,
                       ),
@@ -321,13 +321,13 @@ class _ContenidoNuevoEmpleado extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        for (final skill in vmEmpleados.skillsDisponibles)
-                          ChipSkill(
-                            etiqueta: skill.nombre,
-                            seleccionado: skillsSeleccionadas.contains(
-                              skill.id,
+                        for (final habilidad in vmEmpleados.habilidadesDisponibles)
+                          ChipHabilidad(
+                            etiqueta: habilidad.nombre,
+                            seleccionado: habilidadesSeleccionadas.contains(
+                              habilidad.id,
                             ),
-                            onTap: () => onSkillTap(skill.id),
+                            onTap: () => onHabilidadTap(habilidad.id),
                           ),
                       ],
                     ),

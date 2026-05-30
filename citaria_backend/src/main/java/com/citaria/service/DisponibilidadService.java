@@ -19,7 +19,7 @@ public interface DisponibilidadService {
      * del negocio hasta (cierre - duración total de los servicios).
      *
      *      Si se indica empleadoId, filtra solo ese empleado.
-     *      Si no se indica, evalúa todos los empleados con las skills requeridas.
+     *      Si no se indica, evalúa todos los empleados con las habilidades requeridas.
      *
      * @param fecha       fecha a consultar
      * @param servicioIds lista de ids de servicios seleccionados

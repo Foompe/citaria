@@ -3,8 +3,8 @@ package com.citaria.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.citaria.dto.CategoriaDTO;
 import com.citaria.dto.ServicioDTO;
-import com.citaria.dto.ServicioSkillDTO;
-import com.citaria.dto.SkillDTO;
+import com.citaria.dto.ServicioHabilidadDTO;
+import com.citaria.dto.HabilidadDTO;
 import com.citaria.service.CatalogoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,9 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Controlador REST para la gestión del catálogo, servicios, categorías y skills.
+ * Controlador REST para la gestión del catálogo, servicios, categorías y habilidades.
  */
-@Tag(name = "Catálogo", description = "Gestión de servicios, categorías y skills")
+@Tag(name = "Catálogo", description = "Gestión de servicios, categorías y habilidades")
 @RestController
 @RequestMapping("/api/catalogo")
 public class CatalogoController {
@@ -83,55 +83,55 @@ public class CatalogoController {
         return ResponseEntity.noContent().build();
     }
 
-    // SKILLS
+    // HABILIDADES
 
-    @Operation(summary = "Obtener skills de la organización autenticada")
+    @Operation(summary = "Obtener habilidades de la organización autenticada")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/skills")
-    public ResponseEntity<List<SkillDTO>> obtenerSkills() {
-        return ResponseEntity.ok(catalogoService.obtenerSkills());
+    @GetMapping("/habilidades")
+    public ResponseEntity<List<HabilidadDTO>> obtenerHabilidades() {
+        return ResponseEntity.ok(catalogoService.obtenerHabilidades());
     }
 
-    @Operation(summary = "Obtener skill por ID")
+    @Operation(summary = "Obtener habilidad por ID")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Skill encontrada"),
-            @ApiResponse(responseCode = "404", description = "Skill no encontrada")
+            @ApiResponse(responseCode = "200", description = "Habilidad encontrada"),
+            @ApiResponse(responseCode = "404", description = "Habilidad no encontrada")
     })
-    @GetMapping("/skills/{id}")
-    public ResponseEntity<SkillDTO> obtenerSkillPorId(@PathVariable Integer id) {
-        return ResponseEntity.ok(catalogoService.obtenerSkillPorId(id));
+    @GetMapping("/habilidades/{id}")
+    public ResponseEntity<HabilidadDTO> obtenerHabilidadPorId(@PathVariable Integer id) {
+        return ResponseEntity.ok(catalogoService.obtenerHabilidadPorId(id));
     }
 
-    @Operation(summary = "Crear skill en la organización autenticada")
+    @Operation(summary = "Crear habilidad en la organización autenticada")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Skill creada correctamente")
+            @ApiResponse(responseCode = "201", description = "Habilidad creada correctamente")
     })
-    @PostMapping("/skills")
-    public ResponseEntity<SkillDTO> crearSkill(@Valid @RequestBody SkillDTO dto) {
-        return ResponseEntity.status(201).body(catalogoService.crearSkill(dto));
+    @PostMapping("/habilidades")
+    public ResponseEntity<HabilidadDTO> crearHabilidad(@Valid @RequestBody HabilidadDTO dto) {
+        return ResponseEntity.status(201).body(catalogoService.crearHabilidad(dto));
     }
 
-    @Operation(summary = "Actualizar una skill existente")
+    @Operation(summary = "Actualizar una habilidad existente")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Skill actualizada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Skill no encontrada")
+            @ApiResponse(responseCode = "200", description = "Habilidad actualizada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Habilidad no encontrada")
     })
-    @PutMapping("/skills/{id}")
-    public ResponseEntity<SkillDTO> actualizarSkill(@PathVariable Integer id,
-                                                    @Valid @RequestBody SkillDTO dto) {
-        return ResponseEntity.ok(catalogoService.actualizarSkill(id, dto));
+    @PutMapping("/habilidades/{id}")
+    public ResponseEntity<HabilidadDTO> actualizarHabilidad(@PathVariable Integer id,
+                                                    @Valid @RequestBody HabilidadDTO dto) {
+        return ResponseEntity.ok(catalogoService.actualizarHabilidad(id, dto));
     }
 
-    @Operation(summary = "Desactivar una skill — borrado lógico irreversible")
+    @Operation(summary = "Desactivar una habilidad — borrado lógico irreversible")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Skill desactivada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Skill no encontrada")
+            @ApiResponse(responseCode = "204", description = "Habilidad desactivada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Habilidad no encontrada")
     })
-    @DeleteMapping("/skills/{id}")
-    public ResponseEntity<Void> eliminarSkill(@PathVariable Integer id) {
-        catalogoService.desactivarSkill(id);
+    @DeleteMapping("/habilidades/{id}")
+    public ResponseEntity<Void> eliminarHabilidad(@PathVariable Integer id) {
+        catalogoService.desactivarHabilidad(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -209,36 +209,36 @@ public class CatalogoController {
         return ResponseEntity.noContent().build();
     }
 
-    // SKILLS DE SERVICIO
+    // HABILIDADES DE SERVICIO
 
-    @Operation(summary = "Obtener skills de un servicio")
+    @Operation(summary = "Obtener habilidades de un servicio")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente")
     })
-    @GetMapping("/servicios/{id}/skills")
-    public ResponseEntity<List<ServicioSkillDTO>> obtenerSkillsServicio(@PathVariable Integer id) {
-        return ResponseEntity.ok(catalogoService.obtenerSkillsPorServicio(id));
+    @GetMapping("/servicios/{id}/habilidades")
+    public ResponseEntity<List<ServicioHabilidadDTO>> obtenerHabilidadesServicio(@PathVariable Integer id) {
+        return ResponseEntity.ok(catalogoService.obtenerHabilidadesPorServicio(id));
     }
 
-    @Operation(summary = "Asignar skill a un servicio")
+    @Operation(summary = "Asignar habilidad a un servicio")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Skill asignada correctamente")
+            @ApiResponse(responseCode = "201", description = "Habilidad asignada correctamente")
     })
-    @PostMapping("/servicios/{id}/skills/{skillId}")
-    public ResponseEntity<ServicioSkillDTO> asignarSkill(@PathVariable Integer id,
-                                                         @PathVariable Integer skillId) {
-        return ResponseEntity.status(201).body(catalogoService.asignarSkillAServicio(id, skillId));
+    @PostMapping("/servicios/{id}/habilidades/{habilidadId}")
+    public ResponseEntity<ServicioHabilidadDTO> asignarHabilidad(@PathVariable Integer id,
+                                                         @PathVariable Integer habilidadId) {
+        return ResponseEntity.status(201).body(catalogoService.asignarHabilidadAServicio(id, habilidadId));
     }
 
-    @Operation(summary = "Eliminar skill de un servicio")
+    @Operation(summary = "Eliminar habilidad de un servicio")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Skill eliminada correctamente"),
-            @ApiResponse(responseCode = "404", description = "Skill no encontrada")
+            @ApiResponse(responseCode = "204", description = "Habilidad eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Habilidad no encontrada")
     })
-    @DeleteMapping("/servicios/{id}/skills/{skillId}")
-    public ResponseEntity<Void> eliminarSkillServicio(@PathVariable Integer id,
-                                                      @PathVariable Integer skillId) {
-        catalogoService.quitarSkillDeServicio(id, skillId);
+    @DeleteMapping("/servicios/{id}/habilidades/{habilidadId}")
+    public ResponseEntity<Void> eliminarHabilidadServicio(@PathVariable Integer id,
+                                                      @PathVariable Integer habilidadId) {
+        catalogoService.quitarHabilidadDeServicio(id, habilidadId);
         return ResponseEntity.noContent().build();
     }
 }

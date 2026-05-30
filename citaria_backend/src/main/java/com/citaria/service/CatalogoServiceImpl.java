@@ -2,8 +2,8 @@ package com.citaria.service;
 
 import com.citaria.dto.CategoriaDTO;
 import com.citaria.dto.ServicioDTO;
-import com.citaria.dto.ServicioSkillDTO;
-import com.citaria.dto.SkillDTO;
+import com.citaria.dto.ServicioHabilidadDTO;
+import com.citaria.dto.HabilidadDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
 import com.citaria.model.*;
 import com.citaria.repository.*;
@@ -24,23 +24,23 @@ import java.util.Optional;
 public class CatalogoServiceImpl implements CatalogoService {
 
     private final CategoriaDAO categoriaDAO;
-    private final SkillDAO skillDAO;
+    private final HabilidadDAO habilidadDAO;
     private final ServicioDAO servicioDAO;
-    private final ServicioSkillDAO servicioSkillDAO;
+    private final ServicioHabilidadDAO servicioHabilidadDAO;
     private final ContextoSeguridad contextoSeguridad;
     private final ImagenService imagenService;
 
     @Autowired
     public CatalogoServiceImpl(CategoriaDAO categoriaDAO,
-                               SkillDAO skillDAO,
+                               HabilidadDAO habilidadDAO,
                                ServicioDAO servicioDAO,
-                               ServicioSkillDAO servicioSkillDAO,
+                               ServicioHabilidadDAO servicioHabilidadDAO,
                                ContextoSeguridad contextoSeguridad,
                                ImagenService imagenService) {
         this.categoriaDAO = categoriaDAO;
-        this.skillDAO = skillDAO;
+        this.habilidadDAO = habilidadDAO;
         this.servicioDAO = servicioDAO;
-        this.servicioSkillDAO = servicioSkillDAO;
+        this.servicioHabilidadDAO = servicioHabilidadDAO;
         this.contextoSeguridad = contextoSeguridad;
         this.imagenService = imagenService;
     }
@@ -109,69 +109,69 @@ public class CatalogoServiceImpl implements CatalogoService {
         categoriaDAO.save(categoria);
     }
 
-    // SKILLS
+    // HABILIDADES
 
     @Override
     @Transactional(readOnly = true)
-    public List<SkillDTO> obtenerSkills() {
+    public List<HabilidadDTO> obtenerHabilidades() {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        List<Skill> skills = skillDAO.findByOrganizacion(organizacion);
-        List<SkillDTO> skillsDTO = new ArrayList<>();
-        for (Skill skill : skills) {
-            skillsDTO.add(convertirSkillADTO(skill));
+        List<Habilidad> habilidades = habilidadDAO.findByOrganizacion(organizacion);
+        List<HabilidadDTO> habilidadesDTO = new ArrayList<>();
+        for (Habilidad habilidad : habilidades) {
+            habilidadesDTO.add(convertirHabilidadADTO(habilidad));
         }
-        return skillsDTO;
+        return habilidadesDTO;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public SkillDTO obtenerSkillPorId(Integer id) {
+    public HabilidadDTO obtenerHabilidadPorId(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Optional<Skill> skillOptional = skillDAO.findById(id);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(id);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + id + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        return convertirSkillADTO(skill);
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        return convertirHabilidadADTO(habilidad);
     }
 
     @Override
     @Transactional
-    public SkillDTO crearSkill(SkillDTO dto) {
+    public HabilidadDTO crearHabilidad(HabilidadDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Skill skill = convertirSkillAEntidad(dto);
-        skill.setOrganizacion(organizacion);
-        return convertirSkillADTO(skillDAO.save(skill));
+        Habilidad habilidad = convertirHabilidadAEntidad(dto);
+        habilidad.setOrganizacion(organizacion);
+        return convertirHabilidadADTO(habilidadDAO.save(habilidad));
     }
 
     @Override
     @Transactional
-    public SkillDTO actualizarSkill(Integer id, SkillDTO dto) {
+    public HabilidadDTO actualizarHabilidad(Integer id, HabilidadDTO dto) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Optional<Skill> skillOptional = skillDAO.findById(id);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(id);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + id + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        skill.setNombre(dto.getNombre());
-        skill.setDescripcion(dto.getDescripcion());
-        return convertirSkillADTO(skillDAO.save(skill));
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        habilidad.setNombre(dto.getNombre());
+        habilidad.setDescripcion(dto.getDescripcion());
+        return convertirHabilidadADTO(habilidadDAO.save(habilidad));
     }
 
     @Override
     @Transactional
-    public void desactivarSkill(Integer id) {
+    public void desactivarHabilidad(Integer id) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
-        Optional<Skill> skillOptional = skillDAO.findById(id);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + id + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(id);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + id + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        skill.setActivo(false);
-        skillDAO.save(skill);
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        habilidad.setActivo(false);
+        habilidadDAO.save(habilidad);
     }
 
     // SERVICIOS
@@ -293,11 +293,11 @@ public class CatalogoServiceImpl implements CatalogoService {
         servicioDAO.save(servicio);
     }
 
-    // SKILLS DE SERVICIO
+    // HABILIDADES DE SERVICIO
 
     @Override
     @Transactional(readOnly = true)
-    public List<ServicioSkillDTO> obtenerSkillsPorServicio(Integer servicioId) {
+    public List<ServicioHabilidadDTO> obtenerHabilidadesPorServicio(Integer servicioId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
         if (servicioOptional.isEmpty()) {
@@ -305,17 +305,17 @@ public class CatalogoServiceImpl implements CatalogoService {
         }
         Servicio servicio = servicioOptional.get();
         verificarPerenenciaServicio(servicio, organizacion);
-        List<ServicioSkill> skills = servicioSkillDAO.findByServicio(servicio);
-        List<ServicioSkillDTO> skillsDTO = new ArrayList<>();
-        for (ServicioSkill servicioSkill : skills) {
-            skillsDTO.add(convertirServicioSkillADTO(servicioSkill));
+        List<ServicioHabilidad> habilidades = servicioHabilidadDAO.findByServicio(servicio);
+        List<ServicioHabilidadDTO> habilidadesDTO = new ArrayList<>();
+        for (ServicioHabilidad servicioHabilidad : habilidades) {
+            habilidadesDTO.add(convertirServicioHabilidadADTO(servicioHabilidad));
         }
-        return skillsDTO;
+        return habilidadesDTO;
     }
 
     @Override
     @Transactional
-    public ServicioSkillDTO asignarSkillAServicio(Integer servicioId, Integer skillId) {
+    public ServicioHabilidadDTO asignarHabilidadAServicio(Integer servicioId, Integer habilidadId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
         if (servicioOptional.isEmpty()) {
@@ -323,19 +323,19 @@ public class CatalogoServiceImpl implements CatalogoService {
         }
         Servicio servicio = servicioOptional.get();
         verificarPerenenciaServicio(servicio, organizacion);
-        Optional<Skill> skillOptional = skillDAO.findById(skillId);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + skillId + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(habilidadId);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + habilidadId + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        ServicioSkill servicioSkill = new ServicioSkill(servicio, skill);
-        return convertirServicioSkillADTO(servicioSkillDAO.save(servicioSkill));
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        ServicioHabilidad servicioHabilidad = new ServicioHabilidad(servicio, habilidad);
+        return convertirServicioHabilidadADTO(servicioHabilidadDAO.save(servicioHabilidad));
     }
 
     @Override
     @Transactional
-    public void quitarSkillDeServicio(Integer servicioId, Integer skillId) {
+    public void quitarHabilidadDeServicio(Integer servicioId, Integer habilidadId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Servicio> servicioOptional = servicioDAO.findById(servicioId);
         if (servicioOptional.isEmpty()) {
@@ -343,18 +343,18 @@ public class CatalogoServiceImpl implements CatalogoService {
         }
         Servicio servicio = servicioOptional.get();
         verificarPerenenciaServicio(servicio, organizacion);
-        Optional<Skill> skillOptional = skillDAO.findById(skillId);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + skillId + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(habilidadId);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + habilidadId + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        ServicioSkillId servicioSkillId = new ServicioSkillId(servicioId, skillId);
-        if (!servicioSkillDAO.existsById(servicioSkillId)) {
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        ServicioHabilidadId servicioHabilidadId = new ServicioHabilidadId(servicioId, habilidadId);
+        if (!servicioHabilidadDAO.existsById(servicioHabilidadId)) {
             throw new RecursoNoEncontradoException(
-                    "Asignación de skill " + skillId + " al servicio " + servicioId + " no encontrada");
+                    "Asignación de habilidad " + habilidadId + " al servicio " + servicioId + " no encontrada");
         }
-        servicioSkillDAO.deleteById(servicioSkillId);
+        servicioHabilidadDAO.deleteById(servicioHabilidadId);
     }
 
     //      MÉTODOS AUXILIARES
@@ -368,9 +368,9 @@ public class CatalogoServiceImpl implements CatalogoService {
         }
     }
 
-    private void verificarPertenenciaSkill(Skill skill, Organizacion organizacion) {
-        if (!skill.getOrganizacion().getId().equals(organizacion.getId())) {
-            throw new RecursoNoEncontradoException("Skill con id " + skill.getId() + " no encontrada");
+    private void verificarPertenenciaHabilidad(Habilidad habilidad, Organizacion organizacion) {
+        if (!habilidad.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + habilidad.getId() + " no encontrada");
         }
     }
 
@@ -402,26 +402,26 @@ public class CatalogoServiceImpl implements CatalogoService {
         return categoria;
     }
 
-    private SkillDTO convertirSkillADTO(Skill skill) {
-        SkillDTO dto = new SkillDTO();
-        dto.setId(skill.getId());
-        dto.setOrganizacionId(skill.getOrganizacion().getId());
-        dto.setNombre(skill.getNombre());
-        dto.setDescripcion(skill.getDescripcion());
-        dto.setActivo(skill.getActivo());
+    private HabilidadDTO convertirHabilidadADTO(Habilidad habilidad) {
+        HabilidadDTO dto = new HabilidadDTO();
+        dto.setId(habilidad.getId());
+        dto.setOrganizacionId(habilidad.getOrganizacion().getId());
+        dto.setNombre(habilidad.getNombre());
+        dto.setDescripcion(habilidad.getDescripcion());
+        dto.setActivo(habilidad.getActivo());
         return dto;
     }
 
-    private Skill convertirSkillAEntidad(SkillDTO dto) {
-        Skill skill = new Skill();
-        skill.setNombre(dto.getNombre());
-        skill.setDescripcion(dto.getDescripcion());
+    private Habilidad convertirHabilidadAEntidad(HabilidadDTO dto) {
+        Habilidad habilidad = new Habilidad();
+        habilidad.setNombre(dto.getNombre());
+        habilidad.setDescripcion(dto.getDescripcion());
         if (dto.getActivo() != null) {
-            skill.setActivo(dto.getActivo());
+            habilidad.setActivo(dto.getActivo());
         } else {
-            skill.setActivo(true);
+            habilidad.setActivo(true);
         }
-        return skill;
+        return habilidad;
     }
 
     private ServicioDTO convertirServicioADTO(Servicio servicio) {
@@ -465,11 +465,11 @@ public class CatalogoServiceImpl implements CatalogoService {
         servicio.setActivo(dto.getActivo());
     }
 
-    private ServicioSkillDTO convertirServicioSkillADTO(ServicioSkill servicioSkill) {
-        ServicioSkillDTO dto = new ServicioSkillDTO();
-        dto.setServicioId(servicioSkill.getServicio().getId());
-        dto.setSkillId(servicioSkill.getSkill().getId());
-        dto.setNombreSkill(servicioSkill.getSkill().getNombre());
+    private ServicioHabilidadDTO convertirServicioHabilidadADTO(ServicioHabilidad servicioHabilidad) {
+        ServicioHabilidadDTO dto = new ServicioHabilidadDTO();
+        dto.setServicioId(servicioHabilidad.getServicio().getId());
+        dto.setHabilidadId(servicioHabilidad.getHabilidad().getId());
+        dto.setNombreHabilidad(servicioHabilidad.getHabilidad().getNombre());
         return dto;
     }
 }

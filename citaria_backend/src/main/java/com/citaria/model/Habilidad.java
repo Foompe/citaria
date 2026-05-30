@@ -10,7 +10,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "skill")
-public class Skill {
+public class Habilidad {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,8 +70,8 @@ public class Skill {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Skill skill)) return false;
-        return Objects.equals(id, skill.id) && Objects.equals(organizacion, skill.organizacion) && Objects.equals(nombre, skill.nombre) && Objects.equals(descripcion, skill.descripcion) && Objects.equals(activo, skill.activo);
+        if (!(o instanceof Habilidad habilidad)) return false;
+        return Objects.equals(id, habilidad.id) && Objects.equals(organizacion, habilidad.organizacion) && Objects.equals(nombre, habilidad.nombre) && Objects.equals(descripcion, habilidad.descripcion) && Objects.equals(activo, habilidad.activo);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class Skill {
 
     @Override
     public String toString() {
-        return "Skill{" +
+        return "Habilidad{" +
                 "id=" + id +
                 ", organizacionId=" + (organizacion != null ? organizacion.getId() : null) +
                 ", nombre='" + nombre + '\'' +

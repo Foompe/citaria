@@ -1,6 +1,6 @@
 import 'package:citaria_frontend/data/models/categoria.dart';
 import 'package:citaria_frontend/data/models/servicio.dart';
-import 'package:citaria_frontend/data/models/servicio_skill.dart';
+import 'package:citaria_frontend/data/models/servicio_habilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/foundation.dart';
@@ -52,7 +52,7 @@ class DtoDetalleServicioCliente {
     required this.duracionTexto,
     required this.precioTexto,
     required this.imagenUrl,
-    required this.skills,
+    required this.habilidades,
   });
 
   final int id;
@@ -62,7 +62,7 @@ class DtoDetalleServicioCliente {
   final String duracionTexto;
   final String precioTexto;
   final String? imagenUrl;
-  final List<String> skills;
+  final List<String> habilidades;
 }
 
 class ViewModelCatalogoCliente extends ChangeNotifier {
@@ -189,9 +189,9 @@ class ViewModelCatalogoCliente extends ChangeNotifier {
         id,
         token,
       );
-      final List<ServicioSkill> skills = await _repoCatalogo
-          .obtenerSkillsServicio(id, token);
-      _detalle = _crearDtoDetalle(servicio, skills);
+      final List<ServicioHabilidad> habilidades = await _repoCatalogo
+          .obtenerHabilidadesServicio(id, token);
+      _detalle = _crearDtoDetalle(servicio, habilidades);
       notifyListeners();
     } catch (e) {
       _setError(_mensajeError(e));
@@ -224,7 +224,7 @@ class ViewModelCatalogoCliente extends ChangeNotifier {
 
   DtoDetalleServicioCliente _crearDtoDetalle(
     Servicio servicio,
-    List<ServicioSkill> skills,
+    List<ServicioHabilidad> habilidades,
   ) {
     return DtoDetalleServicioCliente(
       id: servicio.id ?? 0,
@@ -234,10 +234,10 @@ class ViewModelCatalogoCliente extends ChangeNotifier {
       duracionTexto: '${servicio.duracionMinutos} min',
       precioTexto: _formatoPrecio.format(servicio.precio),
       imagenUrl: servicio.imagenUrl,
-      skills: skills
-          .map((skill) => skill.nombreSkill)
+      habilidades: habilidades
+          .map((habilidad) => habilidad.nombreHabilidad)
           .whereType<String>()
-          .where((skill) => skill.trim().isNotEmpty)
+          .where((habilidad) => habilidad.trim().isNotEmpty)
           .toList(growable: false),
     );
   }

@@ -1,8 +1,8 @@
 import 'package:citaria_frontend/data/models/empleado.dart';
-import 'package:citaria_frontend/data/models/empleado_skill.dart';
+import 'package:citaria_frontend/data/models/empleado_habilidad.dart';
 import 'package:citaria_frontend/data/models/horario_empleado.dart';
 import 'package:citaria_frontend/data/models/horario_organizacion.dart';
-import 'package:citaria_frontend/data/models/skill.dart';
+import 'package:citaria_frontend/data/models/habilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
@@ -83,16 +83,16 @@ class DtoHorarioEmpleadoAdmin {
 }
 
 @immutable
-class DtoSkillEmpleadoAdmin {
-  const DtoSkillEmpleadoAdmin({required this.id, required this.nombre});
+class DtoHabilidadEmpleadoAdmin {
+  const DtoHabilidadEmpleadoAdmin({required this.id, required this.nombre});
 
   final int id;
   final String nombre;
 }
 
 @immutable
-class DtoSkillDisponibleEmpleadoAdmin {
-  const DtoSkillDisponibleEmpleadoAdmin({
+class DtoHabilidadDisponibleEmpleadoAdmin {
+  const DtoHabilidadDisponibleEmpleadoAdmin({
     required this.id,
     required this.nombre,
   });
@@ -149,9 +149,9 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
   List<Empleado> _empleados = const <Empleado>[];
   DtoDetalleEmpleadoAdmin? _detalle;
   List<DtoHorarioEmpleadoAdmin> _horarios = const <DtoHorarioEmpleadoAdmin>[];
-  List<DtoSkillEmpleadoAdmin> _skills = const <DtoSkillEmpleadoAdmin>[];
-  List<DtoSkillDisponibleEmpleadoAdmin> _skillsDisponibles =
-      const <DtoSkillDisponibleEmpleadoAdmin>[];
+  List<DtoHabilidadEmpleadoAdmin> _habilidades = const <DtoHabilidadEmpleadoAdmin>[];
+  List<DtoHabilidadDisponibleEmpleadoAdmin> _habilidadesDisponibles =
+      const <DtoHabilidadDisponibleEmpleadoAdmin>[];
   List<DtoHorarioNuevoEmpleadoAdmin> _horariosNuevo =
       const <DtoHorarioNuevoEmpleadoAdmin>[];
   String _busqueda = '';
@@ -159,9 +159,9 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
   String get busqueda => _busqueda;
   DtoDetalleEmpleadoAdmin? get detalle => _detalle;
   List<DtoHorarioEmpleadoAdmin> get horarios => _horarios;
-  List<DtoSkillEmpleadoAdmin> get skills => _skills;
-  List<DtoSkillDisponibleEmpleadoAdmin> get skillsDisponibles =>
-      _skillsDisponibles;
+  List<DtoHabilidadEmpleadoAdmin> get habilidades => _habilidades;
+  List<DtoHabilidadDisponibleEmpleadoAdmin> get habilidadesDisponibles =>
+      _habilidadesDisponibles;
   List<DtoHorarioNuevoEmpleadoAdmin> get horariosNuevo => _horariosNuevo;
 
   List<DtoEmpleadoAdmin> get empleados {
@@ -199,8 +199,8 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
   Future<void> cargarDetalleEmpleado(int id) async {
     _detalle = null;
     _horarios = const <DtoHorarioEmpleadoAdmin>[];
-    _skills = const <DtoSkillEmpleadoAdmin>[];
-    _skillsDisponibles = const <DtoSkillDisponibleEmpleadoAdmin>[];
+    _habilidades = const <DtoHabilidadEmpleadoAdmin>[];
+    _habilidadesDisponibles = const <DtoHabilidadDisponibleEmpleadoAdmin>[];
     iniciarCarga();
 
     try {
@@ -208,17 +208,17 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
       final Empleado empleado = await _repoEmpleados.obtenerPorId(id, token);
       final List<HorarioEmpleado> horarios = await _repoEmpleados
           .obtenerHorarios(id, token);
-      final List<EmpleadoSkill> skills = await _repoEmpleados.obtenerSkills(
+      final List<EmpleadoHabilidad> habilidades = await _repoEmpleados.obtenerHabilidades(
         id,
         token,
       );
-      final List<Skill> skillsDisponibles = await _repoCatalogo.listarSkills(
+      final List<Habilidad> habilidadesDisponibles = await _repoCatalogo.listarHabilidades(
         token,
       );
       _detalle = _crearDetalle(empleado);
       _horarios = _crearHorarios(horarios);
-      _skills = _crearSkills(skills);
-      _skillsDisponibles = _crearSkillsDisponibles(skillsDisponibles);
+      _habilidades = _crearHabilidades(habilidades);
+      _habilidadesDisponibles = _crearHabilidadesDisponibles(habilidadesDisponibles);
       notifyListeners();
     } catch (e) {
       registrarError(e);
@@ -227,20 +227,20 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }
   }
 
-  Future<void> cargarSkillsDisponibles() async {
+  Future<void> cargarHabilidadesDisponibles() async {
     iniciarCarga();
 
     try {
       final String token = leerTokenObligatorio();
-      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
-      _skillsDisponibles =
-          skills
-              .where((skill) => skill.id != null)
-              .where((skill) => skill.activo ?? true)
+      final List<Habilidad> habilidades = await _repoCatalogo.listarHabilidades(token);
+      _habilidadesDisponibles =
+          habilidades
+              .where((habilidad) => habilidad.id != null)
+              .where((habilidad) => habilidad.activo ?? true)
               .map(
-                (skill) => DtoSkillDisponibleEmpleadoAdmin(
-                  id: skill.id ?? 0,
-                  nombre: skill.nombre,
+                (habilidad) => DtoHabilidadDisponibleEmpleadoAdmin(
+                  id: habilidad.id ?? 0,
+                  nombre: habilidad.nombre,
                 ),
               )
               .toList(growable: false)
@@ -259,10 +259,10 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     try {
       final String token = leerTokenObligatorio();
       final int organizacionId = leerOrganizacionIdObligatoria();
-      final List<Skill> skills = await _repoCatalogo.listarSkills(token);
+      final List<Habilidad> habilidades = await _repoCatalogo.listarHabilidades(token);
       final List<HorarioOrganizacion> horarios = await _repoOrganizaciones
           .obtenerHorarios(organizacionId, token);
-      _skillsDisponibles = _crearSkillsDisponibles(skills);
+      _habilidadesDisponibles = _crearHabilidadesDisponibles(habilidades);
       _horariosNuevo = _crearHorariosNuevo(horarios);
       notifyListeners();
     } catch (e) {
@@ -286,7 +286,7 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     required String apellidos,
     required String email,
     required String telefono,
-    required Set<int> skillIds,
+    required Set<int> habilidadIds,
   }) async {
     iniciarCarga();
 
@@ -308,7 +308,7 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
       }
 
       await _crearHorariosIniciales(empleadoId, token);
-      await _asignarSkillsIniciales(empleadoId, skillIds, token);
+      await _asignarHabilidadesIniciales(empleadoId, habilidadIds, token);
       return creado;
     } catch (e) {
       registrarError(e);
@@ -455,23 +455,23 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }
   }
 
-  Future<bool> asignarSkillDetalle({
+  Future<bool> asignarHabilidadDetalle({
     required int empleadoId,
-    required int skillId,
+    required int habilidadId,
   }) async {
     try {
       final String token = leerTokenObligatorio();
-      final EmpleadoSkill asignada = await _repoEmpleados.asignarSkill(
+      final EmpleadoHabilidad asignada = await _repoEmpleados.asignarHabilidad(
         empleadoId,
-        skillId,
+        habilidadId,
         token,
       );
-      final int? sid = asignada.skillId;
-      final String? nombre = asignada.nombreSkill;
+      final int? sid = asignada.habilidadId;
+      final String? nombre = asignada.nombreHabilidad;
       if (sid != null && nombre != null) {
-        _skills = [
-          ..._skills,
-          DtoSkillEmpleadoAdmin(id: sid, nombre: nombre),
+        _habilidades = [
+          ..._habilidades,
+          DtoHabilidadEmpleadoAdmin(id: sid, nombre: nombre),
         ]..sort((a, b) => a.nombre.compareTo(b.nombre));
         notifyListeners();
       }
@@ -482,15 +482,15 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }
   }
 
-  Future<bool> eliminarSkillDetalle({
+  Future<bool> eliminarHabilidadDetalle({
     required int empleadoId,
-    required int skillId,
+    required int habilidadId,
   }) async {
     try {
       final String token = leerTokenObligatorio();
-      await _repoEmpleados.eliminarSkill(empleadoId, skillId, token);
-      _skills = _skills
-          .where((s) => s.id != skillId)
+      await _repoEmpleados.eliminarHabilidad(empleadoId, habilidadId, token);
+      _habilidades = _habilidades
+          .where((s) => s.id != habilidadId)
           .toList(growable: false);
       notifyListeners();
       return true;
@@ -569,27 +569,27 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }, growable: false);
   }
 
-  List<DtoSkillEmpleadoAdmin> _crearSkills(List<EmpleadoSkill> skills) {
-    return skills
-        .where((skill) => skill.skillId != null && skill.nombreSkill != null)
+  List<DtoHabilidadEmpleadoAdmin> _crearHabilidades(List<EmpleadoHabilidad> habilidades) {
+    return habilidades
+        .where((habilidad) => habilidad.habilidadId != null && habilidad.nombreHabilidad != null)
         .map(
-          (skill) =>
-              DtoSkillEmpleadoAdmin(id: skill.skillId!, nombre: skill.nombreSkill!),
+          (habilidad) =>
+              DtoHabilidadEmpleadoAdmin(id: habilidad.habilidadId!, nombre: habilidad.nombreHabilidad!),
         )
         .toList(growable: false)
       ..sort((a, b) => a.nombre.compareTo(b.nombre));
   }
 
-  List<DtoSkillDisponibleEmpleadoAdmin> _crearSkillsDisponibles(
-    List<Skill> skills,
+  List<DtoHabilidadDisponibleEmpleadoAdmin> _crearHabilidadesDisponibles(
+    List<Habilidad> habilidades,
   ) {
-    return skills
-        .where((skill) => skill.id != null)
-        .where((skill) => skill.activo ?? true)
+    return habilidades
+        .where((habilidad) => habilidad.id != null)
+        .where((habilidad) => habilidad.activo ?? true)
         .map(
-          (skill) => DtoSkillDisponibleEmpleadoAdmin(
-            id: skill.id ?? 0,
-            nombre: skill.nombre,
+          (habilidad) => DtoHabilidadDisponibleEmpleadoAdmin(
+            id: habilidad.id ?? 0,
+            nombre: habilidad.nombre,
           ),
         )
         .toList(growable: false)
@@ -636,13 +636,13 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     }
   }
 
-  Future<void> _asignarSkillsIniciales(
+  Future<void> _asignarHabilidadesIniciales(
     int empleadoId,
-    Set<int> skillIds,
+    Set<int> habilidadIds,
     String token,
   ) async {
-    for (final int skillId in skillIds) {
-      await _repoEmpleados.asignarSkill(empleadoId, skillId, token);
+    for (final int habilidadId in habilidadIds) {
+      await _repoEmpleados.asignarHabilidad(empleadoId, habilidadId, token);
     }
   }
 

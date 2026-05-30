@@ -1,11 +1,11 @@
-class Skill {
+class Habilidad {
   final int? id;
   final int? organizacionId;
   final String nombre;
   final String? descripcion;
   final bool? activo;
 
-  const Skill({
+  const Habilidad({
     this.id,
     this.organizacionId,
     required this.nombre,
@@ -13,8 +13,8 @@ class Skill {
     this.activo,
   });
 
-  factory Skill.fromJson(Map<String, dynamic> json) {
-    return Skill(
+  factory Habilidad.fromJson(Map<String, dynamic> json) {
+    return Habilidad(
       id: json['id'] == null ? null : (json['id'] as num).toInt(),
       organizacionId: json['organizacionId'] == null
           ? null

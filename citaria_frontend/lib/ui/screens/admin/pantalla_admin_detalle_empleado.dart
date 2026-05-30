@@ -234,7 +234,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
           tabs: const [
             Tab(text: 'Datos'),
             Tab(text: 'Horarios'),
-            Tab(text: 'Skills'),
+            Tab(text: 'Habilidades'),
           ],
         ),
         Expanded(
@@ -243,7 +243,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
             children: [
               _TabDatos(empleadoId: empleadoId!, empleado: empleado),
               _TabHorarios(empleadoId: empleadoId!),
-              _TabSkills(empleadoId: empleadoId!),
+              _TabHabilidades(empleadoId: empleadoId!),
             ],
           ),
         ),
@@ -628,51 +628,51 @@ class _FilaHorarioEditable extends StatelessWidget {
   }
 }
 
-// ── Tab Skills ────────────────────────────────────────────────────────────────
+// ── Tab Habilidades ────────────────────────────────────────────────────────────────
 
-class _TabSkills extends StatefulWidget {
-  const _TabSkills({required this.empleadoId});
+class _TabHabilidades extends StatefulWidget {
+  const _TabHabilidades({required this.empleadoId});
 
   final int empleadoId;
 
   @override
-  State<_TabSkills> createState() => _TabSkillsState();
+  State<_TabHabilidades> createState() => _TabHabilidadesState();
 }
 
-class _TabSkillsState extends State<_TabSkills> {
-  Future<void> _mostrarDialogoAgregarSkill(
+class _TabHabilidadesState extends State<_TabHabilidades> {
+  Future<void> _mostrarDialogoAgregarHabilidad(
     BuildContext context,
     ViewModelAdminEmpleados vm,
   ) async {
-    final List<DtoSkillDisponibleEmpleadoAdmin> disponibles = vm.skillsDisponibles
-        .where((s) => vm.skills.every((a) => a.id != s.id))
+    final List<DtoHabilidadDisponibleEmpleadoAdmin> disponibles = vm.habilidadesDisponibles
+        .where((s) => vm.habilidades.every((a) => a.id != s.id))
         .toList(growable: false);
 
     if (disponibles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No hay más skills disponibles para asignar.'),
+          content: Text('No hay más habilidades disponibles para asignar.'),
         ),
       );
       return;
     }
 
-    final int? skillId = await showDialog<int>(
+    final int? habilidadId = await showDialog<int>(
       context: context,
-      builder: (ctx) => _DialogoSeleccionarSkill(disponibles: disponibles),
+      builder: (ctx) => _DialogoSeleccionarHabilidad(disponibles: disponibles),
     );
 
-    if (skillId == null || !context.mounted) return;
+    if (habilidadId == null || !context.mounted) return;
 
-    final bool ok = await vm.asignarSkillDetalle(
+    final bool ok = await vm.asignarHabilidadDetalle(
       empleadoId: widget.empleadoId,
-      skillId: skillId,
+      habilidadId: habilidadId,
     );
 
     if (!context.mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(vm.error ?? 'No se pudo asignar el skill.')),
+        SnackBar(content: Text(vm.error ?? 'No se pudo asignar el habilidad.')),
       );
     }
   }
@@ -683,7 +683,7 @@ class _TabSkillsState extends State<_TabSkills> {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final skills = vm.skills;
+    final habilidades = vm.habilidades;
 
     return ListView(
       padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 32),
@@ -691,7 +691,7 @@ class _TabSkillsState extends State<_TabSkills> {
         Row(
           children: [
             Text(
-              'SKILLS',
+              'HABILIDADES',
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.outline,
                 letterSpacing: 1.1,
@@ -701,19 +701,19 @@ class _TabSkillsState extends State<_TabSkills> {
             TextButton.icon(
               onPressed: vm.cargando
                   ? null
-                  : () => _mostrarDialogoAgregarSkill(context, vm),
+                  : () => _mostrarDialogoAgregarHabilidad(context, vm),
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Añadir'),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        if (skills.isEmpty)
+        if (habilidades.isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 16),
             child: Center(
               child: Text(
-                'Sin skills asignadas',
+                'Sin habilidades asignadas',
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.outline,
                 ),
@@ -725,14 +725,14 @@ class _TabSkillsState extends State<_TabSkills> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final skill in skills)
+              for (final habilidad in habilidades)
                 Chip(
-                  label: Text(skill.nombre),
+                  label: Text(habilidad.nombre),
                   onDeleted: vm.cargando
                       ? null
-                      : () => vm.eliminarSkillDetalle(
+                      : () => vm.eliminarHabilidadDetalle(
                             empleadoId: widget.empleadoId,
-                            skillId: skill.id,
+                            habilidadId: habilidad.id,
                           ),
                   deleteIcon: Icon(
                     Icons.close,
@@ -747,10 +747,10 @@ class _TabSkillsState extends State<_TabSkills> {
   }
 }
 
-class _DialogoSeleccionarSkill extends StatelessWidget {
-  const _DialogoSeleccionarSkill({required this.disponibles});
+class _DialogoSeleccionarHabilidad extends StatelessWidget {
+  const _DialogoSeleccionarHabilidad({required this.disponibles});
 
-  final List<DtoSkillDisponibleEmpleadoAdmin> disponibles;
+  final List<DtoHabilidadDisponibleEmpleadoAdmin> disponibles;
 
   @override
   Widget build(BuildContext context) {
@@ -759,17 +759,17 @@ class _DialogoSeleccionarSkill extends StatelessWidget {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: espaciado.radioCard),
-      title: const Text('Añadir skill'),
+      title: const Text('Añadir habilidad'),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
           shrinkWrap: true,
           itemCount: disponibles.length,
           itemBuilder: (ctx, i) {
-            final skill = disponibles[i];
+            final habilidad = disponibles[i];
             return ListTile(
-              title: Text(skill.nombre, style: textTheme.bodyLarge),
-              onTap: () => Navigator.of(ctx).pop(skill.id),
+              title: Text(habilidad.nombre, style: textTheme.bodyLarge),
+              onTap: () => Navigator.of(ctx).pop(habilidad.id),
             );
           },
         ),

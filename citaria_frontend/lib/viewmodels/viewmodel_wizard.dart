@@ -38,7 +38,7 @@ class DtoEmpleadoWizard {
     required this.nombre,
     required this.rol,
     required this.iniciales,
-    required this.skills,
+    required this.habilidades,
     required this.seleccionado,
   });
 
@@ -46,7 +46,7 @@ class DtoEmpleadoWizard {
   final String nombre;
   final String rol;
   final String iniciales;
-  final List<String> skills;
+  final List<String> habilidades;
   final bool seleccionado;
 }
 
@@ -188,7 +188,7 @@ class ViewModelWizard extends ChangeNotifier {
       nombre: 'Asignación automática',
       rol: 'Te asignamos al mejor profesional disponible',
       iniciales: 'A',
-      skills: const <String>[],
+      habilidades: const <String>[],
       seleccionado: _empleadoId == null,
     );
   }

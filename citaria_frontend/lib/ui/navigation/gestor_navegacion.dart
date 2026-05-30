@@ -18,9 +18,9 @@ import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_cliente.d
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_catalogo.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_categoria.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_servicio.dart';
-import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_skill.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_habilidad.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_categoria.dart';
-import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_skill.dart';
+import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nueva_habilidad.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_cierre.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_nuevo_servicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_horarios.dart';
@@ -424,17 +424,17 @@ class GestorNavegacion {
         'Catálogo',
       );
 
-  static Future<bool?> irAAdminNuevaSkill(BuildContext context) =>
+  static Future<bool?> irAAdminNuevaHabilidad(BuildContext context) =>
       _irAPinConDestino<bool>(
         context,
-        (_) => const PantallaAdminNuevaSkill(),
+        (_) => const PantallaAdminNuevaHabilidad(),
         'Catálogo',
       );
 
-  static Future<bool?> irAAdminDetalleSkill(BuildContext context, int id) =>
+  static Future<bool?> irAAdminDetalleHabilidad(BuildContext context, int id) =>
       _irAPinConDestino<bool>(
         context,
-        (_) => PantallaAdminDetalleSkill(id: id),
+        (_) => PantallaAdminDetalleHabilidad(id: id),
         'Catálogo',
       );
 

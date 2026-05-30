@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/categoria.dart';
 import 'package:citaria_frontend/data/models/servicio.dart';
-import 'package:citaria_frontend/data/models/servicio_skill.dart';
-import 'package:citaria_frontend/data/models/skill.dart';
+import 'package:citaria_frontend/data/models/servicio_habilidad.dart';
+import 'package:citaria_frontend/data/models/habilidad.dart';
 
 class RepoCatalogo {
   RepoCatalogo(this._api);
@@ -135,19 +135,19 @@ class RepoCatalogo {
     }
   }
 
-  Future<List<ServicioSkill>> obtenerSkillsServicio(
+  Future<List<ServicioHabilidad>> obtenerHabilidadesServicio(
     int id,
     String token,
   ) async {
     try {
       final Object? json = await _api.get(
-        '/api/catalogo/servicios/$id/skills',
+        '/api/catalogo/servicios/$id/habilidades',
         token: token,
       );
       return (json as List)
           .map(
             (elemento) =>
-                ServicioSkill.fromJson(elemento as Map<String, dynamic>),
+                ServicioHabilidad.fromJson(elemento as Map<String, dynamic>),
           )
           .toList();
     } on TimeoutException {
@@ -158,17 +158,17 @@ class RepoCatalogo {
     }
   }
 
-  Future<ServicioSkill> asignarSkillServicio(
+  Future<ServicioHabilidad> asignarHabilidadServicio(
     int servicioId,
-    int skillId,
+    int habilidadId,
     String token,
   ) async {
     try {
       final Object? json = await _api.post(
-        '/api/catalogo/servicios/$servicioId/skills/$skillId',
+        '/api/catalogo/servicios/$servicioId/habilidades/$habilidadId',
         token: token,
       );
-      return ServicioSkill.fromJson(json as Map<String, dynamic>);
+      return ServicioHabilidad.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -177,14 +177,14 @@ class RepoCatalogo {
     }
   }
 
-  Future<void> eliminarSkillServicio(
+  Future<void> eliminarHabilidadServicio(
     int servicioId,
-    int skillId,
+    int habilidadId,
     String token,
   ) async {
     try {
       await _api.delete(
-        '/api/catalogo/servicios/$servicioId/skills/$skillId',
+        '/api/catalogo/servicios/$servicioId/habilidades/$habilidadId',
         token: token,
       );
     } on TimeoutException {
@@ -276,11 +276,11 @@ class RepoCatalogo {
     }
   }
 
-  Future<List<Skill>> listarSkills(String token) async {
+  Future<List<Habilidad>> listarHabilidades(String token) async {
     try {
-      final Object? json = await _api.get('/api/catalogo/skills', token: token);
+      final Object? json = await _api.get('/api/catalogo/habilidades', token: token);
       return (json as List)
-          .map((elemento) => Skill.fromJson(elemento as Map<String, dynamic>))
+          .map((elemento) => Habilidad.fromJson(elemento as Map<String, dynamic>))
           .toList();
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
@@ -290,13 +290,13 @@ class RepoCatalogo {
     }
   }
 
-  Future<Skill> obtenerSkillPorId(int id, String token) async {
+  Future<Habilidad> obtenerHabilidadPorId(int id, String token) async {
     try {
       final Object? json = await _api.get(
-        '/api/catalogo/skills/$id',
+        '/api/catalogo/habilidades/$id',
         token: token,
       );
-      return Skill.fromJson(json as Map<String, dynamic>);
+      return Habilidad.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -305,14 +305,14 @@ class RepoCatalogo {
     }
   }
 
-  Future<Skill> crearSkill(Skill skill, String token) async {
+  Future<Habilidad> crearHabilidad(Habilidad habilidad, String token) async {
     try {
       final Object? json = await _api.post(
-        '/api/catalogo/skills',
-        cuerpo: skill.toJson(),
+        '/api/catalogo/habilidades',
+        cuerpo: habilidad.toJson(),
         token: token,
       );
-      return Skill.fromJson(json as Map<String, dynamic>);
+      return Habilidad.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -321,14 +321,14 @@ class RepoCatalogo {
     }
   }
 
-  Future<Skill> actualizarSkill(int id, Skill skill, String token) async {
+  Future<Habilidad> actualizarHabilidad(int id, Habilidad habilidad, String token) async {
     try {
       final Object? json = await _api.put(
-        '/api/catalogo/skills/$id',
-        cuerpo: skill.toJson(),
+        '/api/catalogo/habilidades/$id',
+        cuerpo: habilidad.toJson(),
         token: token,
       );
-      return Skill.fromJson(json as Map<String, dynamic>);
+      return Habilidad.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -337,9 +337,9 @@ class RepoCatalogo {
     }
   }
 
-  Future<void> desactivarSkill(int id, String token) async {
+  Future<void> desactivarHabilidad(int id, String token) async {
     try {
-      await _api.delete('/api/catalogo/skills/$id', token: token);
+      await _api.delete('/api/catalogo/habilidades/$id', token: token);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {

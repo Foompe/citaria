@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/empleado.dart';
-import 'package:citaria_frontend/data/models/empleado_skill.dart';
+import 'package:citaria_frontend/data/models/empleado_habilidad.dart';
 import 'package:citaria_frontend/data/models/horario_empleado.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 
@@ -184,16 +184,16 @@ class RepoEmpleados {
     }
   }
 
-  Future<List<EmpleadoSkill>> obtenerSkills(int id, String token) async {
+  Future<List<EmpleadoHabilidad>> obtenerHabilidades(int id, String token) async {
     try {
       final Object? json = await _api.get(
-        '/api/empleados/$id/skills',
+        '/api/empleados/$id/habilidades',
         token: token,
       );
       return (json as List)
           .map(
             (elemento) =>
-                EmpleadoSkill.fromJson(elemento as Map<String, dynamic>),
+                EmpleadoHabilidad.fromJson(elemento as Map<String, dynamic>),
           )
           .toList();
     } on TimeoutException {
@@ -204,17 +204,17 @@ class RepoEmpleados {
     }
   }
 
-  Future<EmpleadoSkill> asignarSkill(
+  Future<EmpleadoHabilidad> asignarHabilidad(
     int empId,
-    int skillId,
+    int habilidadId,
     String token,
   ) async {
     try {
       final Object? json = await _api.post(
-        '/api/empleados/$empId/skills/$skillId',
+        '/api/empleados/$empId/habilidades/$habilidadId',
         token: token,
       );
-      return EmpleadoSkill.fromJson(json as Map<String, dynamic>);
+      return EmpleadoHabilidad.fromJson(json as Map<String, dynamic>);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {
@@ -223,9 +223,9 @@ class RepoEmpleados {
     }
   }
 
-  Future<void> eliminarSkill(int empId, int skillId, String token) async {
+  Future<void> eliminarHabilidad(int empId, int habilidadId, String token) async {
     try {
-      await _api.delete('/api/empleados/$empId/skills/$skillId', token: token);
+      await _api.delete('/api/empleados/$empId/habilidades/$habilidadId', token: token);
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Inténtalo de nuevo.');
     } catch (e) {

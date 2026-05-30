@@ -2,13 +2,13 @@ package com.citaria.service;
 
 import com.citaria.dto.CategoriaDTO;
 import com.citaria.dto.ServicioDTO;
-import com.citaria.dto.ServicioSkillDTO;
-import com.citaria.dto.SkillDTO;
+import com.citaria.dto.ServicioHabilidadDTO;
+import com.citaria.dto.HabilidadDTO;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * Servicio de gestión de servicios, categorías y skills.
+ * Servicio de gestión de servicios, categorías y habilidades.
  */
 public interface CatalogoService {
 
@@ -19,12 +19,12 @@ public interface CatalogoService {
     CategoriaDTO actualizarCategoria(Integer id, CategoriaDTO dto);
     void desactivarCategoria(Integer id);
 
-    // Skills
-    List<SkillDTO> obtenerSkills();
-    SkillDTO obtenerSkillPorId(Integer id);
-    SkillDTO crearSkill(SkillDTO dto);
-    SkillDTO actualizarSkill(Integer id, SkillDTO dto);
-    void desactivarSkill(Integer id);
+    // Habilidades
+    List<HabilidadDTO> obtenerHabilidades();
+    HabilidadDTO obtenerHabilidadPorId(Integer id);
+    HabilidadDTO crearHabilidad(HabilidadDTO dto);
+    HabilidadDTO actualizarHabilidad(Integer id, HabilidadDTO dto);
+    void desactivarHabilidad(Integer id);
 
     // Servicios
     List<ServicioDTO> obtenerServicios();
@@ -35,9 +35,9 @@ public interface CatalogoService {
     void subirImagenServicio(Integer id, MultipartFile archivo);
     void desactivarServicio(Integer id);
 
-    // Skills de servicio
-    List<ServicioSkillDTO> obtenerSkillsPorServicio(Integer servicioId);
-    ServicioSkillDTO asignarSkillAServicio(Integer servicioId, Integer skillId);
-    void quitarSkillDeServicio(Integer servicioId, Integer skillId);
+    // Habilidades de servicio
+    List<ServicioHabilidadDTO> obtenerHabilidadesPorServicio(Integer servicioId);
+    ServicioHabilidadDTO asignarHabilidadAServicio(Integer servicioId, Integer habilidadId);
+    void quitarHabilidadDeServicio(Integer servicioId, Integer habilidadId);
 
 }

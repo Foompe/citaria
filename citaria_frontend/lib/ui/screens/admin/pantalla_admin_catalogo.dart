@@ -80,7 +80,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
                     tabs: const [
                       Tab(text: 'Servicios'),
                       Tab(text: 'Categorías'),
-                      Tab(text: 'Skills'),
+                      Tab(text: 'Habilidades'),
                     ],
                   ),
                 ),
@@ -100,7 +100,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
   String get _tooltipFab {
     return switch (_tabController.index) {
       1 => 'Nueva categoría',
-      2 => 'Nueva skill',
+      2 => 'Nueva habilidad',
       _ => 'Nuevo servicio',
     };
   }
@@ -112,7 +112,7 @@ class _PantallaAdminCatalogoState extends State<PantallaAdminCatalogo>
     final int indice = _tabController.index;
     final Future<bool?> navegacion = switch (indice) {
       1 => GestorNavegacion.irAAdminNuevaCategoria(context),
-      2 => GestorNavegacion.irAAdminNuevaSkill(context),
+      2 => GestorNavegacion.irAAdminNuevaHabilidad(context),
       _ => GestorNavegacion.irAAdminNuevoServicio(context),
     };
     final bool? creado = await navegacion;
@@ -136,7 +136,7 @@ class _CuerpoCatalogo extends StatelessWidget {
     if (vmCatalogo.cargando &&
         vmCatalogo.servicios.isEmpty &&
         vmCatalogo.categorias.isEmpty &&
-        vmCatalogo.skills.isEmpty) {
+        vmCatalogo.habilidades.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -144,7 +144,7 @@ class _CuerpoCatalogo extends StatelessWidget {
     if (error != null &&
         vmCatalogo.servicios.isEmpty &&
         vmCatalogo.categorias.isEmpty &&
-        vmCatalogo.skills.isEmpty) {
+        vmCatalogo.habilidades.isEmpty) {
       return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
@@ -183,13 +183,13 @@ class _CuerpoCatalogo extends StatelessWidget {
               }
             },
           ),
-          _TabSkills(
-            skills: vmCatalogo.skills,
-            onSkillTap: (skill) async {
+          _TabHabilidades(
+            habilidades: vmCatalogo.habilidades,
+            onHabilidadTap: (habilidad) async {
               final bool? actualizado =
-                  await GestorNavegacion.irAAdminDetalleSkill(
+                  await GestorNavegacion.irAAdminDetalleHabilidad(
                     context,
-                    skill.id,
+                    habilidad.id,
                   );
               if (actualizado == true) {
                 await vmCatalogo.refrescar();
@@ -344,28 +344,28 @@ class _TabCategorias extends StatelessWidget {
   }
 }
 
-class _TabSkills extends StatelessWidget {
-  const _TabSkills({required this.skills, required this.onSkillTap});
+class _TabHabilidades extends StatelessWidget {
+  const _TabHabilidades({required this.habilidades, required this.onHabilidadTap});
 
-  final List<DtoSkillCatalogoAdmin> skills;
-  final ValueChanged<DtoSkillCatalogoAdmin> onSkillTap;
+  final List<DtoHabilidadCatalogoAdmin> habilidades;
+  final ValueChanged<DtoHabilidadCatalogoAdmin> onHabilidadTap;
 
   @override
   Widget build(BuildContext context) {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
-    if (skills.isEmpty) {
-      return const _ListaVacia(mensaje: 'Sin skills');
+    if (habilidades.isEmpty) {
+      return const _ListaVacia(mensaje: 'Sin habilidades');
     }
 
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: espaciado.padX, vertical: 12),
-      itemCount: skills.length,
+      itemCount: habilidades.length,
       itemBuilder: (context, index) => _TarjetaSimpleCatalogo(
-        nombre: skills[index].nombre,
-        subtitulo: skills[index].descripcion,
-        activo: skills[index].activo,
-        onTap: () => onSkillTap(skills[index]),
+        nombre: habilidades[index].nombre,
+        subtitulo: habilidades[index].descripcion,
+        activo: habilidades[index].activo,
+        onTap: () => onHabilidadTap(habilidades[index]),
       ),
     );
   }

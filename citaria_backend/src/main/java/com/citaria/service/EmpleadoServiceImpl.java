@@ -1,7 +1,7 @@
 package com.citaria.service;
 
 import com.citaria.dto.EmpleadoDTO;
-import com.citaria.dto.EmpleadoSkillDTO;
+import com.citaria.dto.EmpleadoHabilidadDTO;
 import com.citaria.dto.HorarioEmpleadoDTO;
 import com.citaria.dto.ReservaDTO;
 import com.citaria.exception.RecursoNoEncontradoException;
@@ -26,8 +26,8 @@ public class EmpleadoServiceImpl implements EmpleadoService {
 
     private final EmpleadoDAO empleadoDAO;
     private final HorarioEmpleadoDAO horarioEmpleadoDAO;
-    private final EmpleadoSkillDAO empleadoSkillDAO;
-    private final SkillDAO skillDAO;
+    private final EmpleadoHabilidadDAO empleadoHabilidadDAO;
+    private final HabilidadDAO habilidadDAO;
     private final ReservaDAO reservaDAO;
     private final ContextoSeguridad contextoSeguridad;
     private final ImagenService imagenService;
@@ -35,15 +35,15 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     @Autowired
     public EmpleadoServiceImpl(EmpleadoDAO empleadoDAO,
                                HorarioEmpleadoDAO horarioEmpleadoDAO,
-                               EmpleadoSkillDAO empleadoSkillDAO,
-                               SkillDAO skillDAO,
+                               EmpleadoHabilidadDAO empleadoHabilidadDAO,
+                               HabilidadDAO habilidadDAO,
                                ReservaDAO reservaDAO,
                                ContextoSeguridad contextoSeguridad,
                                ImagenService imagenService) {
         this.empleadoDAO = empleadoDAO;
         this.horarioEmpleadoDAO = horarioEmpleadoDAO;
-        this.empleadoSkillDAO = empleadoSkillDAO;
-        this.skillDAO = skillDAO;
+        this.empleadoHabilidadDAO = empleadoHabilidadDAO;
+        this.habilidadDAO = habilidadDAO;
         this.reservaDAO = reservaDAO;
         this.contextoSeguridad = contextoSeguridad;
         this.imagenService = imagenService;
@@ -202,11 +202,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         horarioEmpleadoDAO.deleteById(id);
     }
 
-    // SKILLS EMPLEADO
+    // HABILIDADES EMPLEADO
 
     @Override
     @Transactional(readOnly = true)
-    public List<EmpleadoSkillDTO> obtenerSkillsPorEmpleado(Integer empleadoId) {
+    public List<EmpleadoHabilidadDTO> obtenerHabilidadesPorEmpleado(Integer empleadoId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Empleado> empleadoOptional = empleadoDAO.findById(empleadoId);
         if (empleadoOptional.isEmpty()) {
@@ -214,17 +214,17 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         }
         Empleado empleado = empleadoOptional.get();
         verificarPertenencia(empleado, organizacion);
-        List<EmpleadoSkill> skills = empleadoSkillDAO.findByEmpleado(empleado);
-        List<EmpleadoSkillDTO> skillsDTO = new ArrayList<>();
-        for (EmpleadoSkill empleadoSkill : skills) {
-            skillsDTO.add(convertirSkillADTO(empleadoSkill));
+        List<EmpleadoHabilidad> habilidades = empleadoHabilidadDAO.findByEmpleado(empleado);
+        List<EmpleadoHabilidadDTO> habilidadesDTO = new ArrayList<>();
+        for (EmpleadoHabilidad empleadoHabilidad : habilidades) {
+            habilidadesDTO.add(convertirHabilidadADTO(empleadoHabilidad));
         }
-        return skillsDTO;
+        return habilidadesDTO;
     }
 
     @Override
     @Transactional
-    public EmpleadoSkillDTO asignarSkill(Integer empleadoId, Integer skillId) {
+    public EmpleadoHabilidadDTO asignarHabilidad(Integer empleadoId, Integer habilidadId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Empleado> empleadoOptional = empleadoDAO.findById(empleadoId);
         if (empleadoOptional.isEmpty()) {
@@ -232,19 +232,19 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         }
         Empleado empleado = empleadoOptional.get();
         verificarPertenencia(empleado, organizacion);
-        Optional<Skill> skillOptional = skillDAO.findById(skillId);
-        if (skillOptional.isEmpty()) {
-            throw new RecursoNoEncontradoException("Skill con id " + skillId + " no encontrada");
+        Optional<Habilidad> habilidadOptional = habilidadDAO.findById(habilidadId);
+        if (habilidadOptional.isEmpty()) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + habilidadId + " no encontrada");
         }
-        Skill skill = skillOptional.get();
-        verificarPertenenciaSkill(skill, organizacion);
-        EmpleadoSkill empleadoSkill = new EmpleadoSkill(empleado, skill);
-        return convertirSkillADTO(empleadoSkillDAO.save(empleadoSkill));
+        Habilidad habilidad = habilidadOptional.get();
+        verificarPertenenciaHabilidad(habilidad, organizacion);
+        EmpleadoHabilidad empleadoHabilidad = new EmpleadoHabilidad(empleado, habilidad);
+        return convertirHabilidadADTO(empleadoHabilidadDAO.save(empleadoHabilidad));
     }
 
     @Override
     @Transactional
-    public void eliminarSkill(Integer empleadoId, Integer skillId) {
+    public void eliminarHabilidad(Integer empleadoId, Integer habilidadId) {
         Organizacion organizacion = contextoSeguridad.obtenerOrganizacionActual();
         Optional<Empleado> empleadoOptional = empleadoDAO.findById(empleadoId);
         if (empleadoOptional.isEmpty()) {
@@ -252,12 +252,12 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         }
         Empleado empleado = empleadoOptional.get();
         verificarPertenencia(empleado, organizacion);
-        EmpleadoSkillId empleadoSkillId = new EmpleadoSkillId(empleadoId, skillId);
-        if (!empleadoSkillDAO.existsById(empleadoSkillId)) {
+        EmpleadoHabilidadId empleadoHabilidadId = new EmpleadoHabilidadId(empleadoId, habilidadId);
+        if (!empleadoHabilidadDAO.existsById(empleadoHabilidadId)) {
             throw new RecursoNoEncontradoException(
-                    "Asignación de skill " + skillId + " al empleado " + empleadoId + " no encontrada");
+                    "Asignación de habilidad " + habilidadId + " al empleado " + empleadoId + " no encontrada");
         }
-        empleadoSkillDAO.deleteById(empleadoSkillId);
+        empleadoHabilidadDAO.deleteById(empleadoHabilidadId);
     }
 
     // MÉTODOS AUXILIARES
@@ -268,9 +268,9 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         }
     }
 
-    private void verificarPertenenciaSkill(Skill skill, Organizacion organizacion) {
-        if (!skill.getOrganizacion().getId().equals(organizacion.getId())) {
-            throw new RecursoNoEncontradoException("Skill con id " + skill.getId() + " no encontrada");
+    private void verificarPertenenciaHabilidad(Habilidad habilidad, Organizacion organizacion) {
+        if (!habilidad.getOrganizacion().getId().equals(organizacion.getId())) {
+            throw new RecursoNoEncontradoException("Habilidad con id " + habilidad.getId() + " no encontrada");
         }
     }
 
@@ -369,11 +369,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         horario.setActivo(dto.getActivo());
     }
 
-    private EmpleadoSkillDTO convertirSkillADTO(EmpleadoSkill empleadoSkill) {
-        EmpleadoSkillDTO dto = new EmpleadoSkillDTO();
-        dto.setEmpleadoId(empleadoSkill.getEmpleado().getId());
-        dto.setSkillId(empleadoSkill.getSkill().getId());
-        dto.setNombreSkill(empleadoSkill.getSkill().getNombre());
+    private EmpleadoHabilidadDTO convertirHabilidadADTO(EmpleadoHabilidad empleadoHabilidad) {
+        EmpleadoHabilidadDTO dto = new EmpleadoHabilidadDTO();
+        dto.setEmpleadoId(empleadoHabilidad.getEmpleado().getId());
+        dto.setHabilidadId(empleadoHabilidad.getHabilidad().getId());
+        dto.setNombreHabilidad(empleadoHabilidad.getHabilidad().getNombre());
         return dto;
     }
 }
