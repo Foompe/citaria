@@ -4,8 +4,9 @@ import 'package:citaria_frontend/ui/widgets/avatar_editable.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
+import 'package:citaria_frontend/ui/widgets/chip_activo_inactivo.dart';
+import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
@@ -225,7 +226,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
-              _ChipEstadoEmpleado(activo: empleado.activo),
+              ChipActivoInactivo(activo: empleado.activo),
             ],
           ),
         ),
@@ -391,7 +392,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vm),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorEmpleado(),
+              const DivisorCitaria(),
               _FilaDatoEmpleado(
                 icono: Icons.group_outlined,
                 label: 'Apellidos',
@@ -407,7 +408,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vm),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorEmpleado(),
+              const DivisorCitaria(),
               _FilaDatoEmpleado(
                 icono: Icons.email_outlined,
                 label: 'Email',
@@ -423,7 +424,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vm),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorEmpleado(),
+              const DivisorCitaria(),
               _FilaDatoEmpleado(
                 icono: Icons.phone_outlined,
                 label: 'Teléfono',
@@ -786,33 +787,6 @@ class _DialogoSeleccionarHabilidad extends StatelessWidget {
 
 // ── Chip de estado ────────────────────────────────────────────────────────────
 
-class _ChipEstadoEmpleado extends StatelessWidget {
-  const _ChipEstadoEmpleado({required this.activo});
-
-  final bool activo;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final estados = Theme.of(context).extension<EstadosReservaCitaria>()!;
-    final ColoresEstado colores =
-        activo ? estados.confirmada : estados.completada;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: colores.fondo,
-        borderRadius: espaciado.radioPill,
-      ),
-      child: Text(
-        activo ? 'Activo' : 'Inactivo',
-        style: textTheme.labelSmall?.copyWith(color: colores.texto),
-      ),
-    );
-  }
-}
-
 // ── Fila de dato editable ─────────────────────────────────────────────────────
 
 class _FilaDatoEmpleado extends StatelessWidget {
@@ -920,15 +894,3 @@ class _FilaDatoEmpleado extends StatelessWidget {
   }
 }
 
-class _DivisorEmpleado extends StatelessWidget {
-  const _DivisorEmpleado();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      indent: 48,
-      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-    );
-  }
-}

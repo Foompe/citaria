@@ -7,6 +7,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
+import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
@@ -406,7 +407,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vmClientes),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorAdmin(),
+              const DivisorCitaria(),
               _FilaDatoAdmin(
                 icono: Icons.group_outlined,
                 label: 'Apellidos',
@@ -422,7 +423,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vmClientes),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorAdmin(),
+              const DivisorCitaria(),
               _FilaDatoAdmin(
                 icono: Icons.badge_outlined,
                 label: 'DNI',
@@ -436,13 +437,13 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vmClientes),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorAdmin(),
+              const DivisorCitaria(),
               _FilaDatoAdmin(
                 icono: Icons.email_outlined,
                 label: 'Email',
                 valor: c.email,
               ),
-              const _DivisorAdmin(),
+              const DivisorCitaria(),
               _FilaDatoAdmin(
                 icono: Icons.phone_outlined,
                 label: 'Teléfono',
@@ -458,7 +459,7 @@ class _TabDatosState extends State<_TabDatos> {
                 onGuardar: () => _guardarCampo(context, vmClientes),
                 onCancelar: _cancelarEdicion,
               ),
-              const _DivisorAdmin(),
+              const DivisorCitaria(),
               _FilaDatoAdmin(
                 icono: Icons.notes_outlined,
                 label: 'Notas',
@@ -610,19 +611,6 @@ class _FilaDatoAdmin extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-class _DivisorAdmin extends StatelessWidget {
-  const _DivisorAdmin();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      indent: 48,
-      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
     );
   }
 }

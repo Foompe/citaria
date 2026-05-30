@@ -7,6 +7,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
+import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_inicio.dart';
@@ -234,7 +235,7 @@ class _ContenidoInicio extends StatelessWidget {
 
     final String? error = vmInicio.error;
     if (error != null && empleados.isEmpty) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: error,
         accionTexto: 'Reintentar',
         onAccion: vmInicio.refrescar,
@@ -242,7 +243,7 @@ class _ContenidoInicio extends StatelessWidget {
     }
 
     if (empleados.isEmpty) {
-      return _EstadoCentrado(
+      return EstadoCentrado(
         mensaje: 'No hay empleados activos para mostrar la agenda.',
         accionTexto: 'Refrescar',
         onAccion: vmInicio.refrescar,
@@ -279,35 +280,6 @@ class _ContenidoInicio extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _EstadoCentrado extends StatelessWidget {
-  const _EstadoCentrado({
-    required this.mensaje,
-    required this.accionTexto,
-    required this.onAccion,
-  });
-
-  final String mensaje;
-  final String accionTexto;
-  final VoidCallback onAccion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(mensaje, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onAccion, child: Text(accionTexto)),
-          ],
-        ),
-      ),
     );
   }
 }

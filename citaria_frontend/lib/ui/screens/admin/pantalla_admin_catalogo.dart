@@ -1,8 +1,8 @@
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
-import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
+import 'package:citaria_frontend/ui/widgets/chip_activo_inactivo.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
@@ -299,7 +299,7 @@ class _TarjetaServicio extends StatelessWidget {
                             color: colorScheme.primary,
                           ),
                         ),
-                        _ChipActivoInactivo(activo: servicio.activo),
+                        ChipActivoInactivo(activo: servicio.activo),
                       ],
                     ),
                   ],
@@ -399,7 +399,7 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             if (subtitulo != null) Text(subtitulo!),
-            _ChipActivoInactivo(activo: activo!),
+            ChipActivoInactivo(activo: activo!),
           ],
         ),
       );
@@ -421,33 +421,6 @@ class _TarjetaSimpleCatalogo extends StatelessWidget {
               ? null
               : Icon(Icons.chevron_right, color: colorScheme.outline),
         ),
-      ),
-    );
-  }
-}
-
-class _ChipActivoInactivo extends StatelessWidget {
-  const _ChipActivoInactivo({required this.activo});
-
-  final bool activo;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
-    final estados = Theme.of(context).extension<EstadosReservaCitaria>()!;
-    final ColoresEstado colores =
-        activo ? estados.confirmada : estados.completada;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: colores.fondo,
-        borderRadius: espaciado.radioPill,
-      ),
-      child: Text(
-        activo ? 'Activo' : 'Inactivo',
-        style: textTheme.labelSmall?.copyWith(color: colores.texto),
       ),
     );
   }

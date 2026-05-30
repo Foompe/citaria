@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
+import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
@@ -222,7 +223,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                           onCancelar: _cancelarEdicion,
                           formateadores: Validadores.nombrePersona,
                         ),
-                        const _Divisor(),
+                        const DivisorCitaria(),
                         _FilaDato(
                           icono: Icons.badge_outlined,
                           label: 'Apellidos',
@@ -239,13 +240,13 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                           onCancelar: _cancelarEdicion,
                           formateadores: Validadores.nombrePersona,
                         ),
-                        const _Divisor(),
+                        const DivisorCitaria(),
                         _FilaDato(
                           icono: Icons.email_outlined,
                           label: 'Email',
                           valor: perfil.email,
                         ),
-                        const _Divisor(),
+                        const DivisorCitaria(),
                         _FilaDato(
                           icono: Icons.phone_outlined,
                           label: 'Teléfono',
@@ -455,15 +456,3 @@ class _FilaDato extends StatelessWidget {
   }
 }
 
-class _Divisor extends StatelessWidget {
-  const _Divisor();
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      indent: 48,
-      color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.15),
-    );
-  }
-}
