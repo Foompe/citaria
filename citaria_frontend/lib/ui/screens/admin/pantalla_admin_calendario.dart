@@ -70,9 +70,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
   }
 
   void _seleccionarDia(int dia) {
-    setState(
-      () => _diaSeleccionado = _diaSeleccionado == dia ? null : dia,
-    );
+    setState(() => _diaSeleccionado = _diaSeleccionado == dia ? null : dia);
   }
 
   (int, int) _infoMes(DateTime mes) {
@@ -104,183 +102,206 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
               seccionActiva: SeccionAdmin.mas,
             ),
             body: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: CustomScrollView(
+                slivers: [
                   // ── Cabecera ───────────────────────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      espaciado.padX,
-                      16,
-                      espaciado.padX,
-                      0,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        espaciado.padX,
+                        16,
+                        espaciado.padX,
+                        0,
+                      ),
+                      child: Text('Agenda', style: textTheme.displayLarge),
                     ),
-                    child: Text('Agenda', style: textTheme.displayLarge),
                   ),
 
                   // ── Selector de mes ─────────────────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: espaciado.padX,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        Tooltip(
-                          message: 'Mes anterior',
-                          child: IconButton(
-                            icon: const Icon(Icons.chevron_left),
-                            onPressed: _mesAnterior,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: espaciado.padX,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Tooltip(
+                            message: 'Mes anterior',
+                            child: IconButton(
+                              icon: const Icon(Icons.chevron_left),
+                              onPressed: _mesAnterior,
+                            ),
                           ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '${_nombresMes[mes.month]} ${mes.year}',
-                            style: textTheme.displaySmall,
-                            textAlign: TextAlign.center,
+                          Expanded(
+                            child: Text(
+                              '${_nombresMes[mes.month]} ${mes.year}',
+                              style: textTheme.displaySmall,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                        ),
-                        Tooltip(
-                          message: 'Mes siguiente',
-                          child: IconButton(
-                            icon: const Icon(Icons.chevron_right),
-                            onPressed: _mesSiguiente,
+                          Tooltip(
+                            message: 'Mes siguiente',
+                            child: IconButton(
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: _mesSiguiente,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
                   // ── Cabeceras días semana ───────────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-                    child: Row(
-                      children: _cabeceras.map((c) {
-                        return Expanded(
-                          child: Center(
-                            child: Text(
-                              c,
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.outline,
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
+                      child: Row(
+                        children: _cabeceras.map((c) {
+                          return Expanded(
+                            child: Center(
+                              child: Text(
+                                c,
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.outline,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SliverToBoxAdapter(child: SizedBox(height: 4)),
 
                   // ── Grid del calendario ─────────────────────────────────────
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            mainAxisSpacing: 4,
-                            crossAxisSpacing: 4,
-                            childAspectRatio: 0.75,
-                          ),
-                      itemCount: celdasTotales,
-                      itemBuilder: (context, index) {
-                        final diaNum = index - offsetInicio + 1;
-                        if (index < offsetInicio || diaNum > diasEnMes) {
-                          return const SizedBox.shrink();
-                        }
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
+                      child: Stack(
+                        children: [
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 7,
+                                  mainAxisSpacing: 4,
+                                  crossAxisSpacing: 4,
+                                  childAspectRatio: 0.75,
+                                ),
+                            itemCount: celdasTotales,
+                            itemBuilder: (context, index) {
+                              final diaNum = index - offsetInicio + 1;
+                              if (index < offsetInicio || diaNum > diasEnMes) {
+                                return const SizedBox.shrink();
+                              }
 
-                        final nReservas = vmCalendario.contarPorDia(diaNum);
-                        final tieneRes = nReservas > 0;
-                        final seleccionado = _diaSeleccionado == diaNum;
-                        final hoy = DateTime.now();
-                        final esHoy =
-                            hoy.year == mes.year &&
-                            hoy.month == mes.month &&
-                            hoy.day == diaNum;
+                              final nReservas = vmCalendario.contarPorDia(
+                                diaNum,
+                              );
+                              final tieneRes = nReservas > 0;
+                              final seleccionado = _diaSeleccionado == diaNum;
+                              final hoy = DateTime.now();
+                              final esHoy =
+                                  hoy.year == mes.year &&
+                                  hoy.month == mes.month &&
+                                  hoy.day == diaNum;
 
-                        return GestureDetector(
-                          onTap: () => _seleccionarDia(diaNum),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: seleccionado ? colorScheme.primary : null,
-                              borderRadius: espaciado.radioCard,
-                              border: tieneRes && !seleccionado
-                                  ? Border.all(
-                                      color: colorScheme.primary.withValues(
-                                        alpha: 0.4,
-                                      ),
-                                      width: 1,
-                                    )
-                                  : esHoy && !seleccionado
-                                  ? Border.all(
-                                      color: colorScheme.outline.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      width: 1,
-                                    )
-                                  : null,
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '$diaNum',
-                                  style: textTheme.bodySmall?.copyWith(
+                              return GestureDetector(
+                                onTap: () => _seleccionarDia(diaNum),
+                                child: Container(
+                                  decoration: BoxDecoration(
                                     color: seleccionado
-                                        ? colorScheme.onPrimary
-                                        : colorScheme.onSurface,
-                                    fontWeight: esHoy ? FontWeight.bold : null,
+                                        ? colorScheme.primary
+                                        : null,
+                                    borderRadius: espaciado.radioCard,
+                                    border: tieneRes && !seleccionado
+                                        ? Border.all(
+                                            color: colorScheme.primary
+                                                .withValues(alpha: 0.4),
+                                            width: 1,
+                                          )
+                                        : esHoy && !seleccionado
+                                        ? Border.all(
+                                            color: colorScheme.outline
+                                                .withValues(alpha: 0.5),
+                                            width: 1,
+                                          )
+                                        : null,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '$diaNum',
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: seleccionado
+                                              ? colorScheme.onPrimary
+                                              : colorScheme.onSurface,
+                                          fontWeight: esHoy
+                                              ? FontWeight.bold
+                                              : null,
+                                        ),
+                                      ),
+                                      if (tieneRes) ...[
+                                        const SizedBox(height: 2),
+                                        Container(
+                                          width: 16,
+                                          height: 14,
+                                          decoration: BoxDecoration(
+                                            color: seleccionado
+                                                ? colorScheme.onPrimary
+                                                      .withValues(alpha: 0.25)
+                                                : colorScheme.primaryContainer,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            '$nReservas',
+                                            style: textTheme.labelSmall
+                                                ?.copyWith(
+                                                  fontSize: 9,
+                                                  color: seleccionado
+                                                      ? colorScheme.onPrimary
+                                                      : colorScheme.primary,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
-                                if (tieneRes) ...[
-                                  const SizedBox(height: 2),
-                                  Container(
-                                    width: 16,
-                                    height: 14,
-                                    decoration: BoxDecoration(
-                                      color: seleccionado
-                                          ? colorScheme.onPrimary.withValues(
-                                              alpha: 0.25,
-                                            )
-                                          : colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$nReservas',
-                                      style: textTheme.labelSmall?.copyWith(
-                                        fontSize: 9,
-                                        color: seleccionado
-                                            ? colorScheme.onPrimary
-                                            : colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                          if (vmCalendario.cargando)
+                            Positioned.fill(
+                              child: ColoredBox(
+                                color: colorScheme.surface,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
 
-                  const Divider(height: 24),
+                  const SliverToBoxAdapter(child: Divider(height: 24)),
 
                   // ── Panel inferior ──────────────────────────────────────────
-                  Expanded(
-                    child: _PanelInferior(
-                      cargando: vmCalendario.cargando,
-                      error: vmCalendario.error,
-                      onReintentar: vmCalendario.refrescar,
-                      diaSeleccionado: _diaSeleccionado,
-                      mes: mes.month,
-                      reservas: _diaSeleccionado == null
-                          ? const []
-                          : vmCalendario.reservasPorDia(_diaSeleccionado!),
-                    ),
+                  _PanelInferior(
+                    error: vmCalendario.error,
+                    onReintentar: vmCalendario.refrescar,
+                    diaSeleccionado: _diaSeleccionado,
+                    mes: mes.month,
+                    reservas: _diaSeleccionado == null
+                        ? const []
+                        : vmCalendario.reservasPorDia(_diaSeleccionado!),
                   ),
                 ],
               ),
@@ -296,7 +317,6 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
 
 class _PanelInferior extends StatelessWidget {
   const _PanelInferior({
-    required this.cargando,
     required this.error,
     required this.onReintentar,
     required this.diaSeleccionado,
@@ -304,7 +324,6 @@ class _PanelInferior extends StatelessWidget {
     required this.reservas,
   });
 
-  final bool cargando;
   final String? error;
   final Future<void> Function() onReintentar;
   final int? diaSeleccionado;
@@ -316,35 +335,41 @@ class _PanelInferior extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (cargando) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     if (error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(error!, style: textTheme.bodyLarge, textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              FilledButton(
-                onPressed: onReintentar,
-                child: const Text('Reintentar'),
-              ),
-            ],
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  error!,
+                  style: textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: onReintentar,
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
     if (diaSeleccionado == null) {
-      return Center(
-        child: Text(
-          'Selecciona un día para ver las reservas',
-          style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
-          textAlign: TextAlign.center,
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            'Selecciona un día para ver las reservas',
+            style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
+            textAlign: TextAlign.center,
+          ),
         ),
       );
     }
@@ -374,48 +399,50 @@ class _PanelReservasDia extends StatelessWidget {
     final espaciado = Theme.of(context).extension<EspaciadoCitaria>()!;
 
     if (reservas.isEmpty) {
-      return Center(
-        child: Text(
-          'Sin reservas este día',
-          style: textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Text(
+            'Sin reservas este día',
+            style: textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: espaciado.padX,
-            vertical: 4,
-          ),
-          child: Text(
-            '$dia/${mes.toString().padLeft(2, '0')} — ${reservas.length} reservas',
-            style: textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: espaciado.padX,
+              vertical: 4,
+            ),
+            child: Text(
+              '$dia/${mes.toString().padLeft(2, '0')} — ${reservas.length} reservas',
+              style: textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
           ),
         ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: reservas.length,
-            itemBuilder: (context, index) {
-              final r = reservas[index];
-              return TarjetaReservaAdmin(
-                estado: _estadoVisual(r.estado),
-                cliente: r.cliente,
-                servicio: r.servicio,
-                empleado: r.empleado,
-                hora: r.hora,
-                precio: r.precio,
-                onTap: () =>
-                    GestorNavegacion.irAAdminDetalleReserva(context, r.id),
-              );
-            },
-          ),
+        SliverList.builder(
+          itemCount: reservas.length,
+          itemBuilder: (context, index) {
+            final r = reservas[index];
+            return TarjetaReservaAdmin(
+              estado: _estadoVisual(r.estado),
+              cliente: r.cliente,
+              servicio: r.servicio,
+              empleado: r.empleado,
+              hora: r.hora,
+              precio: r.precio,
+              onTap: () =>
+                  GestorNavegacion.irAAdminDetalleReserva(context, r.id),
+            );
+          },
         ),
       ],
     );

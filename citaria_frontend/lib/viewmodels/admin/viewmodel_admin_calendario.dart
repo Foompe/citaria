@@ -62,6 +62,7 @@ class ViewModelAdminCalendario extends ViewModelAdminBase {
 
   Future<void> cargarMes(DateTime mes) async {
     _mesActual = _normalizarMes(mes);
+    _reservasPorDia = const {};
     iniciarCarga();
 
     try {
