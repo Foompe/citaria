@@ -57,9 +57,6 @@ class LogoCitaria extends StatelessWidget {
         );
       case LogoTamano.grande:
         lado = 80;
-        // TODO: sustituir por espaciado.radioLogo cuando se añada
-        // radioLogo a EspaciadoCitaria. Por acuerdo Bloque 1 se usa
-        // radioCard (16 px).
         radio = espaciado.radioCard;
         letraEstilo = textTheme.displaySmall!.copyWith(
           color: Colors.white,
@@ -83,8 +80,6 @@ class LogoCitaria extends StatelessWidget {
         if (mostrarNombre) ...[
           const SizedBox(height: 8),
           Text(
-            // TODO: leer de configuración de empresa.
-            // Por ahora hardcodeado.
             'Citaria',
             style: textTheme.bodySmall,
           ),

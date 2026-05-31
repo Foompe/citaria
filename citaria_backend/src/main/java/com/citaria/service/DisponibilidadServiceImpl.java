@@ -346,7 +346,15 @@ public class DisponibilidadServiceImpl implements DisponibilidadService {
         if (!fecha.equals(LocalDate.now())) {
             return apertura;
         }
-        LocalTime ahora = LocalTime.now();
+        return primeraFranjaDesdeAhora(LocalTime.now(), apertura);
+    }
+
+    /**
+     * Primera franja reservable hoy a partir de {@code ahora}: deja un margen de
+     * 1h y redondea al intervalo. Recibe {@code ahora} como parámetro (en vez de
+     * leer el reloj) para poder testear el borde de medianoche de forma determinista.
+     */
+    LocalTime primeraFranjaDesdeAhora(LocalTime ahora, LocalTime apertura) {
         LocalTime limite = ahora.plusHours(1);
         // Si plusHours(1) da la vuelta pasada medianoche, no quedan franjas hoy
         if (!limite.isAfter(ahora)) {

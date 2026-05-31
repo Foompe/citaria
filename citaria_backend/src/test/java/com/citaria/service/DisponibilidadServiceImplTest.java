@@ -209,6 +209,31 @@ class DisponibilidadServiceImplTest {
         assertEquals(List.of(dia2), resultado.getFechasDisponibles());
     }
 
+    // ── Primera franja del día (borde de medianoche) ────────────────────────
+
+    @Test
+    void cercaDeMedianoche_noHabilitaTodoElHorario() {
+        // Regresión: a las 23:30 el margen de +1h da la vuelta del reloj (00:30).
+        // Sin protección devolvía la apertura y habilitaba todo el día; debe
+        // devolver 23:59 para que no quede ninguna franja reservable hoy.
+        assertEquals(t(23, 59), servicio.primeraFranjaDesdeAhora(t(23, 30), t(9, 0)));
+        assertEquals(t(23, 59), servicio.primeraFranjaDesdeAhora(t(23, 55), t(9, 0)));
+    }
+
+    @Test
+    void duranteElDia_dejaMargenDeUnaHoraYRedondea() {
+        // Hora en punto: margen +1h exacto, sin redondeo.
+        assertEquals(t(11, 0), servicio.primeraFranjaDesdeAhora(t(10, 0), t(9, 0)));
+        // Minuto no múltiplo de 15: redondea hacia arriba al intervalo.
+        assertEquals(t(11, 15), servicio.primeraFranjaDesdeAhora(t(10, 7), t(9, 0)));
+    }
+
+    @Test
+    void antesDeAbrir_devuelveLaApertura() {
+        // El margen cae antes de la apertura → arranca en la apertura.
+        assertEquals(t(9, 0), servicio.primeraFranjaDesdeAhora(t(8, 0), t(9, 0)));
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     /** Stubs comunes del flujo completo de un día (cierre vacío, horario, etc.). */
