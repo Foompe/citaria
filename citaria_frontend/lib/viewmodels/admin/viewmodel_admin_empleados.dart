@@ -6,6 +6,7 @@ import 'package:citaria_frontend/data/models/habilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 
@@ -118,8 +119,8 @@ class DtoHorarioNuevoEmpleadoAdmin {
   final String horaFin;
 
   String get horario =>
-      '${_formatearHoraEstatica(horaInicio)} - '
-      '${_formatearHoraEstatica(horaFin)}';
+      '${formatearHoraHm(horaInicio)} - '
+      '${formatearHoraHm(horaFin)}';
 
   DtoHorarioNuevoEmpleadoAdmin copyWith({bool? activo}) {
     return DtoHorarioNuevoEmpleadoAdmin(
@@ -440,8 +441,8 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
           dia: horario.dia,
           activo: resultado.activo,
           horario:
-              '${_formatearHora(resultado.horaInicio)} - '
-              '${_formatearHora(resultado.horaFin)}',
+              '${formatearHoraHm(resultado.horaInicio)} - '
+              '${formatearHoraHm(resultado.horaFin)}',
           horaInicio: resultado.horaInicio,
           horaFin: resultado.horaFin,
         );
@@ -561,8 +562,8 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
         dia: _diasSemana[index],
         activo: horario.activo,
         horario:
-            '${_formatearHora(horario.horaInicio)} - '
-            '${_formatearHora(horario.horaFin)}',
+            '${formatearHoraHm(horario.horaInicio)} - '
+            '${formatearHoraHm(horario.horaFin)}',
         horaInicio: horario.horaInicio,
         horaFin: horario.horaFin,
       );
@@ -691,10 +692,6 @@ class ViewModelAdminEmpleados extends ViewModelAdminBase {
     return null;
   }
 
-  String _formatearHora(String hora) {
-    return _formatearHoraEstatica(hora);
-  }
-
   String _crearIniciales(String texto) {
     final List<String> partes = texto
         .trim()
@@ -739,11 +736,3 @@ const List<String> _diasSemana = <String>[
   'Sábado',
   'Domingo',
 ];
-
-String _formatearHoraEstatica(String hora) {
-  final List<String> partes = hora.split(':');
-  if (partes.length >= 2) {
-    return '${partes[0]}:${partes[1]}';
-  }
-  return hora;
-}

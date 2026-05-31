@@ -7,6 +7,7 @@ import 'package:citaria_frontend/data/models/sesion.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_disponibilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
@@ -249,7 +250,7 @@ class ViewModelWizard extends ChangeNotifier {
       fechaHoraTexto: fecha == null || hora == null
           ? 'Sin fecha y hora'
           : '${_capitalizar(_formatoFecha.format(fecha))} · '
-                '${_formatearHora(hora)}',
+                '${formatearHoraHm(hora)}',
       duracionTotalTexto: '$duracionTotalMinutos min',
       precioTotalTexto: _formatoPrecio.format(precioTotal),
       puedeContinuar: _serviciosSeleccionados.isNotEmpty,
@@ -498,7 +499,7 @@ class ViewModelWizard extends ChangeNotifier {
     return DtoFranjaWizard(
       horaInicio: franja.horaInicio,
       horaFin: franja.horaFin,
-      horaTexto: _formatearHora(franja.horaInicio),
+      horaTexto: formatearHoraHm(franja.horaInicio),
       disponible: disponible,
       seleccionada: _horaSeleccionada == franja.horaInicio,
       empleadosDisponibles: franja.empleadosDisponibles,
@@ -509,7 +510,7 @@ class ViewModelWizard extends ChangeNotifier {
     return DtoReservaCreada(
       id: reserva.id ?? 0,
       fechaTexto: _capitalizar(_formatoFecha.format(reserva.fecha)),
-      horaTexto: _formatearHora(reserva.horaInicio),
+      horaTexto: formatearHoraHm(reserva.horaInicio),
     );
   }
 
@@ -557,12 +558,6 @@ class ViewModelWizard extends ChangeNotifier {
   String _capitalizar(String texto) {
     if (texto.isEmpty) return texto;
     return '${texto.substring(0, 1).toUpperCase()}${texto.substring(1)}';
-  }
-
-  String _formatearHora(String hora) {
-    final List<String> partes = hora.split(':');
-    if (partes.length < 2) return hora;
-    return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
   String _mensajeError(Object error) {

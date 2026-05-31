@@ -7,6 +7,7 @@ import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_empleados.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -314,7 +315,7 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
         'Sin empleado asignado',
       ),
       fechaHoraTexto: '${_formatoFecha.format(reserva.fecha)} · '
-          '${_textoConFallback(reserva.horaInicio, '--:--')}',
+          '${reserva.horaInicio.isEmpty ? '--:--' : formatearHoraHm(reserva.horaInicio)}',
       precio: _formatoPrecio.format(_calcularTotal(lineas)),
       estado: reserva.estado ?? EstadoReserva.pendiente,
     );
@@ -383,8 +384,8 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       ),
       fotoUrlEmpleado: fotosEmpleados[detalle.empleadoId],
       horarioTexto:
-          '${_formatearHora(detalle.horaInicio)} - '
-          '${_formatearHora(detalle.horaFin)}',
+          '${formatearHoraHm(detalle.horaInicio)} - '
+          '${formatearHoraHm(detalle.horaFin)}',
       duracionTexto: '$duracion min',
       precioTexto: _formatoPrecio.format(
         detalle.precioUnitario * (detalle.cantidad ?? 1),
@@ -451,12 +452,6 @@ class ViewModelAdminReservas extends ViewModelAdminBase {
       int.tryParse(partes.first) ?? 0,
       partes.length > 1 ? int.tryParse(partes[1]) ?? 0 : 0,
     );
-  }
-
-  String _formatearHora(String hora) {
-    final List<String> partes = hora.split(':');
-    if (partes.length < 2) return hora;
-    return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
   String _resumenServicios(int total) {

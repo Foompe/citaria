@@ -2,6 +2,7 @@ import 'package:citaria_frontend/data/enums/estado_reserva.dart';
 import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -144,7 +145,7 @@ class ViewModelAdminCalendario extends ViewModelAdminBase {
       ),
       hora: reserva.horaInicio.isEmpty
           ? '--:--'
-          : _formatearHora(reserva.horaInicio),
+          : formatearHoraHm(reserva.horaInicio),
       precio: _formatoPrecio.format(_calcularTotal(lineas)),
       estado: reserva.estado ?? EstadoReserva.pendiente,
     );
@@ -159,12 +160,6 @@ class ViewModelAdminCalendario extends ViewModelAdminBase {
 
   String _resumenServicios(int total) {
     return total == 1 ? '1 servicio' : '$total servicios';
-  }
-
-  String _formatearHora(String hora) {
-    final List<String> partes = hora.split(':');
-    if (partes.length < 2) return hora;
-    return '${partes[0].padLeft(2, '0')}:${partes[1].padLeft(2, '0')}';
   }
 
   String _textoConFallback(String? texto, String fallback) {

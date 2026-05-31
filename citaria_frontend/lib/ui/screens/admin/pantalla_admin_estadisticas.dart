@@ -1248,18 +1248,20 @@ class _GraficoCancelacionesPorServicio extends StatelessWidget {
         ),
         const SizedBox(width: 16),
         Flexible(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(datos.length, (i) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: _ItemLeyenda(
-                  color: colores[i % colores.length],
-                  etiqueta: datos[i].nombre,
-                ),
-              );
-            }),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(datos.length, (i) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: _ItemLeyenda(
+                    color: colores[i % colores.length],
+                    etiqueta: datos[i].nombre,
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ],

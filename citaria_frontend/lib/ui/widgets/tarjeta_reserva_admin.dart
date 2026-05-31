@@ -51,10 +51,16 @@ class TarjetaReservaAdmin extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ChipEstado(estado: estado),
-                  Text(
-                    hora,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.outline,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      hora,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
                     ),
                   ),
                 ],

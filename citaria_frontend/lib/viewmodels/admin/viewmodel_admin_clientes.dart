@@ -7,6 +7,7 @@ import 'package:citaria_frontend/data/models/reserva.dart';
 import 'package:citaria_frontend/data/models/reserva_servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_clientes.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -365,7 +366,7 @@ class ViewModelAdminClientes extends ViewModelAdminBase {
         'Sin empleado asignado',
       ),
       hora: '${_formatoFecha.format(reserva.fecha)} · '
-          '${_textoConFallback(reserva.horaInicio, '--:--')}',
+          '${reserva.horaInicio.isEmpty ? '--:--' : formatearHoraHm(reserva.horaInicio)}',
       precio: _formatoPrecio.format(_calcularTotal(detalles)),
       estado: reserva.estado ?? EstadoReserva.pendiente,
     );

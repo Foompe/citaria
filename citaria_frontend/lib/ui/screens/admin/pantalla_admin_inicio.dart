@@ -717,7 +717,14 @@ class _GridReservas extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(5),
-                    child: contenido,
+                    // Con texto escalado grande, el contenido puede superar la
+                    // altura fija del bloque (que va por duración): el OverflowBox
+                    // lo deja maquetar sin error y el Material recorta lo que sobra.
+                    child: OverflowBox(
+                      alignment: Alignment.topLeft,
+                      maxHeight: double.infinity,
+                      child: contenido,
+                    ),
                   ),
                 ),
               ),

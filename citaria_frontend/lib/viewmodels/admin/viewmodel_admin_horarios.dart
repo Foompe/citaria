@@ -1,6 +1,7 @@
 import 'package:citaria_frontend/data/models/cierre_organizacion.dart';
 import 'package:citaria_frontend/data/models/horario_organizacion.dart';
 import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
+import 'package:citaria_frontend/utils/formato_hora.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_base.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
@@ -222,10 +223,10 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
         dia: _diasSemana[index],
         activo: horario.activo,
         horario:
-            '${_formatearHora(horario.horaApertura)} - '
-            '${_formatearHora(horario.horaCierre)}',
-        horaApertura: _formatearHora(horario.horaApertura),
-        horaCierre: _formatearHora(horario.horaCierre),
+            '${formatearHoraHm(horario.horaApertura)} - '
+            '${formatearHoraHm(horario.horaCierre)}',
+        horaApertura: formatearHoraHm(horario.horaApertura),
+        horaCierre: formatearHoraHm(horario.horaCierre),
       );
     }, growable: false);
   }
@@ -246,14 +247,6 @@ class ViewModelAdminHorarios extends ViewModelAdminBase {
       return diaSemana;
     }
     return null;
-  }
-
-  String _formatearHora(String hora) {
-    final List<String> partes = hora.split(':');
-    if (partes.length >= 2) {
-      return '${partes[0]}:${partes[1]}';
-    }
-    return hora;
   }
 
   String _textoConFallback(String? texto, String fallback) {
