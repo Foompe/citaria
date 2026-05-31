@@ -56,7 +56,7 @@ class ReservaServiceImplTest {
         fechaFutura = LocalDate.now().plusDays(7);
     }
 
-    // ── crear: validaciones de entrada (IllegalArgumentException) ────────────
+    // crear: validaciones de entrada (IllegalArgumentException)
 
     @Test
     void crear_sinServicios_lanzaIllegalArgument() {
@@ -88,7 +88,7 @@ class ReservaServiceImplTest {
         assertThrows(IllegalArgumentException.class, () -> servicio.crear(clienteId, dto));
     }
 
-    // ── crear: reglas de negocio ─────────────────────────────────────────────
+    // crear: reglas de negocio
 
     @Test
     void crear_conCincoReservasActivas_lanzaIllegalState() {
@@ -136,7 +136,7 @@ class ReservaServiceImplTest {
         verify(reservaServicioDAO).save(any(ReservaServicio.class));
     }
 
-    // ── crear: asignación automática de empleado ─────────────────────────────
+    // crear: asignación automática de empleado
 
     @Test
     void crear_sinEmpleado_asignaElDeMenorCarga() {
@@ -199,7 +199,7 @@ class ReservaServiceImplTest {
         assertThrows(IllegalStateException.class, () -> servicio.crear(clienteId, dto));
     }
 
-    // ── actualizarEstado: máquina de estados ─────────────────────────────────
+    // actualizarEstado: máquina de estados
 
     @Test
     void actualizarEstado_pendienteAConfirmada_ok() {
@@ -245,7 +245,7 @@ class ReservaServiceImplTest {
                 () -> servicio.actualizarEstado(1, EstadoReserva.pendiente));
     }
 
-    // ── cancelar: restricciones del rol CLIENTE ──────────────────────────────
+    // cancelar: restricciones del rol CLIENTE
 
     @Test
     void cancelar_clienteSobreReservaDeOtro_lanzaRecursoNoEncontrado() {
@@ -281,7 +281,7 @@ class ReservaServiceImplTest {
         verify(reservaServicioDAO).cancelarDetallesPorReserva(reserva, EstadoReservaServicio.cancelado);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // Helpers
 
     private ReservaDTO dto(List<Integer> servicioIds, LocalTime hora, LocalDate fecha, Integer empleadoId) {
         ReservaDTO dto = new ReservaDTO();

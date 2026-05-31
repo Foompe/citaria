@@ -42,7 +42,7 @@ class CabeceraWizard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Fila superior: atrás + indicador + equilibrio ────────────────
+              // Fila superior: atrás + indicador + equilibrio
               Row(
                 children: [
                   Semantics(
@@ -77,7 +77,7 @@ class CabeceraWizard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // ── Stepper lineal ───────────────────────────────────────────────
+              // Stepper lineal
               Row(
                 children: List.generate(totalPasos, (index) {
                   final esCompletadoOActual = index <= pasoActual;
@@ -99,7 +99,7 @@ class CabeceraWizard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              // ── Título del paso ──────────────────────────────────────────────
+              // Título del paso
               Text(
                 titulo,
                 style: textTheme.displayLarge,

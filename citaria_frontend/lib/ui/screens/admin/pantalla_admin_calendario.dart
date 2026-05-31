@@ -11,7 +11,7 @@ import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_calendario.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+// Pantalla
 
 /// P26 — Calendario mensual de reservas del área admin.
 class PantallaAdminCalendario extends StatefulWidget {
@@ -104,7 +104,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
             body: SafeArea(
               child: CustomScrollView(
                 slivers: [
-                  // ── Cabecera ───────────────────────────────────────────────
+                  // Cabecera
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -117,7 +117,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                     ),
                   ),
 
-                  // ── Selector de mes ─────────────────────────────────────────
+                  // Selector de mes
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(
@@ -152,7 +152,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                     ),
                   ),
 
-                  // ── Cabeceras días semana ───────────────────────────────────
+                  // Cabeceras días semana
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
@@ -174,7 +174,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 4)),
 
-                  // ── Grid del calendario ─────────────────────────────────────
+                  // Grid del calendario
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: espaciado.padX),
@@ -293,7 +293,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
 
                   const SliverToBoxAdapter(child: Divider(height: 24)),
 
-                  // ── Panel inferior ──────────────────────────────────────────
+                  // Panel inferior
                   _PanelInferior(
                     error: vmCalendario.error,
                     onReintentar: vmCalendario.refrescar,
@@ -313,7 +313,7 @@ class _PantallaAdminCalendarioState extends State<PantallaAdminCalendario> {
   }
 }
 
-// ── Panel inferior: gestiona carga, error y selección de día ──────────────────
+// Panel inferior: gestiona carga, error y selección de día
 
 class _PanelInferior extends StatelessWidget {
   const _PanelInferior({

@@ -25,7 +25,7 @@ class MenuLateralAdmin extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── CABECERA ──────────────────────────────────────────────────
+            // CABECERA
             _Cabecera(
               empresa: autenticacion.empresaActiva,
               email: autenticacion.usuarioActual?.email,
@@ -34,7 +34,7 @@ class MenuLateralAdmin extends StatelessWidget {
               espaciado: espaciado,
             ),
 
-            // ── CUERPO scrollable ─────────────────────────────────────────
+            // CUERPO scrollable
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -135,7 +135,7 @@ class MenuLateralAdmin extends StatelessWidget {
               ),
             ),
 
-            // ── PIE ───────────────────────────────────────────────────────
+            // PIE
             _Pie(colorScheme: colorScheme),
           ],
         ),
@@ -144,7 +144,7 @@ class MenuLateralAdmin extends StatelessWidget {
   }
 }
 
-// ── Subwidgets privados ────────────────────────────────────────────────────────
+// Subwidgets privados
 
 class _Cabecera extends StatelessWidget {
   const _Cabecera({

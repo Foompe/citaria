@@ -509,7 +509,7 @@ class _TabDatosState extends State<_TabDatos> {
   }
 }
 
-// ── Fila de dato editable (patrón perfil cliente) ─────────────────────────────
+// Fila de dato editable (patrón perfil cliente)
 
 class _FilaDatoAdmin extends StatelessWidget {
   const _FilaDatoAdmin({

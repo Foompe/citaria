@@ -45,7 +45,7 @@ class EstadisticaServiceImplTest {
         when(contextoSeguridad.obtenerOrganizacionIdActual()).thenReturn(1);
     }
 
-    // ── Porcentaje: cálculo, redondeo y división por cero ────────────────────
+    // Porcentaje: cálculo, redondeo y división por cero
 
     @Test
     void reservasPorEmpleado_calculaPorcentajeYRedondea() {
@@ -105,7 +105,7 @@ class EstadisticaServiceImplTest {
         assertEquals(0.0, dto.getValor2(), 0.0001);
     }
 
-    // ── Emparejamiento por período ───────────────────────────────────────────
+    // Emparejamiento por período
 
     @Test
     void clientesNuevosVsRecurrentes_emparejaPorPeriodoYRellenaConCero() {
@@ -127,7 +127,7 @@ class EstadisticaServiceImplTest {
         assertEquals(0.0, resultado.get(1).getValor2(), 0.0001);
     }
 
-    // ── Resumen ──────────────────────────────────────────────────────────────
+    // Resumen
 
     @Test
     void obtenerResumen_facturacionNula_seNormalizaACero() {
@@ -145,7 +145,7 @@ class EstadisticaServiceImplTest {
         assertEquals("Corte", dto.getServicioMasSolicitadoMes());
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // Helpers
 
     private FilaItemEstadistica itemFila(Integer id, String nombre, Double total, Double canceladas) {
         FilaItemEstadistica fila = mock(FilaItemEstadistica.class);

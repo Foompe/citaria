@@ -239,7 +239,7 @@ class _DialogoCambiarPinState extends State<DialogoCambiarPin> {
   }
 }
 
-// ── Indicador de pasos ────────────────────────────────────────────────────────
+// Indicador de pasos
 
 class _IndicadorPasos extends StatelessWidget {
   const _IndicadorPasos({required this.pasoActual});

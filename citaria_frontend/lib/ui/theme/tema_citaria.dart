@@ -3,9 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // PALETA — extraída de styles-light.css del prototipo DetailCarWash
-// ═══════════════════════════════════════════════════════════════════════════
 
 // Superficies
 const Color _bgBase = Color(0xFFFFFFFF);
@@ -36,9 +34,7 @@ const Color _accentTint = Color(0x0FC4A882);   // beis oscuro muy suave (6%)
 // Semánticos
 const Color _danger = Color(0xFFA82828);
 
-// ═══════════════════════════════════════════════════════════════════════════
 // ESCALA TIPOGRÁFICA
-// ═══════════════════════════════════════════════════════════════════════════
 
 /// Construye la tipografía inyectando colores directamente para evitar
 /// problemas de herencia con GoogleFonts y Material 3.
@@ -93,9 +89,7 @@ TextTheme _buildTextTheme(Color displayColor, Color bodyColor) => TextTheme(
   ),
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
 // TEMA ÚNICO DE CITARIA (CLARO)
-// ═══════════════════════════════════════════════════════════════════════════
 
 final ThemeData temaCitaria = () {
   const espaciado = EspaciadoCitaria.base;
@@ -108,7 +102,7 @@ final ThemeData temaCitaria = () {
     useMaterial3: true,
     brightness: Brightness.light,
 
-    // ── ColorScheme ───────────────────────────────────────────────────────
+    // ColorScheme
     colorScheme: const ColorScheme.light(
       primary: _accent,
       onPrimary: Colors.white,
@@ -125,16 +119,16 @@ final ThemeData temaCitaria = () {
       onError: Colors.white,
     ),
 
-    // ── Tipografía ────────────────────────────────────────────────────────
+    // Tipografía
     textTheme: textTheme,
 
-    // ── Scaffold ──────────────────────────────────────────────────────────
+    // Scaffold
     scaffoldBackgroundColor: _bgBase,
 
-    // ── Extensiones propias ───────────────────────────────────────────────
+    // Extensiones propias
     extensions: const <ThemeExtension<dynamic>>[espaciado, estados],
 
-    // ── AppBar ────────────────────────────────────────────────────────────
+    // AppBar
     appBarTheme: AppBarTheme(
       backgroundColor: _bgSurface,
       elevation: 0,
@@ -147,7 +141,7 @@ final ThemeData temaCitaria = () {
       centerTitle: true,
     ),
 
-    // ── Card ──────────────────────────────────────────────────────────────
+    // Card
     cardTheme: CardThemeData(
       color: _bgSurface,
       elevation: 0,
@@ -157,7 +151,7 @@ final ThemeData temaCitaria = () {
       ),
     ),
 
-    // ── ElevatedButton ────────────────────────────────────────────────────
+    // ElevatedButton
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: _accent,
@@ -171,7 +165,7 @@ final ThemeData temaCitaria = () {
       ),
     ),
 
-    // ── OutlinedButton ────────────────────────────────────────────────────
+    // OutlinedButton
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: _textPrimary,
@@ -182,7 +176,7 @@ final ThemeData temaCitaria = () {
       ),
     ),
 
-    // ── InputDecoration ───────────────────────────────────────────────────
+    // InputDecoration
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: _bgElevated,
@@ -211,7 +205,7 @@ final ThemeData temaCitaria = () {
       labelStyle: textTheme.bodyLarge?.copyWith(color: _textMuted),
     ),
 
-    // ── BottomNavigationBar ───────────────────────────────────────────────
+    // BottomNavigationBar
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: _bgSurface,
       selectedItemColor: _accent,
@@ -230,14 +224,14 @@ final ThemeData temaCitaria = () {
       elevation: 0,
     ),
 
-    // ── Divider ───────────────────────────────────────────────────────────
+    // Divider
     dividerTheme: const DividerThemeData(
       color: _borderSubtle,
       thickness: 1,
       space: 1,
     ),
 
-    // ── Chip ──────────────────────────────────────────────────────────────
+    // Chip
     chipTheme: ChipThemeData(
       backgroundColor: _bgElevated,
       side: const BorderSide(color: _border),

@@ -254,7 +254,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
 
-                  // ── Imagen ────────────────────────────────────────────────
+                  // Imagen
                   Center(
                     child: ImagenServicioEditable(
                       imagenUrl: null,
@@ -266,7 +266,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── Campos de texto ───────────────────────────────────────
+                  // Campos de texto
                   CampoFormulario(
                     controller: ctrlNombre,
                     etiqueta: 'Nombre *',
@@ -295,7 +295,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Duración ──────────────────────────────────────────────
+                  // Duración
                   Text(
                     'Duración *',
                     style: textTheme.bodySmall?.copyWith(
@@ -354,7 +354,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Categoría ─────────────────────────────────────────────
+                  // Categoría
                   DropdownButtonFormField<int>(
                     key: ValueKey('categoria-$categoriaSeleccionadaId'),
                     initialValue: categoriaSeleccionadaId,
@@ -375,7 +375,7 @@ class _ContenidoNuevoServicio extends StatelessWidget {
                   ),
                   const SizedBox(height: 28),
 
-                  // ── Habilidades ────────────────────────────────────────────────
+                  // Habilidades
                   Text(
                     'HABILIDADES REQUERIDAS',
                     style: textTheme.labelSmall?.copyWith(

@@ -54,7 +54,7 @@ class DisponibilidadServiceImplTest {
         diaSemana = fecha.getDayOfWeek().getValue();
     }
 
-    // ── Salidas tempranas ───────────────────────────────────────────────────
+    // Salidas tempranas
 
     @Test
     void fechaMasAllaDe60Dias_lanzaExcepcion() {
@@ -117,7 +117,7 @@ class DisponibilidadServiceImplTest {
         assertTrue(resultado.getFranjas().isEmpty());
     }
 
-    // ── Cálculo de franjas ──────────────────────────────────────────────────
+    // Cálculo de franjas
 
     @Test
     void empleadoLibreTodoElDia_generaTodasLasFranjasDisponibles() {
@@ -177,7 +177,7 @@ class DisponibilidadServiceImplTest {
         assertEquals(1, resultado.getFranjas().get(4).getEmpleadosDisponibles());
     }
 
-    // ── Periodo ─────────────────────────────────────────────────────────────
+    // Periodo
 
     @Test
     void periodoConCierre_excluyeElDiaCerrado() {
@@ -209,7 +209,7 @@ class DisponibilidadServiceImplTest {
         assertEquals(List.of(dia2), resultado.getFechasDisponibles());
     }
 
-    // ── Primera franja del día (borde de medianoche) ────────────────────────
+    // Primera franja del día (borde de medianoche)
 
     @Test
     void cercaDeMedianoche_noHabilitaTodoElHorario() {
@@ -234,7 +234,7 @@ class DisponibilidadServiceImplTest {
         assertEquals(t(9, 0), servicio.primeraFranjaDesdeAhora(t(8, 0), t(9, 0)));
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // Helpers
 
     /** Stubs comunes del flujo completo de un día (cierre vacío, horario, etc.). */
     private void stubEscenarioDia(OrganizacionHorario horario,

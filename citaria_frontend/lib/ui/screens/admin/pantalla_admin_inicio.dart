@@ -14,7 +14,7 @@ import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_inicio.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:provider/provider.dart';
 
-// ── Constantes de layout ───────────────────────────────────────────────────────
+// Constantes de layout
 const double _anchoCeldaEmpleado = 120.0;
 const double _alturaFranja = 80.0;
 const double _alturaSubfranja = _alturaFranja / 4;
@@ -24,7 +24,7 @@ const int _horaInicio = 9;
 const int _horaFin = 20;
 const int _nFranjas = _horaFin - _horaInicio;
 
-// ── Pantalla ───────────────────────────────────────────────────────────────────
+// Pantalla
 
 /// P19 — Pantalla de inicio del área admin.
 ///
@@ -284,7 +284,7 @@ class _ContenidoInicio extends StatelessWidget {
   }
 }
 
-// ── Cabecera personalizada ─────────────────────────────────────────────────────
+// Cabecera personalizada
 
 class _CabeceraInicio extends StatelessWidget {
   const _CabeceraInicio({
@@ -428,7 +428,7 @@ class _BotonNotificacionesPendientes extends StatelessWidget {
   }
 }
 
-// ── Columna de horas ───────────────────────────────────────────────────────────
+// Columna de horas
 
 class _ColumnaHoras extends StatelessWidget {
   const _ColumnaHoras({required this.colorScheme, required this.textTheme});
@@ -468,7 +468,7 @@ class _ColumnaHoras extends StatelessWidget {
   }
 }
 
-// ── Fila de empleados ──────────────────────────────────────────────────────────
+// Fila de empleados
 
 class _FilaEmpleados extends StatelessWidget {
   const _FilaEmpleados({
@@ -515,7 +515,7 @@ class _FilaEmpleados extends StatelessWidget {
   }
 }
 
-// ── Grid de reservas ───────────────────────────────────────────────────────────
+// Grid de reservas
 
 class _GridReservas extends StatelessWidget {
   const _GridReservas({
@@ -736,7 +736,7 @@ class _GridReservas extends StatelessWidget {
   }
 }
 
-// ── Selector de fecha ──────────────────────────────────────────────────────────
+// Selector de fecha
 
 class _SelectorFechaDia extends StatefulWidget {
   const _SelectorFechaDia({

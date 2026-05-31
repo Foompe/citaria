@@ -57,7 +57,7 @@ class _PantallaAdminEstadisticasState extends State<PantallaAdminEstadisticas> {
   }
 }
 
-// ── Cuerpo ────────────────────────────────────────────────────────────────────
+// Cuerpo
 
 class _CuerpoEstadisticas extends StatelessWidget {
   const _CuerpoEstadisticas({required this.vmEstadisticas});
@@ -99,7 +99,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
           child: ListView(
             padding: EdgeInsets.fromLTRB(espaciado.padX, 16, espaciado.padX, 32),
             children: [
-              // ── KPIs ───────────────────────────────────────────────────────
+              // KPIs
               _TarjetaKpiDoble(
                 kpi: vmEstadisticas.kpiReservas,
                 icono: Icons.calendar_today_outlined,
@@ -118,7 +118,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // ── Clientes ───────────────────────────────────────────────────
+              // Clientes
               _TarjetaGrafico(
                 titulo: 'Clientes nuevos vs recurrentes',
                 anoActivo: vmEstadisticas.anoGrafico(
@@ -160,7 +160,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // ── Profesionales ──────────────────────────────────────────────
+              // Profesionales
               _TarjetaGrafico(
                 titulo: 'Rendimiento por profesional',
                 periodoActivo: vmEstadisticas.periodoGrafico(
@@ -180,7 +180,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // ── Servicios ──────────────────────────────────────────────────
+              // Servicios
               _TarjetaGrafico(
                 titulo: 'Servicios más solicitados',
                 periodoActivo: vmEstadisticas.periodoGrafico(
@@ -251,7 +251,7 @@ class _CuerpoEstadisticas extends StatelessWidget {
   }
 }
 
-// ── Selector de periodo compacto ──────────────────────────────────────────────
+// Selector de periodo compacto
 
 class _SelectorPeriodoCompacto extends StatelessWidget {
   const _SelectorPeriodoCompacto({
@@ -422,7 +422,7 @@ class _ChipCompacto extends StatelessWidget {
   }
 }
 
-// ── KPI doble ─────────────────────────────────────────────────────────────────
+// KPI doble
 
 class _TarjetaKpiDoble extends StatelessWidget {
   const _TarjetaKpiDoble({required this.kpi, required this.icono});
@@ -527,7 +527,7 @@ class _ColumnaKpi extends StatelessWidget {
   }
 }
 
-// ── Servicio top ──────────────────────────────────────────────────────────────
+// Servicio top
 
 class _TarjetaServicioTop extends StatelessWidget {
   const _TarjetaServicioTop({
@@ -609,7 +609,7 @@ class _TarjetaServicioTop extends StatelessWidget {
   }
 }
 
-// ── Contenedor de gráfico ─────────────────────────────────────────────────────
+// Contenedor de gráfico
 
 class _TarjetaGrafico extends StatelessWidget {
   const _TarjetaGrafico({
@@ -690,7 +690,7 @@ class _TarjetaGrafico extends StatelessWidget {
   }
 }
 
-// ── Gráfico: dos líneas (clientes nuevos vs recurrentes) ──────────────────────
+// Gráfico: dos líneas (clientes nuevos vs recurrentes)
 
 class _GraficoClientesDobleLinea extends StatelessWidget {
   const _GraficoClientesDobleLinea({required this.datos});
@@ -829,7 +829,7 @@ class _GraficoClientesDobleLinea extends StatelessWidget {
   }
 }
 
-// ── Gráfico: fidelización (línea con área + puntos + grid) ───────────────────
+// Gráfico: fidelización (línea con área + puntos + grid)
 
 class _GraficoFidelizacion extends StatelessWidget {
   const _GraficoFidelizacion({required this.datos});
@@ -944,7 +944,7 @@ class _GraficoFidelizacion extends StatelessWidget {
   }
 }
 
-// ── Gráfico: rendimiento por profesional (barras agrupadas + facturación) ─────
+// Gráfico: rendimiento por profesional (barras agrupadas + facturación)
 
 class _GraficoRendimientoProfesional extends StatelessWidget {
   const _GraficoRendimientoProfesional({required this.datos});
@@ -1115,7 +1115,7 @@ class _GraficoRendimientoProfesional extends StatelessWidget {
   }
 }
 
-// ── Gráfico: ranking de servicios (barras de progreso) ────────────────────────
+// Gráfico: ranking de servicios (barras de progreso)
 
 class _RankingServicios extends StatelessWidget {
   const _RankingServicios({required this.datos, required this.color});
@@ -1200,7 +1200,7 @@ class _FilaRanking extends StatelessWidget {
   }
 }
 
-// ── Gráfico: cancelaciones por servicio (donut) ───────────────────────────────
+// Gráfico: cancelaciones por servicio (donut)
 
 class _GraficoCancelacionesPorServicio extends StatelessWidget {
   const _GraficoCancelacionesPorServicio({required this.datos});
@@ -1269,7 +1269,7 @@ class _GraficoCancelacionesPorServicio extends StatelessWidget {
   }
 }
 
-// ── Widgets comunes ───────────────────────────────────────────────────────────
+// Widgets comunes
 
 class _ItemLeyenda extends StatelessWidget {
   const _ItemLeyenda({required this.color, required this.etiqueta});
@@ -1320,7 +1320,7 @@ class _EstadoVacioGrafico extends StatelessWidget {
   }
 }
 
-// ── Helpers de fl_chart ───────────────────────────────────────────────────────
+// Helpers de fl_chart
 
 FlTitlesData _titulosMeses(
   List<DtoSerieMesEstadisticaAdmin> datos,

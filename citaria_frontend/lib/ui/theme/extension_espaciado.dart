@@ -16,18 +16,18 @@ class EspaciadoCitaria extends ThemeExtension<EspaciadoCitaria> {
     required this.safeBottom,
   });
 
-  // ── Radios ─────────────────────────────────────────────────────────────────
+  // Radios
   final BorderRadius radioPill;
   final BorderRadius radioInput;
   final BorderRadius radioCard;
   final BorderRadius radioBoton;
 
-  // ── Espaciado ──────────────────────────────────────────────────────────────
+  // Espaciado
   final double padX;
   final double safeTop;
   final double safeBottom;
 
-  // ── Instancia base ─────────────────────────────────────────────────────────
+  // Instancia base
   static const EspaciadoCitaria base = EspaciadoCitaria(
     radioPill: BorderRadius.all(Radius.circular(999)),
     radioInput: BorderRadius.all(Radius.circular(12)),

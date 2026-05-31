@@ -14,7 +14,7 @@ import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+// Pantalla
 
 /// P28 — Listado de empleados del área admin protegida por PIN.
 class PantallaAdminEmpleados extends StatefulWidget {
@@ -134,7 +134,7 @@ class _PantallaAdminEmpleadosState extends State<PantallaAdminEmpleados> {
   }
 }
 
-// ── Tarjeta de empleado ───────────────────────────────────────────────────────
+// Tarjeta de empleado
 
 class _TarjetaEmpleado extends StatelessWidget {
   const _TarjetaEmpleado({

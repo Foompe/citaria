@@ -31,7 +31,7 @@ class EstadosReservaCitaria extends ThemeExtension<EstadosReservaCitaria> {
   final ColoresEstado cancelada;
   final ColoresEstado completada;
 
-  // ── Instancia base (tema claro) ────────────────────────────────────────────
+  // Instancia base (tema claro)
   //
   // Conversión RGBA → ARGB hex:
   //   rgba(217,159,36 ,0.12) → alpha=31=0x1F  → 0x1FD99F24

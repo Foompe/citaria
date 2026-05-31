@@ -96,7 +96,7 @@ class _PantallaAdminDetalleEmpleadoState
   }
 }
 
-// ── Contenido ─────────────────────────────────────────────────────────────────
+// Contenido
 
 class _ContenidoDetalleEmpleado extends StatelessWidget {
   const _ContenidoDetalleEmpleado({
@@ -253,7 +253,7 @@ class _CuerpoDetalleEmpleado extends StatelessWidget {
   }
 }
 
-// ── Tab Datos ─────────────────────────────────────────────────────────────────
+// Tab Datos
 
 enum _CampoEmpleado { nombre, apellidos, email, telefono }
 
@@ -460,7 +460,7 @@ class _TabDatosState extends State<_TabDatos> {
   }
 }
 
-// ── Tab Horarios ──────────────────────────────────────────────────────────────
+// Tab Horarios
 
 class _TabHorarios extends StatefulWidget {
   const _TabHorarios({required this.empleadoId});
@@ -629,7 +629,7 @@ class _FilaHorarioEditable extends StatelessWidget {
   }
 }
 
-// ── Tab Habilidades ────────────────────────────────────────────────────────────────
+// Tab Habilidades
 
 class _TabHabilidades extends StatefulWidget {
   const _TabHabilidades({required this.empleadoId});
@@ -785,9 +785,9 @@ class _DialogoSeleccionarHabilidad extends StatelessWidget {
   }
 }
 
-// ── Chip de estado ────────────────────────────────────────────────────────────
+// Chip de estado
 
-// ── Fila de dato editable ─────────────────────────────────────────────────────
+// Fila de dato editable
 
 class _FilaDatoEmpleado extends StatelessWidget {
   const _FilaDatoEmpleado({

@@ -239,7 +239,7 @@ class _PantallaAdminDetalleServicioState
   }
 }
 
-// ── Cuerpo ────────────────────────────────────────────────────────────────────
+// Cuerpo
 
 class _CuerpoDetalleServicio extends StatelessWidget {
   const _CuerpoDetalleServicio({
@@ -324,7 +324,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.fromLTRB(espaciado.padX, 24, espaciado.padX, 120),
         children: [
-          // ── Imagen ────────────────────────────────────────────────────────
+          // Imagen
           Center(
             child: ImagenServicioEditable(
               imagenUrl: detalle!.imagenUrl,
@@ -335,7 +335,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // ── Campos de texto ───────────────────────────────────────────────
+          // Campos de texto
           TextFormField(
             controller: ctrlNombre,
             inputFormatters: Validadores.nombreCatalogo,
@@ -369,7 +369,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Duración ──────────────────────────────────────────────────────
+          // Duración
           Text(
             'Duración *',
             style: textTheme.bodySmall?.copyWith(color: colorScheme.outline),
@@ -426,7 +426,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Categoría + activo ────────────────────────────────────────────
+          // Categoría + activo
           DropdownButtonFormField<int>(
             key: ValueKey('categoria-$categoriaSeleccionadaId'),
             initialValue: categoriaSeleccionadaId,
@@ -451,7 +451,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
 
-          // ── Habilidades ────────────────────────────────────────────────────────
+          // Habilidades
           const SizedBox(height: 24),
           Text(
             'HABILIDADES REQUERIDAS',
@@ -482,7 +482,7 @@ class _CuerpoDetalleServicio extends StatelessWidget {
               ],
             ),
 
-          // ── Desactivar ────────────────────────────────────────────────────
+          // Desactivar
           const SizedBox(height: 24),
           OutlinedButton(
             style: OutlinedButton.styleFrom(

@@ -78,7 +78,7 @@ class _PantallaAdminDetalleReservaState
   }
 }
 
-// ── Contenido ────────────────────────────────────────────────────────────────
+// Contenido
 
 class _ContenidoDetalleReserva extends StatelessWidget {
   const _ContenidoDetalleReserva({required this.reservaId});
@@ -111,7 +111,7 @@ class _ContenidoDetalleReserva extends StatelessWidget {
   }
 }
 
-// ── Cuerpo ───────────────────────────────────────────────────────────────────
+// Cuerpo
 
 class _Cuerpo extends StatelessWidget {
   const _Cuerpo({
@@ -206,7 +206,7 @@ class _Cuerpo extends StatelessWidget {
   }
 }
 
-// ── Barra de acciones ─────────────────────────────────────────────────────────
+// Barra de acciones
 
 class _BarraAcciones extends StatelessWidget {
   const _BarraAcciones({
@@ -291,7 +291,7 @@ class _BarraAcciones extends StatelessWidget {
   }
 }
 
-// ── Card estado ───────────────────────────────────────────────────────────────
+// Card estado
 
 class _CardEstado extends StatelessWidget {
   const _CardEstado({
@@ -341,7 +341,7 @@ class _CardEstado extends StatelessWidget {
   }
 }
 
-// ── Card cliente ──────────────────────────────────────────────────────────────
+// Card cliente
 
 class _CardCliente extends StatelessWidget {
   const _CardCliente({
@@ -404,7 +404,7 @@ class _CardCliente extends StatelessWidget {
   }
 }
 
-// ── Card servicios ────────────────────────────────────────────────────────────
+// Card servicios
 
 class _CardServicios extends StatelessWidget {
   const _CardServicios({
@@ -491,7 +491,7 @@ class _FilaLinea extends StatelessWidget {
   }
 }
 
-// ── Card fecha + total ────────────────────────────────────────────────────────
+// Card fecha + total
 
 class _CardFechaTotal extends StatelessWidget {
   const _CardFechaTotal({
@@ -539,7 +539,7 @@ class _CardFechaTotal extends StatelessWidget {
   }
 }
 
-// ── Helper ────────────────────────────────────────────────────────────────────
+// Helper
 
 chip.EstadoReserva _estadoVisual(datos.EstadoReserva estado) {
   switch (estado) {

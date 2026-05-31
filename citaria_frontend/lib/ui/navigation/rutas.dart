@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/screens/public/pantalla_splash.dart';
-// ── Rutas parametrizadas (resueltas en generarRuta) ───────────────────────────
+// Rutas parametrizadas (resueltas en generarRuta)
 import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_servicio.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_detalle_reserva_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_reserva.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_cliente.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_detalle_empleado.dart';
-// ── Bloque 4: área admin común ────────────────────────────────────────────────
+// Bloque 4: área admin común
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_inicio.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_seleccion_cliente.dart';
@@ -21,7 +21,7 @@ import 'package:citaria_frontend/ui/screens/client/pantalla_catalogo_cliente.dar
 import 'package:citaria_frontend/ui/screens/client/pantalla_mis_reservas.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_perfil.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_chatbot.dart';
-// ── Bloque 3: wizard de reserva ───────────────────────────────────────────────
+// Bloque 3: wizard de reserva
 import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_servicios.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_empleado.dart';
 import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_fecha.dart';
@@ -36,13 +36,13 @@ import 'package:citaria_frontend/ui/screens/client/pantalla_wizard_confirmar.dar
 class Rutas {
   Rutas._();
 
-  // ── ÁREA PÚBLICA
+  // ÁREA PÚBLICA
   static const String splash = '/splash';
   static const String seleccionEmpresa = '/seleccion-empresa';
   static const String login = '/login';
   static const String registro = '/registro';
 
-  // ── ÁREA CLIENTE
+  // ÁREA CLIENTE
   static const String inicioCliente = '/inicio';
   static const String catalogoCliente = '/catalogo';
 
@@ -62,7 +62,7 @@ class Rutas {
   static const String perfil = '/perfil';
   static const String chatbot = '/chatbot';
 
-  // ── ÁREA ADMIN — COMÚN
+  // ÁREA ADMIN — COMÚN
   static const String adminInicio = '/admin/inicio';
   static const String adminReservas = '/admin/reservas';
 
@@ -84,27 +84,27 @@ class Rutas {
   /// Devuelve el mapa registrable en [MaterialApp.routes].
   static Map<String, WidgetBuilder> mapaDeRutas() {
     return <String, WidgetBuilder>{
-      // ── Área pública (Bloque 1) ───────────────────────────────────────────
+      // Área pública (Bloque 1)
       splash: (_) => const PantallaSplash(),
       seleccionEmpresa: (_) => const PantallaSeleccionEmpresa(),
       login: (_) => const PantallaLogin(),
       registro: (_) => const PantallaRegistro(),
 
-      // ── Área cliente (Bloque 2) ───────────────────────────────────────────
+      // Área cliente (Bloque 2)
       inicioCliente: (_) => const PantallaInicioCliente(),
       catalogoCliente: (_) => const PantallaCatalogoCliente(),
       misReservas: (_) => const PantallaMisReservas(),
       perfil: (_) => const PantallaPerfil(),
       chatbot: (_) => const PantallaChatbot(),
 
-      // ── Wizard de reserva (Bloque 3) ─────────────────────────────────────
+      // Wizard de reserva (Bloque 3)
       wizardServicios: (_) => const PantallaWizardServicios(),
       wizardEmpleado: (_) => const PantallaWizardEmpleado(),
       wizardFecha: (_) => const PantallaWizardFecha(),
       wizardHora: (_) => const PantallaWizardHora(),
       wizardConfirmar: (_) => const PantallaWizardConfirmar(),
 
-      // ── Área admin — común (Bloque 4) ────────────────────────────────────
+      // Área admin — común (Bloque 4)
       adminInicio: (_) => const PantallaAdminInicio(),
       adminReservas: (_) => const PantallaAdminReservas(),
       adminSeleccionCliente: (_) => const PantallaAdminSeleccionCliente(),

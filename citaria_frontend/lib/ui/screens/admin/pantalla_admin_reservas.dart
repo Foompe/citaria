@@ -15,7 +15,7 @@ import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
 import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
 import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
 
-// ── Filtros disponibles ───────────────────────────────────────────────────────
+// Filtros disponibles
 
 enum FiltroReservasAdmin { hoy, semana, pendientes, confirmadas, canceladas }
 
@@ -53,7 +53,7 @@ extension FiltroReservasAdminMapeo on FiltroReservasAdmin {
   }
 }
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
+// Pantalla
 
 /// P20 — Lista de reservas del área admin con filtros.
 class PantallaAdminReservas extends StatefulWidget {
@@ -123,7 +123,7 @@ class _ContenidoAdminReservas extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Cabecera ───────────────────────────────────────────────────
+            // Cabecera
             Padding(
               padding: EdgeInsets.fromLTRB(
                 espaciado.padX,
@@ -151,7 +151,7 @@ class _ContenidoAdminReservas extends StatelessWidget {
               ),
             ),
 
-            // ── Chips de filtro ────────────────────────────────────────────
+            // Chips de filtro
             SizedBox(
               height: 36,
               child: ListView.separated(
@@ -174,7 +174,7 @@ class _ContenidoAdminReservas extends StatelessWidget {
               ),
             ),
 
-            // ── Lista de reservas ──────────────────────────────────────────
+            // Lista de reservas
             const Expanded(
               child: _ListaReservasAdmin(),
             ),

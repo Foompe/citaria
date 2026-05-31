@@ -47,7 +47,7 @@ import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
 class GestorNavegacion {
   GestorNavegacion._();
 
-  // ── ÁREA PÚBLICA ──────────────────────────────────────────────────────────
+  // ÁREA PÚBLICA
 
   static void irASplash(BuildContext context) =>
       Navigator.pushNamedAndRemoveUntil(
@@ -95,7 +95,7 @@ class GestorNavegacion {
   static void irARegistro(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.registro);
 
-  // ── POST-AUTENTICACIÓN (limpian la pila completa) ─────────────────────────
+  // POST-AUTENTICACIÓN (limpian la pila completa)
 
   static void irAHomeCliente(BuildContext context) =>
       Navigator.pushNamedAndRemoveUntil(
@@ -128,7 +128,7 @@ class GestorNavegacion {
     Navigator.pushNamedAndRemoveUntil(context, Rutas.login, (route) => false);
   }
 
-  // ── ÁREA CLIENTE ──────────────────────────────────────────────────────────
+  // ÁREA CLIENTE
 
   static void irACatalogo(BuildContext context) =>
       Navigator.pushNamed(context, Rutas.catalogoCliente);
@@ -269,7 +269,7 @@ class GestorNavegacion {
     irAHomeCliente(context);
   }
 
-  // ── ÁREA ADMIN — COMÚN ────────────────────────────────────────────────────
+  // ÁREA ADMIN — COMÚN
 
   static void irAAdminInicio(BuildContext context) {
     SesionPin.invalidar();
@@ -334,7 +334,7 @@ class GestorNavegacion {
     Navigator.pushNamed(context, Rutas.adminCalendario);
   }
 
-  // ── ÁREA ADMIN — PROTEGIDA PIN ────────────────────────────────────────────
+  // ÁREA ADMIN — PROTEGIDA PIN
 
   /// Núcleo de la navegación protegida.
   ///

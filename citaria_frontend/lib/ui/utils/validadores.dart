@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 class Validadores {
   Validadores._();
 
-  // ── Formatters: bloqueo al teclear ────────────────────────────────────────
+  // Formatters: bloqueo al teclear
 
   /// Nombres de persona: solo letras (con acentos y ñ) y espacios.
   static final List<TextInputFormatter> nombrePersona = <TextInputFormatter>[
@@ -38,7 +38,7 @@ class Validadores {
     FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
   ];
 
-  // ── Validadores: comprobación al guardar ──────────────────────────────────
+  // Validadores: comprobación al guardar
 
   static String? nombrePersonaValidador(
     String? valor, {

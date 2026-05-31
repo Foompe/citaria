@@ -17,7 +17,7 @@ enum GraficoAdmin {
   cancelacionesPorServicio,
 }
 
-// ── DTOs ──────────────────────────────────────────────────────────────────────
+// DTOs
 
 @immutable
 class DtoKpiEstadisticaAdmin {
@@ -101,7 +101,7 @@ class DtoRendimientoProfesionalAdmin {
   final String facturacionTexto;
 }
 
-// ── ViewModel ─────────────────────────────────────────────────────────────────
+// ViewModel
 
 class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   ViewModelAdminEstadisticas({
@@ -118,7 +118,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   );
   final NumberFormat _formatoPorcentaje = NumberFormat.decimalPattern('es_ES');
 
-  // ── Estado por gráfico ─────────────────────────────────────────────────────
+  // Estado por gráfico
   final Map<GraficoAdmin, PeriodoAdminEstadisticas> _periodos = {
     for (final g in GraficoAdmin.values) g: PeriodoAdminEstadisticas.esteMes,
   };
@@ -134,7 +134,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     for (final g in GraficoAdmin.values) g: false,
   };
 
-  // ── Datos ──────────────────────────────────────────────────────────────────
+  // Datos
   ResumenEstadistica? _resumen;
   List<EstadisticaMes> _clientesNuevosVsRecurrentes = const [];
   List<EstadisticaMes> _fidelizacion = const [];
@@ -149,7 +149,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   List<EstadisticaItem> _importePorServicio = const [];
   List<EstadisticaItem> _cancelacionesPorServicio = const [];
 
-  // ── Getters de estado ──────────────────────────────────────────────────────
+  // Getters de estado
   PeriodoAdminEstadisticas periodoGrafico(GraficoAdmin g) => _periodos[g]!;
   int anoGrafico(GraficoAdmin g) => _anos[g] ?? DateTime.now().year;
   Set<int> anosSinDatos(GraficoAdmin g) =>
@@ -171,7 +171,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
       _importePorServicio.isEmpty &&
       _cancelacionesPorServicio.isEmpty;
 
-  // ── Getters de datos ───────────────────────────────────────────────────────
+  // Getters de datos
   DtoKpiDobleEstadisticaAdmin get kpiReservas => DtoKpiDobleEstadisticaAdmin(
     titulo: 'Reservas',
     valorHoy: _formatearEntero(_resumen?.reservasHoy),
@@ -261,7 +261,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
   List<DtoItemEstadisticaAdmin> get cancelacionesPorServicio =>
       _crearItems(_cancelacionesPorServicio, TipoValorEstadistica.cantidad);
 
-  // ── Carga inicial ──────────────────────────────────────────────────────────
+  // Carga inicial
   Future<void> cargarEstadisticas() async {
     iniciarCarga();
     for (final g in GraficoAdmin.values) {
@@ -395,7 +395,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
 
   Future<void> refrescar() => cargarEstadisticas();
 
-  // ── Cambio de periodo por gráfico ──────────────────────────────────────────
+  // Cambio de periodo por gráfico
   Future<void> cambiarPeriodoGrafico(
     GraficoAdmin grafico,
     PeriodoAdminEstadisticas periodo,
@@ -444,7 +444,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     }
   }
 
-  // ── Cambio de año por gráfico ──────────────────────────────────────────────
+  // Cambio de año por gráfico
   Future<void> cambiarAnoGrafico(GraficoAdmin grafico, int ano) async {
     if (_anos[grafico] == ano) return;
     _anos[grafico] = ano;
@@ -492,7 +492,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     }
   }
 
-  // ── Cambio de mes en servicio top ──────────────────────────────────────────
+  // Cambio de mes en servicio top
   Future<void> cambiarMesServicioTop(DateTime mes) async {
     if (_mesServicioTop.year == mes.year && _mesServicioTop.month == mes.month) {
       return;
@@ -516,7 +516,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     }
   }
 
-  // ── Helpers privados ───────────────────────────────────────────────────────
+  // Helpers privados
   _RangoFechas _rangoGrafico(GraficoAdmin g) {
     if (_anos.containsKey(g)) return _crearRangoAnual(_anos[g]!);
     return _crearRango(_periodos[g]!);
