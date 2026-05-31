@@ -8,6 +8,7 @@ import 'package:citaria_frontend/data/api/citaria_api.dart';
 import 'package:citaria_frontend/data/models/disponibilidad.dart';
 import 'package:citaria_frontend/data/models/franja_horaria.dart';
 import 'package:citaria_frontend/data/models/periodo_disponibles.dart';
+import 'package:citaria_frontend/data/models/servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_disponibilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
@@ -57,6 +58,20 @@ class _RepoDisponibilidadFake extends RepoDisponibilidad {
   String _clave(DateTime fecha) => '${fecha.year}-${fecha.month}-${fecha.day}';
 }
 
+/// Doble de [RepoCatalogo] que devuelve un catálogo fijo de servicios, para
+/// poder seleccionar servicios reales y calcular duración/precio.
+class _RepoCatalogoFake extends RepoCatalogo {
+  _RepoCatalogoFake(super.api);
+
+  @override
+  Future<List<Servicio>> listarServicios(String token) async {
+    return const <Servicio>[
+      Servicio(id: 1, nombre: 'Corte', precio: 10.0, duracionMinutos: 30, activo: true),
+      Servicio(id: 2, nombre: 'Tinte', precio: 25.5, duracionMinutos: 45, activo: true),
+    ];
+  }
+}
+
 Disponibilidad _disponibilidadCon(DateTime fecha, String horaInicio) {
   return Disponibilidad(
     fecha: fecha,
@@ -89,15 +104,16 @@ void main() {
     repoDisponibilidad = _RepoDisponibilidadFake(api)
       ..diasDisponibles = <DateTime>{fechaA, fechaB};
     vm = ViewModelWizard(
-      repoCatalogo: RepoCatalogo(api),
+      repoCatalogo: _RepoCatalogoFake(api),
       repoReservas: RepoReservas(api),
       repoDisponibilidad: repoDisponibilidad,
       token: 'token-test',
       organizacionId: 1,
     );
 
-    // Estado mínimo para poder seleccionar fechas: un servicio elegido y la
-    // caché de días disponibles cargada con A y B.
+    // Estado mínimo para poder seleccionar fechas: catálogo cargado, un
+    // servicio elegido y la caché de días disponibles cargada con A y B.
+    await vm.inicializar();
     await vm.toggleServicio(1);
     await vm.cargarDiasDisponibles();
   });
@@ -131,4 +147,88 @@ void main() {
       expect(vm.franjas.single.horaInicio, '10:00');
     },
   );
+
+  test('duracionTotalMinutos suma los servicios seleccionados', () async {
+    expect(vm.duracionTotalMinutos, 30); // solo el 1 (de setUp)
+    await vm.toggleServicio(2);
+    expect(vm.duracionTotalMinutos, 75); // 30 + 45
+    await vm.toggleServicio(1);
+    await vm.toggleServicio(2);
+    expect(vm.duracionTotalMinutos, 0);
+  });
+
+  test('precioTotal suma los precios de los servicios seleccionados', () async {
+    expect(vm.precioTotal, closeTo(10.0, 0.0001)); // solo el 1
+    await vm.toggleServicio(2);
+    expect(vm.precioTotal, closeTo(35.5, 0.0001)); // 10.0 + 25.5
+  });
+
+  test('diasCalendario genera semanas completas con relleno', () {
+    final List<DtoDiaWizard> dias = vm.diasCalendario;
+
+    // La rejilla es siempre un número entero de semanas.
+    expect(dias.length % 7, 0);
+
+    // Tantas celdas del mes como días tiene el mes actual.
+    final DateTime ahora = DateTime.now();
+    final int diasEnMes = DateTime(ahora.year, ahora.month + 1, 0).day;
+    expect(dias.where((d) => d.esDelMes).length, diasEnMes);
+
+    // Las celdas de relleno van con dia 0 y nunca disponibles.
+    expect(
+      dias.where((d) => !d.esDelMes).every((d) => d.dia == 0 && !d.disponible),
+      isTrue,
+    );
+
+    // Hoy aparece exactamente una vez entre las celdas del mes.
+    expect(dias.where((d) => d.esDelMes && d.esHoy).length, 1);
+  });
+
+  test('franjas: marca como pasada la franja temprana si la fecha es hoy', () async {
+    final DateTime hoy = DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    );
+    repoDisponibilidad.diasDisponibles = <DateTime>{hoy};
+    await vm.cargarDiasDisponibles();
+
+    final Future<void> seleccion = vm.seleccionarFecha(hoy);
+    repoDisponibilidad.resolver(
+      hoy,
+      Disponibilidad(
+        fecha: hoy,
+        franjas: const <FranjaHoraria>[
+          FranjaHoraria(
+            horaInicio: '00:00',
+            horaFin: '00:15',
+            disponible: true,
+            empleadosDisponibles: 1,
+          ),
+          FranjaHoraria(
+            horaInicio: '23:59',
+            horaFin: '23:59',
+            disponible: true,
+            empleadosDisponibles: 1,
+          ),
+        ],
+      ),
+    );
+    await seleccion;
+
+    final List<DtoFranjaWizard> franjas = vm.franjas;
+    expect(franjas[0].horaInicio, '00:00');
+    expect(franjas[0].disponible, isFalse); // ya pasó (hoy)
+    expect(franjas[1].horaInicio, '23:59');
+    expect(franjas[1].disponible, isTrue); // aún por venir
+  });
+
+  test('franjas: una franja temprana en fecha futura NO se marca pasada', () async {
+    final Future<void> seleccion = vm.seleccionarFecha(fechaA);
+    repoDisponibilidad.resolver(fechaA, _disponibilidadCon(fechaA, '00:00'));
+    await seleccion;
+
+    // fechaA es 2099 → la regla de "ya pasó" solo aplica a hoy.
+    expect(vm.franjas.single.disponible, isTrue);
+  });
 }
