@@ -18,12 +18,12 @@ import 'package:citaria_frontend/data/repositories/repo_organizaciones.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
 import 'package:citaria_frontend/data/repositories/repo_usuarios.dart';
 import 'package:citaria_frontend/ui/navigation/rutas.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_chatbot.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_perfil_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_reservas_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +60,7 @@ Future<void> main() async {
 
 /// Widget raíz de la aplicación Citaria.
 ///
-/// Registra los ViewModels globales y configura tema y enrutamiento.
+/// Registra los ViewModels globales y configura tema y las rutas.
 class AplicacionCitaria extends StatelessWidget {
   const AplicacionCitaria({
     super.key,

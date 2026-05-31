@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 /// Campo de formulario estándar con estilo del tema.
 ///
-/// Lee el radio de borde desde [EspaciadoCitaria] del tema.
+/// Lee el radio de borde del tema.
 class CampoFormulario extends StatelessWidget {
   const CampoFormulario({
     super.key,

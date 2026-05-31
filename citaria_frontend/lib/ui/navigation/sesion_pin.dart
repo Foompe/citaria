@@ -5,7 +5,7 @@
 ///
 /// Es un flag en memoria — no persiste entre reinicios de la app.
 /// Una sesión activa da acceso a todas las zonas protegidas hasta
-/// que se invalide explícitamente desde [GestorNavegacion].
+/// que se invalide explícitamente desde el GestorNavegacion.
 class SesionPin {
   SesionPin._();
 
@@ -17,7 +17,6 @@ class SesionPin {
   /// Activa la sesión tras una validación correcta del PIN.
   static void activar() => _validado = true;
 
-  /// Invalida la sesión. Llamado desde [GestorNavegacion] al navegar
-  /// fuera del área protegida.
+  /// Invalida la sesión. Llamado desde [GestorNavegacion] al navegar fuera del área protegida.
   static void invalidar() => _validado = false;
 }

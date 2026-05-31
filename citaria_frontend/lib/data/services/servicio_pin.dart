@@ -2,9 +2,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Gestión local del PIN de administración.
 ///
-/// El PIN se guarda en [FlutterSecureStorage] (cifrado por el OS).
-/// El valor por defecto es "1234"; la flag [requiereCambio] indica si
-/// el usuario aún no lo ha personalizado.
+/// El PIN se guarda en FlutterSecureStorage (cifrado por el OS).
+/// El valor por defecto es "1234". La flag requiereCambio indica si el usuario aún no lo ha personalizado.
 class ServicioPin {
   ServicioPin({required FlutterSecureStorage almacenamiento})
       : _almacenamiento = almacenamiento;
@@ -16,7 +15,7 @@ class ServicioPin {
   static const String _pinDefecto    = '1234';
 
   /// Escribe el PIN por defecto si no existe ninguno almacenado.
-  /// Debe llamarse una vez al arranque de la app.
+  /// Se llama una vez al arranque de la app.
   Future<void> inicializar() async {
     final String? pin = await _almacenamiento.read(key: _clavePin);
     if (pin == null) {
@@ -25,19 +24,19 @@ class ServicioPin {
     }
   }
 
-  /// Devuelve [true] si [pin] coincide con el almacenado.
+  /// Devuelve true si el pin coincide con el almacenado osea, el pin por defecto.
   Future<bool> verificar(String pin) async {
     final String? almacenado = await _almacenamiento.read(key: _clavePin);
     return almacenado == pin;
   }
 
-  /// Guarda [nuevo] como PIN y marca que ya fue personalizado.
+  /// Guarda el nuevo PIN y marca que ya fue personalizado.
   Future<void> cambiar(String nuevo) async {
     await _almacenamiento.write(key: _clavePin,      value: nuevo);
     await _almacenamiento.write(key: _claveCambiado, value: 'true');
   }
 
-  /// Devuelve [true] si el usuario nunca ha cambiado el PIN por defecto.
+  /// Devuelve true si el usuario nunca ha cambiado el PIN por defecto.
   Future<bool> requiereCambio() async {
     final String? cambiado = await _almacenamiento.read(key: _claveCambiado);
     return cambiado != 'true';

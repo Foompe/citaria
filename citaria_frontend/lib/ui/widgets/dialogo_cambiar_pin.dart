@@ -8,10 +8,10 @@ enum _Paso { actual, nuevo, confirmar }
 
 /// Diálogo de cambio de PIN en tres pasos:
 /// 1. Introduce el PIN actual.
-/// 2. Introduce el nuevo PIN (4–8 dígitos).
+/// 2. Introduce el nuevo PIN.
 /// 3. Confirma el nuevo PIN.
 ///
-/// Devuelve [true] al guardar correctamente, [false] si el usuario cancela.
+/// Devuelve true al guardar correctamente, false si el usuario cancela.
 class DialogoCambiarPin extends StatefulWidget {
   const DialogoCambiarPin({super.key});
 

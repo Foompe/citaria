@@ -3,14 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 
-// PALETA — extraída de styles-light.css del prototipo DetailCarWash
-
 // Superficies
 const Color _bgBase = Color(0xFFFFFFFF);
 const Color _bgSurface = Color(0xFFF5F6FA);
 const Color _bgElevated = Color(0xFFEDEEF4);
 // ignore: unused_element
-const Color _bgOverlay = Color(0xD9FFFFFF); // rgba(255,255,255,0.85)
+const Color _bgOverlay = Color(0xD9FFFFFF);
 
 // Bordes
 const Color _border = Color(0xFFDDE0EA);
@@ -24,12 +22,12 @@ const Color _textBody = Color(0xFF3D4460);
 const Color _textMuted = Color(0xFF7A8194);
 const Color _textFaint = Color(0xFFB0B6C8);
 
-// Acento — identidad de marca (igual en claro y oscuro)
-const Color _accent = Color(0xFFB09070);       // beis oscuro
-const Color _accentStrong = Color(0xFFA6845A); // beis oscuro reforzado
-const Color _accentSoft = Color(0x1FC4A882);   // beis oscuro suave (12%)
+// Acento
+const Color _accent = Color(0xFFB09070);
+const Color _accentStrong = Color(0xFFA6845A);
+const Color _accentSoft = Color(0x1FC4A882);
 // ignore: unused_element
-const Color _accentTint = Color(0x0FC4A882);   // beis oscuro muy suave (6%)
+const Color _accentTint = Color(0x0FC4A882);
 
 // Semánticos
 const Color _danger = Color(0xFFA82828);
@@ -89,20 +87,19 @@ TextTheme _buildTextTheme(Color displayColor, Color bodyColor) => TextTheme(
   ),
 );
 
-// TEMA ÚNICO DE CITARIA (CLARO)
+// TEMA ÚNICO DE CITARIA
 
 final ThemeData temaCitaria = () {
   const espaciado = EspaciadoCitaria.base;
   const estados = EstadosReservaCitaria.base;
 
-  // Generamos el TextTheme con los colores de la paleta ya aplicados
   final textTheme = _buildTextTheme(_textPrimary, _textBody);
 
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
 
-    // ColorScheme
+    // ColorSchem
     colorScheme: const ColorScheme.light(
       primary: _accent,
       onPrimary: Colors.white,

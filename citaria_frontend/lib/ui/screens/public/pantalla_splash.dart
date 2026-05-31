@@ -4,13 +4,13 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 
-/// P01 — Splash.
+/// Pantalla de Splash.
 ///
 /// Muestra logo + barra de progreso animada mientras se verifica
-/// la sesión. Al terminar navega según el resultado del ViewModel.
+/// la sesión. Al terminar navega segú el resultado del ViewModel.
 class PantallaSplash extends StatefulWidget {
   const PantallaSplash({super.key, this.duracionMinima = true});
 

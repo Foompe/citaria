@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Valores de geometría propios de Citaria no cubiertos por [ThemeData].
-///
-/// Dispositivo de referencia: 390 × 844.
-/// Acceso: `Theme.of(context).extension<EspaciadoCitaria>()!`
+/// Valores de geometría propios de Citaria
 @immutable
 class EspaciadoCitaria extends ThemeExtension<EspaciadoCitaria> {
   const EspaciadoCitaria({

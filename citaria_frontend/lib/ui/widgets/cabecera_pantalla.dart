@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// AppBar reutilizable de Citaria.
-///
-/// Implementa [PreferredSizeWidget] para usarse directamente como
-/// [Scaffold.appBar]. Todos los valores visuales proceden del
-/// [AppBarTheme] del tema — cero valores inline.
+/// AppBar reutilizable.
 class CabeceraPantalla extends StatelessWidget implements PreferredSizeWidget {
   const CabeceraPantalla({
     super.key,
@@ -16,7 +12,7 @@ class CabeceraPantalla extends StatelessWidget implements PreferredSizeWidget {
   final String titulo;
   final bool mostrarAtras;
 
-  /// Widget opcional situado en [AppBar.actions].
+  /// Widget opcional
   final Widget? accionDerecha;
 
   @override

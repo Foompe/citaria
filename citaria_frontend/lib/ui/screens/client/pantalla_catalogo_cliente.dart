@@ -6,7 +6,7 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/ui/widgets/chip_categoria.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/fila_servicio.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_catalogo_cliente.dart';
 
 class PantallaCatalogoCliente extends StatefulWidget {
   const PantallaCatalogoCliente({super.key});

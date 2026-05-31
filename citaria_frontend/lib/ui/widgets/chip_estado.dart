@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/theme/extension_estados.dart';
 
-/// Estados posibles de una reserva Citaria.
+/// Estados posibles de una reserva.
 enum EstadoReserva { pendiente, confirmada, cancelada, completada }
 
 /// Chip visual que representa el estado de una reserva.
-///
-/// Los colores proceden de [EstadosReservaCitaria] y la geometría
-/// de [EspaciadoCitaria.radioPill]. Cero valores visuales inline.
 class ChipEstado extends StatelessWidget {
   const ChipEstado({
     super.key,

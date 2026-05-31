@@ -10,12 +10,14 @@ import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/detalle_widgets.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_detalle_reserva_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_linea_detalle_reserva_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_reservas.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P21 — Detalle de una reserva en el área admin.
+/// Pantalla de detalle de una reserva en el área admin.
 class PantallaAdminDetalleReserva extends StatefulWidget {
   const PantallaAdminDetalleReserva({super.key});
 

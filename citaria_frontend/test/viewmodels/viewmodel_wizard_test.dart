@@ -12,7 +12,9 @@ import 'package:citaria_frontend/data/models/servicio.dart';
 import 'package:citaria_frontend/data/repositories/repo_catalogo.dart';
 import 'package:citaria_frontend/data/repositories/repo_disponibilidad.dart';
 import 'package:citaria_frontend/data/repositories/repo_reservas.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
+import 'package:citaria_frontend/dto/dto_dia_wizard.dart';
+import 'package:citaria_frontend/dto/dto_franja_wizard.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_wizard.dart';
 
 /// Doble de [RepoDisponibilidad] con control manual del orden de respuestas.
 ///

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Botón flotante común de Citaria.
 ///
-/// Centraliza el estilo visual del FAB. La pantalla que lo usa decide
-/// la acción mediante [onPressed], normalmente delegando en [GestorNavegacion].
+/// Centraliza el estilo visual del FAB.
 class FabCitaria extends StatelessWidget {
   const FabCitaria({
     super.key,

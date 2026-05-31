@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Pantalla provisional usada por todas las rutas.
-///
-/// La Capa 2B la sustituirá por las pantallas reales.
 class PantallaPlaceholder extends StatelessWidget {
   const PantallaPlaceholder({super.key, required this.nombre});
 

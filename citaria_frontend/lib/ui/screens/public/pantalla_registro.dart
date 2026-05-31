@@ -3,16 +3,14 @@ import 'package:provider/provider.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
 
-/// P05 — Registro.
+/// Pantalla de Registro.
 ///
 /// Formulario de alta de nuevo usuario con todos los campos
-/// definidos en el prompt: nombre, apellidos, DNI (opcional),
-/// email, teléfono y contraseña.
 class PantallaRegistro extends StatefulWidget {
   const PantallaRegistro({super.key});
 

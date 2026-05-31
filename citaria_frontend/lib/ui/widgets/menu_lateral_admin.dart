@@ -1,15 +1,14 @@
+import 'package:citaria_frontend/dto/dto_empresa_activa.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// Menú lateral (Drawer) del área de administración.
+/// Menú lateral del área de administración.
 ///
-/// Se usa como [Scaffold.drawer] en todas las pantallas admin.
-/// Las secciones protegidas por PIN tienen un icono candado como
-/// trailing — la protección real ocurre en [GuardianPin].
+/// Se usa en todas las pantallas admin.
 class MenuLateralAdmin extends StatelessWidget {
   const MenuLateralAdmin({super.key});
 
@@ -34,7 +33,7 @@ class MenuLateralAdmin extends StatelessWidget {
               espaciado: espaciado,
             ),
 
-            // CUERPO scrollable
+            // CUERPO 
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,

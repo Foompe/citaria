@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 /// Sección "HORARIO SEMANAL" con label, card y filas de días.
 ///
-/// Pasa [soloLectura] true para deshabilitar la interacción (AbsorbPointer).
+/// Pasa soloLectura true para deshabilitar la interacción (AbsorbPointer).
 class SeccionHorarioSemanal extends StatelessWidget {
   const SeccionHorarioSemanal({
     super.key,

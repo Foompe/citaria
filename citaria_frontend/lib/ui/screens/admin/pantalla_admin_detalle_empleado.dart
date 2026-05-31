@@ -8,14 +8,15 @@ import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_activo_inactivo.dart';
 import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_detalle_empleado_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_horario_empleado_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_habilidad_disponible_empleado_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_empleados.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P30 — Ficha de detalle de empleado.
-///
-/// Ruta: /admin/empleados/:id  — arguments: {'id': String}
+/// Pantalla de ficha de detalle de empleado.
 class PantallaAdminDetalleEmpleado extends StatefulWidget {
   const PantallaAdminDetalleEmpleado({super.key, this.id});
 

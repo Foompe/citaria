@@ -3,12 +3,13 @@ import 'package:citaria_frontend/ui/widgets/dialogo_cambiar_contrasena.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:citaria_frontend/dto/dto_perfil_cliente.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
 import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/utils/validadores.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_perfil_cliente.dart';
 import 'package:flutter/services.dart' show TextInputFormatter;
 
 class PantallaPerfil extends StatefulWidget {

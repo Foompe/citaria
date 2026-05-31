@@ -5,7 +5,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/etiqueta_wizard.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_catalogo_cliente.dart';
 
 class PantallaDetalleServicio extends StatefulWidget {
   const PantallaDetalleServicio({super.key, this.modoAdmin = false});

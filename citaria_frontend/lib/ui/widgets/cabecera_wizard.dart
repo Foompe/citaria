@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 
-/// Cabecera compartida por los 5 pasos del wizard de reserva.
-///
-/// Muestra: botón atrás + indicador "Paso X de 5" + stepper lineal + título.
+/// Cabecera compartida por los 5 pasos del wizard de reserva
 class CabeceraWizard extends StatelessWidget {
   const CabeceraWizard({
     super.key,
@@ -18,7 +16,7 @@ class CabeceraWizard extends StatelessWidget {
   /// Número total de pasos (siempre 5).
   final int totalPasos;
 
-  /// Título descriptivo que se muestra bajo el stepper.
+  /// Título descriptivo que se muestra bajo.
   final String titulo;
 
   @override
@@ -42,7 +40,7 @@ class CabeceraWizard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Fila superior: atrás + indicador + equilibrio
+              // Fila superior
               Row(
                 children: [
                   Semantics(

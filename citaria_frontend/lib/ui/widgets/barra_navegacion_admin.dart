@@ -6,11 +6,6 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_citaria.dart';
 enum SeccionAdmin { inicio, reservas, clientes, mas }
 
 /// Barra de navegación inferior del área de administración.
-///
-/// Recibe la [seccionActiva] para resaltar el tab correspondiente.
-/// El tab "Más" no navega a ninguna pantalla: abre el [Drawer] del
-/// [Scaffold] padre usando [Scaffold.of(context).openDrawer()].
-/// Los demás tabs delegan en [GestorNavegacion].
 class BarraNavegacionAdmin extends StatelessWidget {
   const BarraNavegacionAdmin({super.key, required this.seccionActiva});
 

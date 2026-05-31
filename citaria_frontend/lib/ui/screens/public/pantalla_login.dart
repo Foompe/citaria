@@ -4,14 +4,12 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 
-/// P04 — Login.
+/// Pantalla de Login.
 ///
 /// Formulario de inicio de sesión con email y contraseña.
-/// Incluye toggle de visibilidad de contraseña y diálogo de
-/// recuperación (D01) sin lógica real.
 class PantallaLogin extends StatefulWidget {
   const PantallaLogin({super.key});
 

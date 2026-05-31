@@ -6,12 +6,14 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_horarios.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_cierre_organizacion_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_horario_organizacion_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_horarios.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P33 — Gestión de horarios del negocio.
+/// Pantalla de gestión de horarios del negocio.
 class PantallaAdminHorarios extends StatefulWidget {
   const PantallaAdminHorarios({super.key});
 

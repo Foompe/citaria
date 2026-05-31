@@ -13,13 +13,13 @@ import 'package:citaria_frontend/ui/utils/validadores.dart';
 import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/fila_dia_horario.dart';
 import 'package:citaria_frontend/ui/widgets/seccion_horario_semanal.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_empleados.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-/// P29 — Formulario de alta de nuevo empleado.
+/// Pantalla de formulario de alta de nuevo empleado.
 class PantallaAdminNuevoEmpleado extends StatefulWidget {
   const PantallaAdminNuevoEmpleado({super.key});
 

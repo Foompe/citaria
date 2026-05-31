@@ -10,8 +10,10 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_inicio.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_empleado_inicio_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_reserva_inicio_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_inicio.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:provider/provider.dart';
 
 // Constantes de layout
@@ -24,9 +26,7 @@ const int _horaInicio = 9;
 const int _horaFin = 20;
 const int _nFranjas = _horaFin - _horaInicio;
 
-// Pantalla
-
-/// P19 — Pantalla de inicio del área admin.
+/// Pantalla de inicio del área admin.
 ///
 /// Muestra un calendario tipo agenda con eje X (empleados) y
 /// eje Y (franjas horarias). El scroll vertical está sincronizado

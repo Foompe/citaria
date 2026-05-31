@@ -31,19 +31,15 @@ import 'package:citaria_frontend/ui/screens/public/pantalla_seleccion_empresa.da
 import 'package:citaria_frontend/data/services/servicio_pin.dart';
 import 'package:citaria_frontend/ui/widgets/dialogo_pin.dart';
 import 'package:citaria_frontend/ui/screens/admin/pantalla_admin_reservas.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_wizard.dart';
 
-/// Punto único de navegación de la aplicación Citaria.
+/// Clase centralizada de gestión de navegación entre pantallas.
 ///
-/// Todos los métodos son estáticos y reciben el [BuildContext] del widget
-/// que origina la navegación. Nadie usa strings de ruta directamente
-/// fuera de esta clase y de [Rutas].
-///
-/// Las rutas protegidas por PIN navegan a través de [_irAPinConDestino],
-/// que consulta [SesionPin] antes de mostrar el diálogo. Si la sesión
+/// Las rutas protegidas por PIN navegan a través de _irAPinConDestino,
+/// consulta SesionPin antes de mostrar el diálogo. Si la sesión
 /// está activa, navega directamente sin pedir el PIN.
-/// Los métodos que salen del área protegida llaman a [SesionPin.invalidar].
+/// Los métodos que salen del área protegida llaman a SesionPin.invalidar.
 class GestorNavegacion {
   GestorNavegacion._();
 
@@ -336,11 +332,6 @@ class GestorNavegacion {
 
   // ÁREA ADMIN — PROTEGIDA PIN
 
-  /// Núcleo de la navegación protegida.
-  ///
-  /// Si [SesionPin.estaActiva], navega directamente.
-  /// Si no, muestra [DialogoPin]. Al validar, activa la sesión y navega.
-  /// Si el usuario cancela, no ocurre nada.
   static Future<T?> _irAPinConDestino<T>(
     BuildContext context,
     WidgetBuilder builder,

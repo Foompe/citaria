@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:citaria_frontend/dto/dto_reserva_cliente.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_navegacion_cliente.dart';
@@ -8,10 +9,10 @@ import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_reservas_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 
 class PantallaInicioCliente extends StatefulWidget {
   const PantallaInicioCliente({super.key});

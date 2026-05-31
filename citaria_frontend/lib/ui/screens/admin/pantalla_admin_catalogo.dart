@@ -8,12 +8,15 @@ import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_servicio_catalogo_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_categoria_catalogo_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_habilidad_catalogo_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_catalogo.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P31 — Catálogo de servicios del área admin protegida por PIN.
+/// Pantalla de catálogo de servicios del área admin protegida por PIN.
 class PantallaAdminCatalogo extends StatefulWidget {
   const PantallaAdminCatalogo({super.key});
 

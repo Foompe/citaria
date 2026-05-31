@@ -6,20 +6,8 @@ import 'package:flutter/material.dart';
 /// de horarios: PantallaAdminNuevoEmpleado, PantallaAdminDetalleEmpleado
 /// y PantallaAdminHorarios.
 ///
-/// El padre es responsable de envolver varias [FilaDiaHorario] en una
-/// [Card] con [Column] y separar con [Divider] entre ellas.
+/// El padre es responsable de envolver y separar entre ellas.
 ///
-/// Cuando [activo] es false, muestra "Cerrado" en lugar de [horario].
-///
-/// Uso:
-/// ```dart
-/// FilaDiaHorario(
-///   dia: 'Lunes',
-///   activo: _diasActivos[0],
-///   horario: '9:00 – 19:00',
-///   onChanged: (v) => setState(() => _diasActivos[0] = v),
-/// )
-/// ```
 class FilaDiaHorario extends StatelessWidget {
   const FilaDiaHorario({
     super.key,

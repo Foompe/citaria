@@ -4,16 +4,7 @@ import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 /// Chip seleccionable para habilidades en formularios de empleado y servicio.
 ///
 /// El estado activo/inactivo es responsabilidad del padre — este widget
-/// es stateless. Geometría y colores 100 % del tema.
-///
-/// Uso:
-/// ```dart
-/// ChipHabilidad(
-///   etiqueta: 'Pulido',
-///   seleccionado: _seleccionadas.contains('Pulido'),
-///   onTap: () => setState(() { ... }),
-/// )
-/// ```
+/// es stateless.
 class ChipHabilidad extends StatelessWidget {
   const ChipHabilidad({
     super.key,

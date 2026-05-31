@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 
 /// Etiqueta decorativa para categorías y habilidades dentro del wizard de reserva.
-///
-/// Sin estado activo — solo decorativa. Borde sutil, fondo transparente.
-/// Geometría y colores 100 % del tema.
 class EtiquetaWizard extends StatelessWidget {
   const EtiquetaWizard({super.key, required this.etiqueta});
 

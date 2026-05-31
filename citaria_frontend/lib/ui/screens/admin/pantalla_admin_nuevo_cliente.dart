@@ -8,15 +8,13 @@ import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/utils/validadores.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-/// P24 — Formulario de alta de nuevo cliente en el área admin.
-///
-/// Ruta: /admin/clientes/nuevo
+/// Pantalla de formulario de alta de nuevo cliente en el área admin.
 class PantallaAdminNuevoCliente extends StatefulWidget {
   const PantallaAdminNuevoCliente({super.key});
 

@@ -7,8 +7,6 @@ typedef CambiarContrasena = Future<String?> Function(
 );
 
 /// Diálogo de cambio de contraseña.
-/// Recibe [onCambiar] que devuelve null si todo fue bien o el mensaje de error.
-/// Devuelve [true] al guardar correctamente, [false] si el usuario cancela.
 class DialogoCambiarContrasena extends StatefulWidget {
   const DialogoCambiarContrasena({super.key, required this.onCambiar});
 

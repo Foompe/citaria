@@ -4,16 +4,13 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/lista_clientes_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_wizard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P22 — Selección de cliente para nueva reserva.
-///
-/// Ruta: /admin/nueva-reserva/cliente
-/// Argument opcional 'modoSeleccion' (bool) — por defecto true.
+/// Pantalla de selección de cliente para nueva reserva.
 class PantallaAdminSeleccionCliente extends StatefulWidget {
   const PantallaAdminSeleccionCliente({super.key});
 

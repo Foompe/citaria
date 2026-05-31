@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:citaria_frontend/dto/dto_mensaje_chatbot.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/logo_citaria.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_chatbot.dart';
 
 class PantallaChatbot extends StatefulWidget {
   const PantallaChatbot({super.key});

@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Separador horizontal fino entre filas de un listado o card.
-///
-/// Geometría fija (`indent: 48`) alineada con las filas que llevan icono
-/// a la izquierda. El color procede del esquema del tema. Cero valores
-/// visuales inline en las pantallas.
 class DivisorCitaria extends StatelessWidget {
   const DivisorCitaria({super.key});
 

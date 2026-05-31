@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Pantalla de estado centrado con mensaje y botón de acción.
-///
-/// Usado para estados de error, carga vacía o recurso no encontrado.
 class EstadoCentrado extends StatelessWidget {
   const EstadoCentrado({
     super.key,

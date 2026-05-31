@@ -10,14 +10,14 @@ import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/divisor_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/estado_centrado.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_detalle_cliente_admin.dart';
+import 'package:citaria_frontend/dto/admin/dto_reserva_cliente_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P25 — Ficha de cliente en el área admin.
-///
-/// Ruta: /admin/clientes/:id  — arguments: {'id': String}
+/// Pantalla de ficha de cliente en el área admin.
 class PantallaAdminDetalleCliente extends StatefulWidget {
   const PantallaAdminDetalleCliente({super.key});
 

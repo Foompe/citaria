@@ -6,9 +6,6 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_citaria.dart';
 enum SeccionCliente { inicio, catalogo, reservas, perfil }
 
 /// Barra de navegación inferior del área cliente.
-///
-/// Recibe la [seccionActiva] para resaltar el tab correspondiente
-/// y delega toda navegación en [GestorNavegacion].
 class BarraNavegacionCliente extends StatelessWidget {
   const BarraNavegacionCliente({super.key, required this.seccionActiva});
 

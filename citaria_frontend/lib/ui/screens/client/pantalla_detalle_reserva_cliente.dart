@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:citaria_frontend/dto/dto_linea_detalle_reserva_cliente.dart';
+import 'package:citaria_frontend/dto/dto_reserva_cliente.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as estado_ui;
 import 'package:citaria_frontend/ui/widgets/detalle_widgets.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_reservas_cliente.dart';
 
 class PantallaDetalleReservaCliente extends StatefulWidget {
   const PantallaDetalleReservaCliente({super.key});

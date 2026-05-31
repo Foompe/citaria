@@ -4,7 +4,7 @@ import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/barra_cta_fija.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_wizard.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_wizard.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_wizard.dart';
 
 class PantallaWizardHora extends StatelessWidget {
   const PantallaWizardHora({super.key});

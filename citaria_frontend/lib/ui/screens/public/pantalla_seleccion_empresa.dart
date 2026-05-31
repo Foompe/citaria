@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:citaria_frontend/dto/dto_empresa_seleccionable.dart';
 import 'package:citaria_frontend/ui/navigation/gestor_navegacion.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/hero_logo_citaria.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_catalogo_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_chatbot.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_perfil_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_reservas_cliente.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_tema.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_catalogo_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_chatbot.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_perfil_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_reservas_cliente.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_tema.dart';
 
-/// P02 — Selección de empresa.
+/// Pantalla de Selección de empresa.
 ///
-/// Primera pantalla real del flujo. Muestra las empresas disponibles,
+/// Muestra las empresas disponibles,
 /// permite escoger una y navega a login al confirmar.
 class PantallaSeleccionEmpresa extends StatefulWidget {
   const PantallaSeleccionEmpresa({super.key});

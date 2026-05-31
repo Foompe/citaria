@@ -8,13 +8,13 @@ import 'package:citaria_frontend/ui/widgets/campo_formulario.dart';
 import 'package:citaria_frontend/ui/widgets/chip_habilidad.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio_editable.dart';
 import 'package:citaria_frontend/ui/utils/validadores.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_catalogo.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_catalogo.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-/// P32 — Formulario de alta de nuevo servicio.
+/// Pantalla de formulario de alta de nuevo servicio.
 class PantallaAdminNuevoServicio extends StatefulWidget {
   const PantallaAdminNuevoServicio({super.key});
 

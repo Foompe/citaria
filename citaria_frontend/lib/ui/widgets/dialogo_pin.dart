@@ -5,10 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 /// Diálogo modal de verificación de PIN para zonas protegidas.
-///
-/// Muestra el nombre de la [seccion] destino en el subtítulo.
-/// Devuelve [true] si el PIN es correcto, [null] si el usuario cancela.
-/// Acepta entre 4 y 8 dígitos.
 class DialogoPin extends StatefulWidget {
   const DialogoPin({super.key, required this.seccion, this.mostrarAviso = false});
 

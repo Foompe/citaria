@@ -9,14 +9,13 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/cabecera_titulo_grande.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_empleados.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_empleado_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_empleados.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Pantalla
-
-/// P28 — Listado de empleados del área admin protegida por PIN.
+// Pantalla de listado de empleados del área admin protegida por PIN.
 class PantallaAdminEmpleados extends StatefulWidget {
   const PantallaAdminEmpleados({super.key});
 

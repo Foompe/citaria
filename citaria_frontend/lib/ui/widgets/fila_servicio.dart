@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 import 'package:citaria_frontend/ui/widgets/imagen_servicio.dart';
 
-/// Fila de servicio para [PantallaCatalogoCliente].
+/// Fila de servicio.
 ///
-/// Muestra miniatura placeholder, nombre, descripción, duración
-/// y precio. Toda la fila es tappable vía [onTap].
+/// Muestra miniatura placeholder, nombre, descripción, duración y precio.
 class FilaServicio extends StatelessWidget {
   const FilaServicio({
     super.key,

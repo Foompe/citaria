@@ -6,12 +6,12 @@ import 'package:citaria_frontend/ui/widgets/barra_navegacion_admin.dart';
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/lista_clientes_admin.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// P23 — Listado de clientes del área admin.
+/// Pantalla de listado de clientes del área admin.
 class PantallaAdminClientes extends StatefulWidget {
   const PantallaAdminClientes({super.key});
 

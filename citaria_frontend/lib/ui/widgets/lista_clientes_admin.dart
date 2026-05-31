@@ -1,5 +1,6 @@
+import 'package:citaria_frontend/dto/admin/dto_cliente_admin.dart';
 import 'package:citaria_frontend/ui/widgets/avatar_fallback_citaria.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_clientes.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_clientes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

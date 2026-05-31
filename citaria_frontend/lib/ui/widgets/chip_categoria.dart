@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 
 /// Chip de categoría reutilizable para filtros horizontales.
-///
-/// Se usa en [PantallaInicioCliente] y [PantallaCatalogoCliente].
-/// Cero valores visuales inline.
 class ChipCategoria extends StatelessWidget {
   const ChipCategoria({
     super.key,

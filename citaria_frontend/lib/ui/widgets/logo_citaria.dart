@@ -1,25 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:citaria_frontend/ui/theme/extension_espaciado.dart';
 
-/// Tamaños disponibles para [LogoCitaria].
+/// Tamaños disponibles para el Logo.
 enum LogoTamano { pequeno, mediano, grande }
 
-/// Logotipo cuadrado redondeado de Citaria.
-///
-/// Muestra la inicial «C» sobre fondo [colorScheme.primary].
-/// Si [mostrarNombre] es true, añade el nombre de la empresa debajo.
-///
-/// Tamaños:
-///   pequeno → 36×36  radio: radioBoton
-///   mediano → 56×56  radio: radioCard
-///   grande  → 80×80  radio: radioCard  (radioLogo no existe en EspaciadoCitaria;
-///                                       se usa radioCard = 16 px por acuerdo
-///                                       documentado en el informe de Bloque 1)
-///
-/// Escala tipográfica:
-///   pequeno → textTheme.labelLarge   (sustituye titleMedium — fuera de escala)
-///   mediano → textTheme.displaySmall (sustituye titleLarge  — fuera de escala)
-///   grande  → textTheme.displaySmall (sin cambio)
+/// Logotipo cuadrado redondeado.
 class LogoCitaria extends StatelessWidget {
   const LogoCitaria({
     super.key,

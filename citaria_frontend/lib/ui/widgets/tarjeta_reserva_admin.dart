@@ -5,7 +5,6 @@ import 'package:citaria_frontend/ui/widgets/chip_estado.dart';
 /// Tarjeta de resumen de una reserva para las vistas del área admin.
 ///
 /// Muestra estado, hora, nombre del cliente, servicio, empleado y precio.
-/// Toda la tarjeta es táctil — delega la acción en [onTap].
 class TarjetaReservaAdmin extends StatelessWidget {
   const TarjetaReservaAdmin({
     super.key,

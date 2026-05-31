@@ -12,8 +12,9 @@ import 'package:citaria_frontend/ui/widgets/chip_estado.dart' as chip;
 import 'package:citaria_frontend/ui/widgets/fab_citaria.dart';
 import 'package:citaria_frontend/ui/widgets/menu_lateral_admin.dart';
 import 'package:citaria_frontend/ui/widgets/tarjeta_reserva_admin.dart';
-import 'package:citaria_frontend/viewmodels/admin/viewmodel_admin_reservas.dart';
-import 'package:citaria_frontend/viewmodels/viewmodel_autenticacion.dart';
+import 'package:citaria_frontend/dto/admin/dto_reserva_admin.dart';
+import 'package:citaria_frontend/viewmodel/admin/viewmodel_admin_reservas.dart';
+import 'package:citaria_frontend/viewmodel/viewmodel_autenticacion.dart';
 
 // Filtros disponibles
 
@@ -55,7 +56,7 @@ extension FiltroReservasAdminMapeo on FiltroReservasAdmin {
 
 // Pantalla
 
-/// P20 — Lista de reservas del área admin con filtros.
+/// Pantalla de lista de reservas del área admin con filtros.
 class PantallaAdminReservas extends StatefulWidget {
   const PantallaAdminReservas({
     super.key,

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Teclado numérico reutilizable para los diálogos de PIN.
-///
-/// Muestra una cuadrícula 3×4: 1–9 / ← 0 ✓.
-/// El botón ✓ se deshabilita cuando [onConfirmar] es null.
 class TecladoPinCitaria extends StatelessWidget {
   const TecladoPinCitaria({
     super.key,
