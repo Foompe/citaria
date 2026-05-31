@@ -153,13 +153,13 @@ public class ReservaServiceImpl implements ReservaService {
         verificarPertenenciaCliente(cliente, organizacion);
 
         if (dto.getServicioIds() == null || dto.getServicioIds().isEmpty()) {
-            throw new IllegalStateException("Debe seleccionar al menos un servicio");
+            throw new IllegalArgumentException("Debe seleccionar al menos un servicio");
         }
         if (dto.getHoraInicio() == null) {
-            throw new IllegalStateException("La hora de inicio es obligatoria");
+            throw new IllegalArgumentException("La hora de inicio es obligatoria");
         }
         if (dto.getFecha().isBefore(LocalDate.now())) {
-            throw new IllegalStateException("No se pueden crear reservas para fechas pasadas");
+            throw new IllegalArgumentException("No se pueden crear reservas para fechas pasadas");
         }
 
         List<Reserva> reservasActivas = reservaDAO.findReservasFuturasActivasPorCliente(

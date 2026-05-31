@@ -140,13 +140,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
     _limpiarError();
 
     try {
-      final Sesion sesion = _leerSesionCliente();
-      _reservas = await _repoReservas.listarPorCliente(
-        sesion.clienteId ?? 0,
-        sesion.token,
-      );
-      _reservas = _reservas.where(_reservaEsValida).toList(growable: false);
-      _totalesReservas = _calcularTotalesDesdeLineas();
+      await _cargarReservasInterno();
       notifyListeners();
     } catch (e) {
       _setError(_mensajeError(e));
@@ -161,14 +155,7 @@ class ViewModelReservasCliente extends ChangeNotifier {
     _limpiarError();
 
     try {
-      final Sesion sesion = _leerSesionAutenticada();
-      final Reserva reserva = await _repoReservas.obtenerPorId(
-        id,
-        sesion.token,
-      );
-      final List<ReservaServicio> detalles = await _repoReservas
-          .obtenerDetalles(id, sesion.token);
-      _detalle = _crearDetalle(reserva, detalles);
+      await _cargarDetalleInterno(id);
       notifyListeners();
     } catch (e) {
       _setError(_mensajeError(e));
@@ -184,8 +171,11 @@ class ViewModelReservasCliente extends ChangeNotifier {
     try {
       final Sesion sesion = _leerSesionAutenticada();
       await _repoReservas.cancelar(id, sesion.token, motivo: motivo);
-      await cargarReservasCliente();
-      await cargarDetalleReserva(id);
+      // Un único ciclo de carga: recarga lista y detalle sin parpadeos de
+      // spinner ni vaciar el detalle por el camino.
+      await _cargarReservasInterno();
+      await _cargarDetalleInterno(id);
+      notifyListeners();
       return true;
     } catch (e) {
       _setError(_mensajeError(e));
@@ -193,6 +183,26 @@ class ViewModelReservasCliente extends ChangeNotifier {
     } finally {
       _setCargando(false);
     }
+  }
+
+  Future<void> _cargarReservasInterno() async {
+    final Sesion sesion = _leerSesionCliente();
+    _reservas = await _repoReservas.listarPorCliente(
+      sesion.clienteId ?? 0,
+      sesion.token,
+    );
+    _reservas = _reservas.where(_reservaEsValida).toList(growable: false);
+    _totalesReservas = _calcularTotalesDesdeLineas();
+  }
+
+  Future<void> _cargarDetalleInterno(int id) async {
+    final Sesion sesion = _leerSesionAutenticada();
+    final Reserva reserva = await _repoReservas.obtenerPorId(id, sesion.token);
+    final List<ReservaServicio> detalles = await _repoReservas.obtenerDetalles(
+      id,
+      sesion.token,
+    );
+    _detalle = _crearDetalle(reserva, detalles);
   }
 
   Future<void> recargar() => cargarReservasCliente();

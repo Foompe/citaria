@@ -125,15 +125,19 @@ class ViewModelAdminInicio extends ViewModelAdminBase {
   ) async {
     final List<DtoReservaInicioAdmin> resultado = <DtoReservaInicioAdmin>[];
 
-    for (final Reserva reserva in reservas) {
-      final int? reservaId = reserva.id;
-      if (reservaId == null) {
-        continue;
-      }
+    // Solo reservas con id; sus detalles se piden en paralelo (antes era una
+    // petición por reserva en serie: N+1 que ralentizaba el inicio).
+    final List<Reserva> validas = reservas
+        .where((reserva) => reserva.id != null)
+        .toList(growable: false);
+    final List<List<ReservaServicio>> detallesPorReserva = await Future.wait(
+      validas.map((reserva) => _repoReservas.obtenerDetalles(reserva.id!, token)),
+    );
 
+    for (int i = 0; i < validas.length; i++) {
+      final Reserva reserva = validas[i];
+      final List<ReservaServicio> detalles = detallesPorReserva[i];
       final EstadoReserva estado = reserva.estado ?? EstadoReserva.pendiente;
-      final List<ReservaServicio> detalles = await _repoReservas
-          .obtenerDetalles(reservaId, token);
       final Iterable<ReservaServicio> activos = detalles.where(
         (detalle) => detalle.estado != EstadoReservaServicio.cancelado,
       );

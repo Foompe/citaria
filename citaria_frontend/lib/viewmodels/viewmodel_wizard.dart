@@ -384,6 +384,9 @@ class ViewModelWizard extends ChangeNotifier {
         _token,
         empleadoId: _empleadoId,
       );
+      // Descarta respuestas obsoletas: si la fecha seleccionada cambió
+      // mientras llegaba esta petición, no sobrescribas las franjas.
+      if (_fechaSeleccionada != fecha) return;
       _franjas = disponibilidad.franjas;
       notifyListeners();
     } catch (e) {

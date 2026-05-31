@@ -10,6 +10,7 @@ abstract class ViewModelAdminBase extends ChangeNotifier {
 
   bool _cargando = false;
   String? _error;
+  bool _disposed = false;
 
   bool get cargando => _cargando;
   String? get error => _error;
@@ -56,5 +57,19 @@ abstract class ViewModelAdminBase extends ChangeNotifier {
     return mensaje.startsWith('Exception: ')
         ? mensaje.replaceFirst('Exception: ', '')
         : mensaje;
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// Evita notificar tras el dispose: si la pantalla se cierra mientras hay
+  /// una petición en vuelo, su callback ya no toca un notifier destruido.
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
   }
 }

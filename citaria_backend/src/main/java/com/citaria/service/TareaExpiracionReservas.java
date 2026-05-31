@@ -1,8 +1,10 @@
 package com.citaria.service;
 
 import com.citaria.model.EstadoReserva;
+import com.citaria.model.EstadoReservaServicio;
 import com.citaria.model.Reserva;
 import com.citaria.repository.ReservaDAO;
+import com.citaria.repository.ReservaServicioDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,10 +23,12 @@ import java.util.List;
 public class TareaExpiracionReservas {
 
     private final ReservaDAO reservaDAO;
+    private final ReservaServicioDAO reservaServicioDAO;
 
     @Autowired
-    public TareaExpiracionReservas(ReservaDAO reservaDAO) {
+    public TareaExpiracionReservas(ReservaDAO reservaDAO, ReservaServicioDAO reservaServicioDAO) {
         this.reservaDAO = reservaDAO;
+        this.reservaServicioDAO = reservaServicioDAO;
     }
 
     @Scheduled(cron = "0 0 2 * * *")
@@ -43,6 +47,7 @@ public class TareaExpiracionReservas {
                 hoy, List.of(EstadoReserva.pendiente));
         for (Reserva r : pendientes) {
             r.setEstado(EstadoReserva.cancelada);
+            reservaServicioDAO.cancelarDetallesPorReserva(r, EstadoReservaServicio.cancelado);
             reservaDAO.save(r);
         }
     }

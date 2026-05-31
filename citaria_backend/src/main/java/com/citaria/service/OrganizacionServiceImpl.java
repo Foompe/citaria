@@ -224,6 +224,10 @@ public class OrganizacionServiceImpl implements OrganizacionService {
         verificarPertenencia(organizacionId);
         Organizacion organizacion = cargarOrganizacion(organizacionId);
 
+        if (organizacionHorarioCierreDAO.findByOrganizacionAndFecha(organizacion, dto.getFecha()).isPresent()) {
+            throw new IllegalStateException("Ya existe un cierre para esa fecha");
+        }
+
         // Cancelar en la misma transacción las reservas activas de esa fecha
         List<EstadoReserva> estadosActivos = new ArrayList<>();
         estadosActivos.add(EstadoReserva.pendiente);

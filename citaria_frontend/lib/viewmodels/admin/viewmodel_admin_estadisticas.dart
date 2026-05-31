@@ -269,6 +269,7 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
     }
     notifyListeners();
 
+    Object? ultimoError;
     try {
       final String token = leerTokenObligatorio();
       final DateTime hoy = DateTime.now();
@@ -286,36 +287,77 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
       final _RangoFechas rangoCanc =
           _rangoGrafico(GraficoAdmin.cancelacionesPorServicio);
 
-      final resultados = await Future.wait<Object>(<Future<Object>>[
-        _repoEstadisticas.obtenerResumen(token),
-        _repoEstadisticas.clientesNuevosVsRecurrentes(
-            amplioDe, amplioHasta, token),
-        _repoEstadisticas.fidelizacionClientes(amplioDe, amplioHasta, token),
-        _repoEstadisticas.reservasPorEmpleado(
-            rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.importePorEmpleado(
-            rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.cancelacionesPorEmpleado(
-            rangoProf.desde, rangoProf.hasta, token),
-        _repoEstadisticas.serviciosMasSolicitados(
-            rangoSvc.desde, rangoSvc.hasta, token),
-        _repoEstadisticas.importePorServicio(
-            rangoFact.desde, rangoFact.hasta, token),
-        _repoEstadisticas.cancelacionesPorServicio(
-            rangoCanc.desde, rangoCanc.hasta, token),
-      ]);
+      // Se lanzan todas las peticiones a la vez (en paralelo)...
+      final fResumen = _repoEstadisticas.obtenerResumen(token);
+      final fClientes = _repoEstadisticas.clientesNuevosVsRecurrentes(
+          amplioDe, amplioHasta, token);
+      final fFidelizacion =
+          _repoEstadisticas.fidelizacionClientes(amplioDe, amplioHasta, token);
+      final fReservasProf = _repoEstadisticas.reservasPorEmpleado(
+          rangoProf.desde, rangoProf.hasta, token);
+      final fImporteProf = _repoEstadisticas.importePorEmpleado(
+          rangoProf.desde, rangoProf.hasta, token);
+      final fCancelProf = _repoEstadisticas.cancelacionesPorEmpleado(
+          rangoProf.desde, rangoProf.hasta, token);
+      final fServicios = _repoEstadisticas.serviciosMasSolicitados(
+          rangoSvc.desde, rangoSvc.hasta, token);
+      final fImporteSvc = _repoEstadisticas.importePorServicio(
+          rangoFact.desde, rangoFact.hasta, token);
+      final fCancelSvc = _repoEstadisticas.cancelacionesPorServicio(
+          rangoCanc.desde, rangoCanc.hasta, token);
 
-      _resumen = resultados[0] as ResumenEstadistica;
-      final List<EstadisticaMes> todosNvsR =
-          resultados[1] as List<EstadisticaMes>;
-      final List<EstadisticaMes> todosFid =
-          resultados[2] as List<EstadisticaMes>;
-      _reservasPorEmpleado = resultados[3] as List<EstadisticaItem>;
-      _importePorEmpleado = resultados[4] as List<EstadisticaItem>;
-      _cancelacionesPorEmpleado = resultados[5] as List<EstadisticaItem>;
-      _serviciosMasSolicitados = resultados[6] as List<EstadisticaItem>;
-      _importePorServicio = resultados[7] as List<EstadisticaItem>;
-      _cancelacionesPorServicio = resultados[8] as List<EstadisticaItem>;
+      // ...y cada respuesta se procesa por separado: el fallo de un gráfico
+      // ya no descarta a los demás (antes un único Future.wait lo tumbaba todo).
+      try {
+        _resumen = await fResumen;
+      } catch (e) {
+        ultimoError = e;
+      }
+
+      List<EstadisticaMes> todosNvsR = const <EstadisticaMes>[];
+      try {
+        todosNvsR = await fClientes;
+      } catch (e) {
+        ultimoError = e;
+      }
+
+      List<EstadisticaMes> todosFid = const <EstadisticaMes>[];
+      try {
+        todosFid = await fFidelizacion;
+      } catch (e) {
+        ultimoError = e;
+      }
+
+      try {
+        _reservasPorEmpleado = await fReservasProf;
+      } catch (e) {
+        ultimoError = e;
+      }
+      try {
+        _importePorEmpleado = await fImporteProf;
+      } catch (e) {
+        ultimoError = e;
+      }
+      try {
+        _cancelacionesPorEmpleado = await fCancelProf;
+      } catch (e) {
+        ultimoError = e;
+      }
+      try {
+        _serviciosMasSolicitados = await fServicios;
+      } catch (e) {
+        ultimoError = e;
+      }
+      try {
+        _importePorServicio = await fImporteSvc;
+      } catch (e) {
+        ultimoError = e;
+      }
+      try {
+        _cancelacionesPorServicio = await fCancelSvc;
+      } catch (e) {
+        ultimoError = e;
+      }
 
       // Determine which past years have data — no extra API calls
       _actualizarAnosSinDatos(
@@ -336,11 +378,16 @@ class ViewModelAdminEstadisticas extends ViewModelAdminBase {
 
       notifyListeners();
     } catch (e) {
-      registrarError(e);
+      ultimoError = e;
     } finally {
       finalizarCarga();
       for (final g in GraficoAdmin.values) {
         _cargandoPorGrafico[g] = false;
+      }
+      // El error a pantalla completa solo se muestra si no llegó ningún dato;
+      // con datos parciales se pintan los gráficos que sí cargaron.
+      if (ultimoError != null && sinDatos) {
+        registrarError(ultimoError);
       }
       notifyListeners();
     }
