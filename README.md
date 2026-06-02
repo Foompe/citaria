@@ -1,113 +1,116 @@
-## Despliegue del proyecto
+# Citaria
 
-### Requisitos previos
-
-Antes de clonar el repositorio, asegúrate de tener instaladas las siguientes herramientas:
-
-| Herramienta | Versión mínima | Uso |
-|---|---|---|
-| Java JDK | 17 | Compilar y ejecutar el backend |
-| Maven | 3.9 (incluido via wrapper) | Gestión de dependencias del backend |
-| Docker y Docker Compose | Cualquier versión estable | Levantar la base de datos MariaDB |
-| Git | Cualquier versión estable | Clonar el repositorio |
-
----
-
-### 1. Clonar el repositorio
-
-El repositorio contiene las siguientes carpetas principales:
+Aplicación de gestión de citas para negocios de servicios. Consta de una API REST
+(Spring Boot) y una app móvil (Flutter).
 
 ```
 citaria/
-├── citaria_backend/    # API REST — Spring Boot
-└── citaria_frontend/   # App móvil — Flutter (en desarrollo)
+├── citaria_backend/    # API REST — Spring Boot 3 · Java 17 · MariaDB
+└── citaria_frontend/   # App móvil — Flutter
 ```
 
+> La app actualmente corre desplegada en un servidor (Railway). Esta guía cubre
+> cómo levantarla y probarla **en local** de principio a fin.
+
 ---
+
+## Requisitos previos
+
+| Herramienta | Versión | Uso |
+|---|---|---|
+| Java JDK | 17 | Compilar y ejecutar el backend |
+| Docker y Docker Compose | Estable | Levantar la base de datos MariaDB |
+| Flutter SDK | ≥ 3.10 | Compilar y ejecutar la app |
+| Git | Estable | Clonar el repositorio |
+
+> Maven no hace falta instalarlo: el backend incluye el wrapper (`./mvnw`).
+
+---
+
+## Probar en local — paso a paso
+
+### 1. Clonar el repositorio
 
 ### 2. Configurar las variables de entorno
 
-El backend utiliza variables de entorno que **no se incluyen en el repositorio** por razones de seguridad. Se proporciona un archivo `.env_ejemplo` en `citaria_backend/` como referencia.
+El backend usa variables de entorno que **no se incluyen en el repositorio**. Se
+proporciona `citaria_backend/.env_ejemplo` como referencia. Crea tu propio `.env`:
 
-Las variables requeridas son:
+Rellena los valores en `.env`:
 
 ```env
-DB_USERNAME=        # Usuario de la base de datos MariaDB
-DB_PASSWORD=        # Contraseña de la base de datos MariaDB
-MARIADB_ROOT_PASSWORD=  # Contraseña root de MariaDB (usada por Docker)
+# JWT
+JWT_SECRET=               # mínimo 32 caracteres
+JWT_EXPIRATION_MS=86400000
+
+# Spring — conexión a la base de datos
+DB_USERNAME=citaria
+DB_PASSWORD=citaria
+
+# Docker Compose — MariaDB (DB_USERNAME/DB_PASSWORD deben coincidir con estos)
+MARIADB_ROOT_PASSWORD=root
 MARIADB_DATABASE=citaria
-MARIADB_USER=       # Mismo valor que DB_USERNAME
-MARIADB_PASSWORD=   # Mismo valor que DB_PASSWORD
-JWT_SECRET=         # Clave secreta para firmar los tokens JWT (mínimo 32 caracteres)
-GEMINI_API_KEY=     # Clave de la API de Google Gemini (necesaria para el chatbot)
+MARIADB_USER=citaria
+MARIADB_PASSWORD=citaria
+
+# Gemini (chatbot)
+GEMINI_API_KEY=
+GEMINI_API_URL=
+
+# Cloudinary (subida de imágenes)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
----
+> **Importante:**
+> - `DB_USERNAME`/`DB_PASSWORD` deben coincidir con `MARIADB_USER`/`MARIADB_PASSWORD`.
+> - Docker Compose lee el `.env` automáticamente. El backend, al arrancarlo desde
+>   el IDE o la terminal, necesita que esas variables estén cargadas en su entorno
+>   de ejecución.
+> - `GEMINI_*` y `CLOUDINARY_*` solo son necesarias para el chatbot y la subida de
+>   imágenes respectivamente; el resto de la app funciona sin ellas.
 
 ### 3. Levantar la base de datos
 
-Desde la carpeta `citaria_backend/`, ejecuta:
+Arranca **MariaDB 10.11** en el puerto `3306` y ejecuta automáticamente:
 
-```bash
-docker-compose up -d
-```
+- `docker/scripts/init.sql` — crea el esquema completo.
+- `docker/scripts/data.sql` — carga datos de prueba (incluidos los usuarios de prueba).
 
-Esto levantará un contenedor con **MariaDB 10.11** en el puerto `3306` y ejecutará automáticamente el script `docker/scripts/init.sql`, que crea el esquema completo de la base de datos.
-
----
+También levanta **phpMyAdmin** en `http://localhost:8081` para inspeccionar la BD.
 
 ### 4. Arrancar el backend
 
-Abre el proyecto `citaria_backend/` desde tu IDE, asegúrate de que las variables de entorno del `.env` están cargadas en la configuración de ejecución, y lanza la clase principal `CitariaBackendApplication`.
+Desde `citaria_backend/`, con el perfil `dev` (deja Swagger activo):
 
-El backend quedará disponible en `http://localhost:8080`.
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
-> **Nota — deshabilitar la autenticación para pruebas:** si se quiere probar la API sin gestionar tokens JWT, en `SecurityConfig.java` basta con sustituir el bloque `authorizeHttpRequests` por `.anyRequest().permitAll()` y comentar la línea `.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)`. Con esto todos los endpoints quedan accesibles sin autenticación.
+El backend queda disponible en `http://localhost:8080`. La documentación interactiva
+de la API está en `http://localhost:8080/swagger-ui.html`.
+
+### 5. Apuntar el frontend al backend local
+
+Por defecto la app apunta al servidor de producción. Para probar contra tu backend
+local, edita `citaria_frontend/lib/data/api/configuracion_api.dart`:
+
+```dart
+static const String urlBase = 'http://localhost:8080';
+```
+
+### 6. Ejecutar la app Flutter
+
+### 7. Comprobar que todo funciona
+
+Inicia sesión con uno de los usuarios de prueba (organización **1**):
+
+| Rol | Email | Contraseña |
+|---|---|---|
+| Admin | `admin@admin.com` | `12345678` |
+| Cliente | `cliente@cliente.com` | `12345678` |
+
+> También puedes crear un cliente nuevo desde la opción de **registro** de la app.
 
 ---
-
-### Prueba de la API
-
-Una vez el backend esté en marcha, la documentación interactiva de todos los endpoints está disponible en:
-
-```
-http://localhost:8080/swagger-ui.html
-```
-
-Desde ahí se pueden probar todas las operaciones REST sin necesidad de ninguna herramienta adicional.
-
-Funcionamiento actual:
-1. Entrar en http://localhost:8080/swagger-ui/index.html?continue=#/
-
-<img width="955" height="719" alt="imagen" src="https://github.com/user-attachments/assets/41e75760-ef61-4233-82b8-ec65cb3b30a0" />
-
-
-2. Abajo de todo en autenticación meter los credenciales de prueba
-   
-<img width="950" height="112" alt="imagen" src="https://github.com/user-attachments/assets/03463fef-b16c-40a1-a2a6-736ab1820417" />
-<img width="935" height="469" alt="imagen" src="https://github.com/user-attachments/assets/16186430-0a61-4bd3-8dcc-3a1c3f24d6b1" />
-
-
-4. Tomamos el token que nos devuelve y lo metemos en el Authorize de arriba de todo
-   
-<img width="906" height="392" alt="imagen" src="https://github.com/user-attachments/assets/aceb0c94-aac1-4e8c-a0a6-e02b4cd0261f" />
-<img width="794" height="294" alt="imagen" src="https://github.com/user-attachments/assets/46e1d73b-be94-4e04-90eb-771220c96b5f" />
-
-
-6. Ya podemos hacer consultas logeados, por ejemplo, servicios de una organización
-   
-<img width="926" height="581" alt="imagen" src="https://github.com/user-attachments/assets/9f11d86f-f611-43de-893b-0a5720e8898a" />
-<img width="911" height="497" alt="imagen" src="https://github.com/user-attachments/assets/bed9eb66-2389-4cb2-9ca5-fba4dbcb9a9e" />
-
-
-O por ejemplo una consulta a la ia preguntando por los servicios que ofrece una empresa
-
-<img width="924" height="444" alt="imagen" src="https://github.com/user-attachments/assets/96f5f8b5-ead2-4a05-bb2b-d18fae38471c" />
-<img width="928" height="199" alt="imagen" src="https://github.com/user-attachments/assets/396a9cfc-2ec6-4cb6-b3b7-d3d33d0383d8" />
-
-
-En la plataforma de ia podemos consular el uso que estamos haciendo del modelo
-
-<img width="1051" height="897" alt="imagen" src="https://github.com/user-attachments/assets/ab38da5c-643a-4d96-8d79-ead6c92840e1" />
-
-

@@ -3497,3 +3497,24 @@ INSERT INTO reserva_servicio (reserva_id, servicio_id, empleado_id, hora_inicio,
                                                                                                                                   (1584, 6, 4, '09:00', '09:45', 40.00, 1, 'activo'),
                                                                                                                                   (1585, 1, 2, '10:00', '10:30', 15.00, 1, 'activo'),
                                                                                                                                   (1586, 2, 3, '11:00', '11:45', 25.00, 1, 'cancelado');
+
+-- =====================================================================
+-- Usuarios de prueba para entorno local (organización 1)
+--   admin@admin.com     / 12345678  (rol ADMIN)
+--   cliente@cliente.com / 12345678  (rol CLIENTE)
+-- El hash es bcrypt de la contraseña 12345678.
+-- Se enlazan por subconsulta sobre el email para no depender de ids fijos.
+-- =====================================================================
+INSERT INTO empleado (organizacion_id, nombre, apellidos, email, telefono, activo) VALUES
+    (1, 'Admin', 'Pruebas', 'admin@admin.com', '600000000', TRUE);
+
+INSERT INTO cliente (organizacion_id, nombre, apellidos, email, telefono, notas) VALUES
+    (1, 'Cliente', 'Pruebas', 'cliente@cliente.com', '600000001', 'Cliente de prueba local');
+
+INSERT INTO usuario (organizacion_id, email, password_hash, rol, activo, email_verificado, empleado_id) VALUES
+    (1, 'admin@admin.com', '$2b$10$UyG/q9zvUYA1ZXctyPuxje1yA13ykKU7Q28dkbxygfL/Ws/O9qHsi', 'ADMIN', TRUE, TRUE,
+     (SELECT id FROM empleado WHERE organizacion_id = 1 AND email = 'admin@admin.com'));
+
+INSERT INTO usuario (organizacion_id, email, password_hash, rol, activo, email_verificado, cliente_id) VALUES
+    (1, 'cliente@cliente.com', '$2b$10$UyG/q9zvUYA1ZXctyPuxje1yA13ykKU7Q28dkbxygfL/Ws/O9qHsi', 'CLIENTE', TRUE, TRUE,
+     (SELECT id FROM cliente WHERE organizacion_id = 1 AND email = 'cliente@cliente.com'));
